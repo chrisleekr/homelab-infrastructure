@@ -1,0 +1,9 @@
+---
+# - name: Docker setup
+#   ansible.builtin.include_tasks: docker-setup.yml
+
+- name: /etc/hosts setup
+  ansible.builtin.include_tasks: etc-hosts.yml
+
+- name: Add multipath blacklist
+  ansible.builtin.include_tasks: multipath.yml

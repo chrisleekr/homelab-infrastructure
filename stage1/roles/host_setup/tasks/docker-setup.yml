@@ -1,0 +1,98 @@
+---
+
+###
+# Uninstall commands
+# $ apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# $ rm -rf /mnt/exthdd/docker
+# $ rm -rf /var/lib/docker
+# $ rm -rf /var/lib/containerd
+###
+- name: Update APT and install required packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - ca-certificates
+    - curl
+
+- name: Create directory for Docker's GPG key
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Docker's official GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Add Docker's repository to APT sources
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail && \
+      echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    executable: /bin/bash
+  register: docker_apt_source
+  changed_when: docker_apt_source.rc != 0
+
+- name: Install Docker and related packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+    - rsync
+
+- name: Check if docker data path exists
+  ansible.builtin.stat:
+    path: "{{ docker_default_data_path }}"
+  register: docker_dir
+
+- name: Move Docker data to new data path for the first time
+  when: not docker_dir.stat.exists
+  block:
+    - name: Stop Docker socket
+      ansible.builtin.systemd_service:
+        name: docker.socket
+        state: stopped
+
+    # This is only way to sync data between two directories without copying over entire `backingFsBlockDev` block file.
+    - name: Sync Docker data to /mnt/docker # noqa: command-instead-of-module
+      ansible.builtin.command: rsync -aqxP /var/lib/docker/ {{ docker_default_data_path }}/
+      register: rsync_output
+      changed_when: rsync_output.rc == 0
+
+    - name: Remove /var/lib/docker
+      ansible.builtin.file:
+        path: /var/lib/docker
+        state: absent
+
+    - name: Create symlink from new data path to /var/lib/docker
+      ansible.builtin.file:
+        src: "{{ docker_default_data_path }}"
+        dest: /var/lib/docker
+        state: link
+
+    - name: Start Docker socket
+      ansible.builtin.systemd_service:
+        name: docker.socket
+        state: started
+
+    # This may take a while to start Docker service depending on the disk speed.
+    - name: Start Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        state: started
+
+    - name: Run docker info
+      ansible.builtin.command: docker info
+      register: docker_info
+      changed_when: false

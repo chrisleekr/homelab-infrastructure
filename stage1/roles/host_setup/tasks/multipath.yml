@@ -1,0 +1,26 @@
+---
+# https://longhorn.io/kb/troubleshooting-volume-with-multipath/
+
+- name: Check if /etc/multipath.conf exists
+  ansible.builtin.stat:
+    path: /etc/multipath.conf
+  register: multipath_conf
+
+- name: Create /etc/multipath.conf if it does not exist # noqa ignore-errors
+  ansible.builtin.file:
+    path: /etc/multipath.conf
+    state: touch
+    mode: "0644"
+  when: not multipath_conf.stat.exists
+
+- name: Append blacklist devnode to /etc/multipath.conf
+  ansible.builtin.blockinfile:
+    path: /etc/multipath.conf
+    block: |
+      blacklist {
+          devnode "^sd[a-z0-9]+"
+      }
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    create: true
+    mode: '0644'
+  notify: Restart multipathd service

@@ -1,0 +1,28 @@
+controller:
+  service:
+    type: LoadBalancer
+    loadBalancerIP: ${nginx_service_loadbalancer_ip}
+    externalTrafficPolicy: "Local"
+  replicaCount: 1
+  allowSnippetAnnotations: true
+  addHeaders:
+    Referrer-Policy: strict-origin-when-cross-origin
+  config:
+    annotation-value-word-blocklist: "load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount,{,},',\""
+    hsts: "true"
+    hsts-include-subdomains: "false"
+    hsts-max-age: "63072000"
+    server-name-hash-bucket-size: "256"
+    use-http2: "true"
+    ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4"
+    ssl-protocols: "TLSv1.3 TLSv1.2"
+    server-tokens: "false"
+    # Configure smaller defaults for upstream-keepalive-*, see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration
+    upstream-keepalive-connections: 100 # Limit of 100 held-open connections
+    upstream-keepalive-time:        30s # 30 second limit for connection reuse
+    upstream-keepalive-timeout:       5 # 5 second timeout to hold open idle connections
+    upstream-keepalive-requests:   1000 # 1000 requests per connection, before recycling
+scope:
+  enabled: true
+tcp:
+  22: "gitlab/gitlab-gitlab-shell:22"

@@ -1,0 +1,2 @@
+ignored:
+  - SC1091 # Putting shellcheck source=/dev/null didn't work.

@@ -1,0 +1,15 @@
+---
+profile: production
+
+# exclude_paths included in this file are parsed relative to this file's location and not relative to the CWD of execution
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - excludethis/
+
+# Ansible-lint does not fail on warnings from the rules or tags listed below
+
+warn_list:
+  - command-instead-of-module
+  - command-instead-of-shell

@@ -1,0 +1,10 @@
+# https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/objectstorage/registry.minio.yaml
+s3:
+  v4auth: true
+  regionendpoint: "${minio_endpoint}"
+  pathstyle: true
+  region: us-east-1
+  bucket: gitlab-registry-storage
+  accesskey: ${minio_access_key}
+  secretkey: ${minio_secret_key}
+  loglevel: debug

@@ -1,0 +1,221 @@
+
+global:
+  cattle:
+    systemDefaultRegistry: ""
+    windowsCluster:
+      enabled: false
+      nodeSelector:
+        kubernetes.io/os: "linux"
+
+networkPolicies:
+  enabled: false
+  type: "k3s"
+
+image:
+  longhorn:
+    engine:
+      repository: longhornio/longhorn-engine
+      tag: v1.6.2
+    manager:
+      repository: longhornio/longhorn-manager
+      tag: v1.6.2
+    ui:
+      repository: longhornio/longhorn-ui
+      tag: v1.6.2
+    instanceManager:
+      repository: longhornio/longhorn-instance-manager
+      tag: v1.6.2
+    shareManager:
+      repository: longhornio/longhorn-share-manager
+      tag: v1.6.2
+    backingImageManager:
+      repository: longhornio/backing-image-manager
+      tag: v1.6.2
+    supportBundleKit:
+      repository: longhornio/support-bundle-kit
+      tag: v0.0.37
+  csi:
+    attacher:
+      repository: longhornio/csi-attacher
+      tag: v4.5.1
+    provisioner:
+      repository: longhornio/csi-provisioner
+      tag: v3.6.4
+    nodeDriverRegistrar:
+      repository: longhornio/csi-node-driver-registrar
+      tag: v2.9.2
+    resizer:
+      repository: longhornio/csi-resizer
+      tag: v1.10.1
+    snapshotter:
+      repository: longhornio/csi-snapshotter
+      tag: v6.3.4
+    livenessProbe:
+      repository: longhornio/livenessprobe
+      tag: v2.12.0
+  openshift:
+    oauthProxy:
+      repository: longhornio/openshift-origin-oauth-proxy
+      tag: 4.14
+  pullPolicy: IfNotPresent
+
+service:
+  ui:
+    type: ClusterIP
+    nodePort: null
+  manager:
+    type: ClusterIP
+    nodePort: ""
+
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+  defaultMkfsParams: ""
+  defaultClassReplicaCount: 1
+  defaultDataLocality: disabled
+  reclaimPolicy: Retain
+  migratable: false
+  nfsOptions: ""
+  recurringJobSelector:
+    enable: false
+    jobList: []
+  backingImage:
+    enable: false
+    name: ~
+    dataSourceType: ~
+    dataSourceParameters: ~
+    expectedChecksum: ~
+  defaultNodeSelector:
+    enable: false
+    selector: ""
+  removeSnapshotsDuringFilesystemTrim: ignored
+
+preUpgradeChecker:
+  jobEnabled: true
+  upgradeVersionCheck: true
+
+csi:
+  kubeletRootDir: ~
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+defaultSettings:
+  backupTarget: ~
+  backupTargetCredentialSecret: ~
+  allowRecurringJobWhileVolumeDetached: ~
+  createDefaultDiskLabeledNodes: ~
+  defaultDataPath: ${longhorn_default_settings_default_data_path}
+  defaultDataLocality: ~
+  replicaSoftAntiAffinity: ~
+  replicaAutoBalance: ~
+  storageOverProvisioningPercentage: ~
+  storageMinimalAvailablePercentage: ~
+  storageReservedPercentageForDefaultDisk: ~
+  upgradeChecker: ~
+  defaultReplicaCount: 1
+  defaultLonghornStaticStorageClass: ~
+  backupstorePollInterval: ~
+  failedBackupTTL: ~
+  restoreVolumeRecurringJobs: ~
+  recurringSuccessfulJobsHistoryLimit: ~
+  recurringFailedJobsHistoryLimit: ~
+  recurringJobMaxRetention: ~
+  supportBundleFailedHistoryLimit: ~
+  taintToleration: ~
+  systemManagedComponentsNodeSelector: ~
+
+  priorityClass: &defaultPriorityClassNameRef "longhorn-critical"
+  autoSalvage: ~
+  autoDeletePodWhenVolumeDetachedUnexpectedly: ~
+  disableSchedulingOnCordonedNode: ~
+  replicaZoneSoftAntiAffinity: ~
+  replicaDiskSoftAntiAffinity: ~
+  nodeDownPodDeletionPolicy: ~
+  nodeDrainPolicy: ~
+  detachManuallyAttachedVolumesWhenCordoned: ~
+  replicaReplenishmentWaitInterval: ~
+  concurrentReplicaRebuildPerNodeLimit: ~
+  concurrentVolumeBackupRestorePerNodeLimit: ~
+  disableRevisionCounter: ~
+  systemManagedPodsImagePullPolicy: ~
+  allowVolumeCreationWithDegradedAvailability: ~
+  autoCleanupSystemGeneratedSnapshot: ~
+  autoCleanupRecurringJobBackupSnapshot: ~
+  concurrentAutomaticEngineUpgradePerNodeLimit: ~
+  backingImageCleanupWaitInterval: ~
+  backingImageRecoveryWaitInterval: ~
+  guaranteedInstanceManagerCPU: ~
+  kubernetesClusterAutoscalerEnabled: ~
+  orphanAutoDeletion: ~
+  storageNetwork: ~
+  deletingConfirmationFlag: ~
+  engineReplicaTimeout: ~
+  snapshotDataIntegrity: ~
+  snapshotDataIntegrityImmediateCheckAfterSnapshotCreation: ~
+  snapshotDataIntegrityCronjob: ~
+  removeSnapshotsDuringFilesystemTrim: ~
+  fastReplicaRebuildEnabled: ~
+  replicaFileSyncHttpClientTimeout: ~
+  logLevel: ~
+  backupCompressionMethod: "gzip"
+  backupConcurrentLimit: ~
+  restoreConcurrentLimit: ~
+  v1DataEngine: ~
+  v2DataEngine: ~
+  v2DataEngineHugepageLimit: ~
+  offlineReplicaRebuilding: ~
+  v2DataEngineGuaranteedInstanceManagerCPU: ~
+  allowEmptyNodeSelectorVolume: ~
+  allowEmptyDiskSelectorVolume: ~
+  allowCollectingLonghornUsageMetrics: ~
+  disableSnapshotPurge: ~
+  snapshotMaxCount: 3
+
+longhornManager:
+  log:
+    format: plain
+  priorityClass: *defaultPriorityClassNameRef
+  tolerations: []
+  nodeSelector: {}
+  serviceAnnotations: {}
+
+longhornDriver:
+  priorityClass: *defaultPriorityClassNameRef
+  tolerations: []
+  nodeSelector: {}
+
+longhornUI:
+  replicas: 2
+  priorityClass: *defaultPriorityClassNameRef
+  tolerations: []
+  nodeSelector: {}
+
+ingress:
+  enabled: true
+  ingressClassName: ${longhorn_ingress_class_name}
+  host: ${longhorn_ingress_host}
+  tls: true
+  secureBackends: true
+  tlsSecret: longhorn-tls
+  path: /
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+
+
+enablePSP: false
+
+namespaceOverride: ""
+
+annotations: {}
+
+serviceAccount:
+  annotations: {}
+
+metrics:
+  serviceMonitor:
+    enabled: false

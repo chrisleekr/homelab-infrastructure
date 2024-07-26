@@ -1,0 +1,12 @@
+---
+- name: Debug etc_hosts_json variable
+  ansible.builtin.debug:
+    msg: "{{ etc_hosts_json }}"
+
+- name: Add specific IP addresses to /etc/hosts
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: ".*{{ item.name }}$"
+    line: "{{ item.ip }} {{ item.name }}"
+    state: present
+  loop: "{{ etc_hosts_json }}"

@@ -1,0 +1,39 @@
+---
+- name: Host setup - Not related with K3S
+  hosts: k3s_cluster
+  become: true
+  roles:
+    - role: host_setup
+  handlers:
+    - name: Restart multipathd service
+      ansible.builtin.include_tasks:
+        file: handlers/restart-multipathd-service.yml
+
+- name: K3S Cluster prep
+  hosts: k3s_cluster
+  gather_facts: true
+  become: true
+  roles:
+    - role: k3s_prereq
+
+- name: Setup K3S server
+  hosts: server
+  become: true
+  roles:
+    - role: k3s_server
+
+- name: Fail2ban setup
+  hosts: server
+  become: true
+  roles:
+    - role: fail2ban
+  handlers:
+    - name: Restart fail2ban service
+      ansible.builtin.include_tasks:
+        file: handlers/restart-fail2ban-service.yml
+
+- name: Clean up
+  hosts: localhost
+  connection: local
+  roles:
+    - role: rename_kubeconfig

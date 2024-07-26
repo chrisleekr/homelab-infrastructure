@@ -1,0 +1,69 @@
+---
+# Refer: https://github.com/techtales-io/terraform-minio/blob/main/.pre-commit-config.yaml
+fail_fast: false
+default_stages:
+  - commit
+  - push
+
+# exclude: "^assets/"
+
+repos:
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v24.6.1
+    hooks:
+      - id: ansible-lint
+        args:
+          - --project-dir=./stage1
+        # Uncomment if you need the full Ansible community bundle instead of ansible-core:
+        # additional_dependencies:
+        #   - ansible
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.92.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+        exclude: '^[^/]+$'
+      - id: terraform_trivy
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Check for files that contain merge conflict strings.
+      - id: check-merge-conflict
+      # Prevent giant files from being committed. default=500kB
+      - id: check-added-large-files
+      # Check for files with names that would conflict on a case-insensitive filesystem like MacOS HFS+ or Windows FAT.
+      - id: check-case-conflict
+      # Checks that non-binary executables have a proper shebang.
+      - id: check-executables-have-shebangs
+      # Attempts to load all json files to verify syntax.
+      - id: check-json
+      # Checks for symlinks which do not point to anything.
+      - id: check-symlinks
+      # Checks for the existence of private keys.
+      - id: detect-private-key
+      # Makes sure files end in a newline and only a newline.
+      - id: end-of-file-fixer
+      # Removes UTF-8 byte order marker
+      - id: fix-byte-order-marker
+      # Replaces or checks mixed line ending.
+      - id: mixed-line-ending
+        args:
+          - --fix=auto
+      # trailing-whitespace
+      - id: trailing-whitespace
+        args:
+          - --markdown-linebreak-ext=md
+      # Protect specific branches from direct checkins.
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        stages: [commit]

@@ -1,0 +1,136 @@
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+
+## Create default rules for monitoring the cluster
+##
+defaultRules:
+  create: true
+  ## Disabled PrometheusRule alerts
+  disabled: {}
+  # KubeAPIDown: true
+  # NodeRAIDDegraded: true
+
+## Configuration for alertmanager
+## ref: https://prometheus.io/docs/alerting/alertmanager/
+##
+alertmanager:
+  enabled: true
+  ## Alertmanager configuration directives
+  ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
+  ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
+  ##
+  config:
+    global:
+      resolve_timeout: 5m
+    inhibit_rules:
+      - source_matchers:
+          - 'severity = critical'
+        target_matchers:
+          - 'severity =~ warning|info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+      - source_matchers:
+          - 'severity = warning'
+        target_matchers:
+          - 'severity = info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+      - source_matchers:
+          - 'alertname = InfoInhibitor'
+        target_matchers:
+          - 'severity = info'
+        equal:
+          - 'namespace'
+      - target_matchers:
+          - 'alertname = InfoInhibitor'
+    route:
+      group_by: ['namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+      - receiver: 'null'
+        matchers:
+          - alertname = "Watchdog"
+    receivers:
+    - name: 'null'
+    templates:
+    - '/etc/alertmanager/config/*.tmpl'
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class_name}
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
+      nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+    labels: {}
+    hosts:
+      - ${alertmanager_domain}
+    paths:
+      - /
+    pathType: ImplementationSpecific
+    tls:
+      - secretName: alertmanager-general-tls
+        hosts:
+        - ${alertmanager_domain}
+
+grafana:
+  enabled: true
+  defaultDashboardsTimezone: Australia/Melbourne
+  adminPassword: ${grafana_admin_password}
+
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class_name}
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
+      nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+    labels: {}
+
+    hosts:
+      - ${grafana_domain}
+
+    path: /
+
+    tls:
+    - secretName: grafana-general-tls
+      hosts:
+      - ${grafana_domain}
+
+  # To make Grafana persistent (Using Statefulset)
+  #
+  persistence:
+    enabled: true
+    type: sts
+    storageClassName: ${persistence_storage_class_name}
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+    finalizers:
+      - kubernetes.io/pvc-protection
+
+prometheus:
+  enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class_name}
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
+      nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+    labels: {}
+    hosts:
+      - ${prometheus_domain}
+    paths:
+    - /
+    pathType: ImplementationSpecific
+    tls:
+      - secretName: prometheus-general-tls
+        hosts:
+          - ${prometheus_domain}

@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "streetsidesoftware.code-spell-checker",
+    "esbenp.prettier-vscode",
+    "redhat.ansible",
+    "redhat.vscode-yaml",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "HashiCorp.terraform",
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    "DavidAnson.vscode-markdownlint"
+  ]
+}

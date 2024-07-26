@@ -1,0 +1,51 @@
+{
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "search.exclude": {
+    ".git": true,
+    ".build": true,
+    "**/.DS_Store": true,
+    "**/.vscode": true,
+    "**/node_modules": true
+  },
+  "cSpell.words": [
+    "blockinfile",
+    "certmanager",
+    "chrisleekr",
+    "gitaly",
+    "gitleaks",
+    "homelab",
+    "kubernetescrd",
+    "minio",
+    "multipathd",
+    "posix",
+    "precommit",
+    "tflint",
+    "traefik",
+    "trivy"
+  ],
+  "yaml.format.enable": true,
+  "files.associations": {
+    "stage1/**/*.yml": "ansible",
+    "stage2/**/*.tftpl": "yaml"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "[terraform]": {}
+}

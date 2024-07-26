@@ -1,0 +1,3 @@
+---
+docker_default_data_path: "/var/lib/docker"
+etc_hosts_json: "[]"

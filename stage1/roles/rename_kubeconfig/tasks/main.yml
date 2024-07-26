@@ -1,0 +1,11 @@
+---
+- name: Rename ~/.kube/config.new to ~/.kube/config locally
+  ansible.builtin.command:
+    cmd: mv ~/.kube/config.new ~/.kube/config
+  register: mv_output
+  changed_when: mv_output.rc != 0
+
+- name: Use kube context to the cluster
+  ansible.builtin.shell: kubectl config use-context $(kubectl config get-contexts -o name)
+  register: kubectl_output
+  changed_when: kubectl_output.rc != 0

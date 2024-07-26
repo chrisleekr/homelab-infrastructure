@@ -1,0 +1,10 @@
+# https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml
+
+installCRDs: true
+
+hostAliases:
+- ip: ${host_alias_ip}
+  hostnames:
+  %{ for hostname in split(",", host_alias_hostnames) ~}
+  - "${hostname}"
+  %{ endfor ~}
