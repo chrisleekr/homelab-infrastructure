@@ -39,3 +39,38 @@ variable "prometheus_persistence_storage_class_name" {
   type        = string
   default     = "longhorn"
 }
+
+variable "prometheus_alertmanager_slack_channel" {
+  description = "The slack channel for the alertmanager"
+  type        = string
+}
+
+variable "prometheus_alertmanager_slack_credentials" {
+  description = "The slack credentials for the alertmanager"
+  type        = string
+  sensitive   = true
+}
+
+variable "prometheus_minio_job_bearer_token" {
+  description = "The bearer token for the minio job scraper"
+  type        = string
+  sensitive   = true
+}
+
+variable "prometheus_minio_job_node_bearer_token" {
+  description = "The bearer token for the minio job node scraper"
+  type        = string
+  sensitive   = true
+}
+
+variable "prometheus_minio_job_bucket_bearer_token" {
+  description = "The bearer token for the minio job bucket scraper"
+  type        = string
+  sensitive   = true
+}
+
+variable "prometheus_minio_job_resource_bearer_token" {
+  description = "The bearer token for the minio job resource scraper"
+  type        = string
+  sensitive   = true
+}

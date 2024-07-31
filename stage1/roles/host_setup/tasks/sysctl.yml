@@ -1,0 +1,18 @@
+---
+# For Gitlab Registry
+# sysctl -w fs.inotify.max_user_watches=100000
+# sysctl -w fs.inotify.max_user_instances=100000
+
+- name: Set fs.inotify.max_user_watches
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: 100000
+    state: present
+    reload: true
+
+- name: Set fs.inotify.max_user_instances
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_instances
+    value: 100000
+    state: present
+    reload: true

@@ -9,6 +9,7 @@
     "**/node_modules": true
   },
   "cSpell.words": [
+    "alertmanager",
     "blockinfile",
     "certmanager",
     "chrisleekr",

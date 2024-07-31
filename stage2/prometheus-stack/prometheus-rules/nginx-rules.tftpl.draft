@@ -1,0 +1,11 @@
+# https://samber.github.io/awesome-prometheus-alerts/rules.html#nginx
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: nginx
+    role: alert-rules
+    release: kube-prometheus-stack
+  name: prometheus-nginx-rules
+  namespace: ${namespace}
+spec:

@@ -16,28 +16,31 @@ global:
     externalIP: ${global_hosts_external_ip}
     gitlab:
       name: gitlab.${global_hosts_domain}
-      https: false
+      https: ${global_hosts_https}
       serviceName: webservice
     registry:
       name: registry.${global_hosts_domain}
-      https: false
-      httpSecret:
-        secret: ${registry_http_secret}
-        key: secret
+      https: ${global_hosts_https}
     minio:
       name: minio.${global_hosts_domain}
-      https: false
+      https: ${global_hosts_https}
     smartcard:
       name: smartcard.${global_hosts_domain}
     kas:
       name: kas.${global_hosts_domain}
     pages:
       name: pages.${global_hosts_domain}
-      https: false
+      https: ${global_hosts_https}
     ssh: gitlab.${global_hosts_domain}
 
-  ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
+  registry:
+    enabled: true
+    bucket: gitlab-registry-storage
+    httpSecret:
+      secret: ${registry_http_secret}
+      key: secret
 
+  ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
   ingress:
     enabled: true
     configureCertmanager: false
@@ -51,16 +54,15 @@ global:
       secretName: "gitlab-tls"
     path: /
     pathType: Prefix
-
-
+  # Override enablement of ServiceMonitor and PodMonitor objects.
+  monitoring:
+    enabled: true
   ## Initial root password for this GitLab installation
   ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#initial-root-password
   ## If allowing shared-secrets generation, this is OPTIONAL.
   initialRootPassword:
     secret: ${global_initial_root_password_secret}
     key: password
-
-
   ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
   psql:
     connectTimeout:
@@ -74,29 +76,8 @@ global:
       secret: ${global_postgresql_password_secret}
       key: postgresql-password
       file:
-    # host: postgresql.hostedsomewhere.else
-    # port: 123
-    # username: gitlab
-    # database: gitlabhq_production
-    # applicationName:
-    # preparedStatements: false
-    # databaseTasks: true
     main: {}
-      # host: postgresql.hostedsomewhere.else
-      # port: 123
-      # username: gitlab
-      # database: gitlabhq_production
-      # applicationName:
-      # preparedStatements: false
-      # databaseTasks: true
     ci: {}
-      # host: postgresql.hostedsomewhere.else
-      # port: 123
-      # username: gitlab
-      # database: gitlabhq_production_ci
-      # applicationName:
-      # preparedStatements: false
-      # databaseTasks: false
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
   ## https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
@@ -105,25 +86,15 @@ global:
       enabled: true
       secret: ${global_redis_secret}
       key: password
-    # host: redis.hostedsomewhere.else
-    # port: 6379
-    # user: webservice
-    # sentinels:
-    #   - host:
-    #     port:
     sentinelAuth:
       enabled: false
-      # secret:
-      # key:
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
-
   gitaly:
     enabled: true
     authToken:
       secret: ${global_gitaly_auth_token_secret}
       key: "token"
-    # serviceName:
     internal:
       names: [default]
     external: []
@@ -137,8 +108,6 @@ global:
         internalPort: 8076
     tls:
       enabled: false
-      # secretName:
-
   praefect:
     enabled: false
     ntpHost: pool.ntp.org
@@ -152,7 +121,6 @@ global:
         maxUnavailable: 1
     psql:
       sslMode: disable
-    # serviceName:
     service:
       name: praefect
       type: ClusterIP
@@ -163,15 +131,11 @@ global:
         internalPort: 8076
     tls:
       enabled: false
-      # secretName:
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-minio-settings
-
   minio:
     enabled: false
     credentials: {}
-      # secret:
-
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-appconfig-settings
   ## Rails based portions of this chart share many settings
@@ -218,7 +182,6 @@ global:
       ci_runners_stale_machines_cleanup_worker:
         cron: "36 * * * *"
 
-
     ## https://docs.gitlab.com/charts/charts/globals#content-security-policy
     contentSecurityPolicy:
       enabled: true
@@ -228,97 +191,42 @@ global:
     ## Making use of object_store, you can configure a connection once, and it will be used for any and all object storage backed features that are not individually configured with a connection property.
     object_store:
       enabled: true
-      # proxy_download: true
       storage_options: {}
-        # server_side_encryption:
-        # server_side_encryption_kms_key_id
       connection:
         secret: ${object_store_connection_secret}
         key: connection
     lfs:
       enabled: true
-      # proxy_download: true
       bucket: git-lfs
-      # connection: *connection
     artifacts:
       enabled: true
-      # proxy_download: true
       bucket: gitlab-artifacts
-      # connection: *connection
     uploads:
       enabled: true
-      # proxy_download: true
       bucket: gitlab-uploads
-      # connection: *connection
     packages:
       enabled: true
-      # proxy_download: true
       bucket: gitlab-packages
-      # connection: *connection
     externalDiffs:
       enabled: true
-      # proxy_download: true
       bucket: gitlab-mr-diffs
-      # connection: *connection
     terraformState:
       enabled: false
       bucket: gitlab-terraform-state
-      # connection: *connection
     ciSecureFiles:
       enabled: false
       bucket: gitlab-ci-secure-files
-      # connection: *connection
     dependencyProxy:
       enabled: false
       proxy_download: true
       bucket: gitlab-dependency-proxy
-      # connection: *connection
     backups:
       bucket: gitlab-backups
       tmpBucket: gitlab-tmp-backups
-      # connection: *connection
 
   ## End of global.appConfig
 
-  oauth:
-    gitlab-pages: {}
-      # secret:
-      # appIdKey:
-      # appSecretKey:
-      # redirectUri:
-      # authScope:
-
-  ## https://docs.gitlab.com/charts/advanced/geo/
-  geo:
-    enabled: false
-    # Valid values: primary, secondary
-    role: primary
-    ## Geo Secondary only
-    # nodeName allows multiple instances behind a load balancer.
-    nodeName: # defaults to `gitlab.gitlab.host`
-    # ingressClass:
-    # PostgreSQL connection details only needed for `secondary`
-    psql:
-      password: {}
-      #   secret:
-      #   key:
-      # host: postgresql.hostedsomewhere.else
-      # port: 123
-      # username: gitlab_replicator
-      # database: gitlabhq_geo_production
-      # ssl:
-      #   secret:
-      #   clientKey:
-      #   clientCertificate:
-      #   serverCA:
-    registry:
-      replication:
-        enabled: false
-        primaryApiUrl:
-        ## Consumes global.registry.notificationSecret
-
   ## https://docs.gitlab.com/charts/charts/gitlab/kas/
-
   kas:
     enabled: true
     service:
@@ -326,11 +234,8 @@ global:
     tls:
       enabled: false
       verify: true
-      # secretName:
-      # caSecretName:
 
   ## https://docs.gitlab.com/charts/charts/gitlab/spamcheck/
-
   spamcheck:
     enabled: false
 
@@ -408,29 +313,12 @@ global:
   certificates:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/certificates
-      # Default tag is `global.gitlabVersion` or `master` if the former one is undefined.
-      # tag: master
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
     customCAs: []
-    # - secret: custom-CA
-    # - secret: more-custom-CAs
-    #   keys:
-    #     - custom-ca-1.crt
-    # - configMap: custom-CA-cm
-    # - configMap: more-custom-CAs-cm
-    #   keys:
-    #     - custom-ca-2.crt
-    #     - custom-ca-3.crt
 
   ## kubectl image used by hooks to carry out specific jobs
   kubectl:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/kubectl
-      # Default tag is `global.gitlabVersion` or `master` if the former one is undefined.
-      # tag: master
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
     securityContext:
       # in most base images, this is `nobody:nogroup`
       runAsUser: 65534
@@ -438,48 +326,12 @@ global:
   gitlabBase:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/gitlab-base
-      # Default tag is `global.gitlabVersion` or `master` if the former one is undefined.
-      # Charts using this image as init container support further overrides with `init.image.tag`.
-      # tag: master
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
 
   ## https://docs.gitlab.com/charts/charts/globals#service-accounts
   serviceAccount:
     enabled: false
     create: true
     annotations: {}
-    ## Name to be used for serviceAccount, otherwise defaults to chart fullname
-    # name:
-
-  ## https://docs.gitlab.com/charts/charts/globals
-  extraEnv: {}
-  #   SOME_KEY: some_value
-  #   SOME_OTHER_KEY: some_other_value
-
-  ## https://docs.gitlab.com/charts/charts/globals
-  extraEnvFrom: {}
-  #   MY_NODE_NAME:
-  #     fieldRef:
-  #       fieldPath: spec.nodeName
-  #   MY_CPU_REQUEST:
-  #     resourceFieldRef:
-  #       containerName: test-container
-  #       resource: requests.cpu
-  #   SECRET_THING:
-  #     secretKeyRef:
-  #       name: special-secret
-  #       key: special_token
-  #       # optional: boolean
-  #   CONFIG_STRING:
-  #     configMapKeyRef:
-  #       name: useful-config
-  #       key: some-string
-  #       # optional: boolean
-
-  ## https://docs.gitlab.com/charts/charts/globals/#jobs
-  job:
-    nameSuffixOverride:
 ## End of global
 
 
@@ -488,11 +340,32 @@ global:
 registry:
   # Settings utilized by other services referencing registry:
   enabled: true
-  bucket: gitlab-registry-storage
+  maintenance:
+    readonly:
+      enabled: false  # must remain set to true while the migration is executed
+  database:
+    configure: true
+    enabled: true
+    name: registry  # must match the database name you created above
+    user: registry  # must match the database username you created above
+    password:
+      secret: ${registry_database_password}  # must match the secret name
+      key: password  # must match the secret key to read the password from
+    sslmode: disable  # SSL connection mode. See http://www.postgresql.cn/docs/current/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS for more options.
+    migrations:
+      enabled: true  # this option will execute the schema migration as part of the registry deployment
   storage:
     secret: ${registry_storage_secret}
     key: storage
     extraKey:
+  metrics:
+    enabled: true
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+      endpointConfig: {}
   ingress:
     enabled: true
     tls:
@@ -504,31 +377,19 @@ registry:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
       nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
       nginx.ingress.kubernetes.io/proxy-buffering: "off"
-      # https://github.com/distribution/distribution/issues/970#issuecomment-499228700
-      nginx.ingress.kubernetes.io/configuration-snippet: |
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-  # Enable the registry to return relative URLs in Location headers
   relativeurls: true
   hpa:
     minReplicas: 1
   log:
-    level: debug  # FIXME: Change to info
+    level: debug
     fields:
       service: registry
-
-
 
 # https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/templates/_runcheck.tpl
 # https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/templates/upgrade_check_hook.yaml?ref_type=heads
 upgradeCheck:
   enabled: true
   image: {}
-    # repository:
-    # tag:
-    # pullPolicy: IfNotPresent
-    # pullSecrets: []
   securityContext:
     # in alpine/debian/busybox based images, this is `nobody:nogroup`
     runAsUser: 65534
@@ -585,7 +446,6 @@ nginx-ingress: &nginx-ingress
       upstream-keepalive-time:        30s # 30 second limit for connection reuse
       upstream-keepalive-timeout:       5 # 5 second timeout to hold open idle connections
       upstream-keepalive-requests:   1000 # 1000 requests per connection, before recycling
-
     service:
       externalTrafficPolicy: "Local"
     ingressClassByName: false
@@ -628,7 +488,7 @@ nginx-ingress: &nginx-ingress
 ## Installation & configuration of stable/prometheus
 ## See requirements.yaml for current version
 prometheus:
-  install: true
+  install: false # Note: It's not working. The rules are not loaded by default.
   rbac:
     create: true
   alertmanager:
@@ -774,6 +634,7 @@ prometheus:
 ## Configuration of Redis
 ## https://docs.gitlab.com/charts/architecture/decisions#redis
 ## https://docs.gitlab.com/charts/installation/deployment.html#redis
+# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
 redis:
   install: true
   image:
@@ -785,11 +646,19 @@ redis:
   architecture: standalone
   cluster:
     enabled: false
+  master:
+    count: 1
   metrics:
     enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+      endpointConfig: {}
 
 ## Installation & configuration of stable/postgresql
 ## See requirements.yaml for current version
+# https://github.com/bitnami/charts/blob/main/bitnami/postgresql/values.yaml
 postgresql:
   install: true
   auth:
@@ -822,6 +691,11 @@ postgresql:
         prometheus.io/port: "9187"
         gitlab.com/prometheus_scrape: "true"
         gitlab.com/prometheus_port: "9187"
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+      endpointConfig: {}
 
     ## Optionally define additional custom metrics
     ## ref: https://github.com/wrouesnel/postgres_exporter#adding-new-metrics-via-a-config-file
@@ -835,11 +709,7 @@ shared-secrets:
     create: true
   selfsign:
     image:
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
       repository: registry.gitlab.com/gitlab-org/build/cng/cfssl-self-sign
-      # Default tag is `master`, overridable by `global.gitlabVersion`.
-      # tag: master
     keyAlgorithm: "rsa"
     keySize: "4096"
     expiry: "3650d"
@@ -880,6 +750,7 @@ gitlab-runner:
     # The parent/GitLab chart overrides the template to render the actual secret name.
     # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-kubernetes
     # https://docs.gitlab.com/runner/executors/kubernetes/index.html#exposed-varrundockersock
+    # https://stackoverflow.com/questions/72490488/user-systemserviceaccountgitlabdefault-cannot-get-resource-deployments-in
     secret: ${global_runner_registration_token_secret}
     config: |
       [[runners]]
@@ -887,7 +758,7 @@ gitlab-runner:
           namespace = "{{.Release.Namespace}}"
           image = "docker:stable"
           privileged = true
-          pull_policy = "always"
+          # service_account = "gitlab-gitlab-runner"
           [runners.cache]
             Type = "s3"
             Path = "gitlab-runner"
@@ -898,30 +769,15 @@ gitlab-runner:
               BucketLocation = "us-east-1"
               Insecure = false
               AuthenticationType = "access-key"
-          [[runners.kubernetes.volumes.empty_dir]]
-            name = "docker-certs"
-            mount_path = "/certs/client"
-            medium = "Memory"
+        [[runners.kubernetes.volumes.empty_dir]]
+          name = "docker-certs"
+          mount_path = "/certs/client"
+          medium = "Memory"
   cache:
     secretName: ${runner_s3_access_secret}
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: false
-    runAsNonRoot: true
-    privileged: false
-    capabilities:
-      drop: ["ALL"]
   podAnnotations:
     gitlab.com/prometheus_scrape: "true"
     gitlab.com/prometheus_port: 9252
-  # This is added to workaround resolving the dns.
-  hostAliases:
-    - ip: "${global_hosts_external_ip}"
-      hostnames:
-        - "gitlab.${global_hosts_domain}"
-        - "kas.${global_hosts_domain}"
-        - "registry.${global_hosts_domain}"
-        - "minio.${global_hosts_domain}"
 
 traefik:
   install: false
@@ -938,6 +794,17 @@ traefik:
 ## Settings for individual sub-charts under GitLab
 ## Note: Many of these settings are configurable via globals
 gitlab:
+  gitlay:
+    enabled: true
+    metrics:
+      enabled: true
+      port: 9236
+      path: /metrics
+      serviceMonitor:
+        enabled: truie
+        additionalLabels:
+          release: kube-prometheus-stack
+        endpointConfig: {}
   # https://docs.gitlab.com/charts/charts/gitlab/toolbox
   toolbox:
     enabled: true
@@ -963,7 +830,7 @@ gitlab:
           accessMode: ReadWriteOnce
           storageClass: ${persistence_storage_class_name}
           useGenericEphemeralVolume: false
-          size: 10Gi
+          size: 20Gi
       objectStorage:
         backend: s3
         config:
@@ -980,11 +847,37 @@ gitlab:
   webservice:
     enabled: true
     minReplicas: 1
+    metrics:
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
     ingress:
       tls:
         secretName: "gitlab-webservice-tls"
   sidekiq:
     enabled: true
+    metrics:
+      enabled: true
+      port: 3807
+      path: /metrics
+      log_enabled: false
+      podMonitor:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
+        endpointConfig: {}
+  gitlab-exporter:
+    enabled: true
+    metrics:
+      enabled: true
+      port: 9168
+      path: /metrics
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
+        endpointConfig: {}
   gitlab-shell:
     enabled: true
     logging:
@@ -992,9 +885,26 @@ gitlab:
       sshdLogLevel: "VERBOSE"
     sshDaemon: gitlab-sshd
     minReplicas: 1
+    metrics:
+      enabled: true
+      port: 9122
+      path: /metrics
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
+        endpointConfig: {}
   kas:
     enabled: true
     minReplicas: 1
+    metrics:
+      enabled: true
+      path: /metrics
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
+        endpointConfig: {}
     ingress:
       tls:
         secretName: "gitlab-kas-tls"
