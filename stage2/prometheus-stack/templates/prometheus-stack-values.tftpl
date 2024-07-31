@@ -5,9 +5,10 @@
 defaultRules:
   create: true
   ## Disabled PrometheusRule alerts
-  disabled: {}
-  # KubeAPIDown: true
-  # NodeRAIDDegraded: true
+  disabled:
+    KubeControllerManagerDown: true
+    KubeProxyDown: true
+    KubeSchedulerDown: true
 
 ## Configuration for alertmanager
 ## ref: https://prometheus.io/docs/alerting/alertmanager/
@@ -49,13 +50,49 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
-      receiver: 'null'
+      receiver: 'default-receiver'
       routes:
+      - receiver: 'default-receiver'
+        match:
+          severity: critical
+      - receiver: 'default-receiver'
+        match:
+          severity: warning
+      - receiver: 'default-receiver'
+        match:
+          severity: info
       - receiver: 'null'
         matchers:
           - alertname = "Watchdog"
     receivers:
     - name: 'null'
+    - name: 'default-receiver'
+      slack_configs:
+      - api_url: 'https://slack.com/api/chat.postMessage'
+        channel: '#${alertmanager_slack_channel}'
+        send_resolved: true
+        http_config:
+          authorization:
+            credentials: ${alertmanager_slack_credentials}
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '[{{ if eq .Status "firing" }}{{ .Alerts.Firing | len }} {{ end }} {{ if
+          eq .Status "firing" }}Alerts{{ else }}{{ .Status | toUpper }}{{ end }}]'
+        title_link: '{{ template "slack.default.titlelink" . }}'
+        pretext: '{{ .CommonAnnotations.summary }}'
+        text: |-
+          {{ range .Alerts }}
+          {{- if .Annotations.summary }}*Alert:* {{ .Annotations.summary }}{{- end }}
+          *Description:* {{ .Annotations.description }}{{ .Annotations.message }}
+          *Severity:* `{{ .Labels.severity }}`
+          *Source:* Prometheus Alertmanager
+          {{ end }}
+        short_fields: false
+        footer: '{{ template "slack.default.footer" . }}'
+        fallback: '{{ template "slack.default.fallback" . }}'
+        callback_id: '{{ template "slack.default.callbackid" . }}'
+        icon_emoji: '{{ template "slack.default.iconemoji" . }}'
+        icon_url: '{{ template "slack.default.iconurl" . }}'
+        link_names: false
     templates:
     - '/etc/alertmanager/config/*.tmpl'
   ingress:
@@ -77,10 +114,49 @@ alertmanager:
         hosts:
         - ${alertmanager_domain}
 
+# https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
 grafana:
   enabled: true
   defaultDashboardsTimezone: Australia/Melbourne
   adminPassword: ${grafana_admin_password}
+  datasources: {}
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      minio-server:
+        url: https://raw.githubusercontent.com/minio/minio/master/docs/metrics/prometheus/grafana/minio-dashboard.json
+        datasource:
+        - name: DS_PROMETHEUS
+          value: Prometheus
+      minio-bucket:
+        url: https://raw.githubusercontent.com/minio/minio/master/docs/metrics/prometheus/grafana/bucket/minio-bucket.json
+        datasource:
+        - name: DS_PROMETHEUS
+          value: Prometheus
+      minio-node:
+        url: https://raw.githubusercontent.com/minio/minio/master/docs/metrics/prometheus/grafana/node/minio-node.json
+        datasource:
+        - name: DS_PROMETHEUS
+          value: Prometheus
+      longhorn: # https://grafana.com/grafana/dashboards/16888-longhorn/
+        gnetId: 16888
+        revision: 9
+        datasource: Prometheus
+      ingress-nginx:
+        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/nginx.json
+      ingress-nginx-request-handling-performance:
+        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/request-handling-performance.json
 
   ingress:
     enabled: true
@@ -91,12 +167,9 @@ grafana:
       nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
       nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
     labels: {}
-
     hosts:
       - ${grafana_domain}
-
     path: /
-
     tls:
     - secretName: grafana-general-tls
       hosts:
@@ -114,8 +187,58 @@ grafana:
     finalizers:
       - kubernetes.io/pvc-protection
 
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml
 prometheus:
   enabled: true
+  prometheusSpec:
+    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the servicemonitors created
+    ##
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    ## If true, a nil or {} value for prometheus.prometheusSpec.podMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the podmonitors created
+    ##
+    podMonitorSelectorNilUsesHelmValues: false
+
+    ## AdditionalScrapeConfigs allows specifying additional Prometheus scrape configurations. Scrape configurations
+    ## are appended to the configurations generated by the Prometheus Operator. Job configurations must have the form
+    ## as specified in the official Prometheus documentation:
+    ## https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config. As scrape configs are
+    ## appended, the user is responsible to make sure it is valid. Note that using this feature may expose the possibility
+    ## to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible
+    ## scrape configs are going to break Prometheus after the upgrade.
+    ## AdditionalScrapeConfigs can be defined as a list or as a templated string.
+    ##
+    ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
+    ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
+    additionalScrapeConfigs:
+    - job_name: minio-job
+      bearer_token: ${minio_job_bearer_token}
+      metrics_path: /minio/v2/metrics/cluster
+      scheme: http
+      static_configs:
+      - targets: [minio.minio-tenant.svc.cluster.local]
+    - job_name: minio-job-node
+      bearer_token: ${minio_job_node_bearer_token}
+      metrics_path: /minio/v2/metrics/node
+      scheme: http
+      static_configs:
+      - targets: [minio.minio-tenant.svc.cluster.local]
+    - job_name: minio-job-bucket
+      bearer_token: ${minio_job_bucket_bearer_token}
+      metrics_path: /minio/v2/metrics/bucket
+      scheme: http
+      static_configs:
+      - targets: [minio.minio-tenant.svc.cluster.local]
+    - job_name: minio-job-resource
+      bearer_token: ${minio_job_resource_bearer_token}
+      metrics_path: /minio/v2/metrics/resource
+      scheme: http
+      static_configs:
+      - targets: [minio.minio-tenant.svc.cluster.local]
   ingress:
     enabled: true
     ingressClassName: ${ingress_class_name}

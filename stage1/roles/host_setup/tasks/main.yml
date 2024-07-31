@@ -7,3 +7,6 @@
 
 - name: Add multipath blacklist
   ansible.builtin.include_tasks: multipath.yml
+
+- name: Update sysctl settings
+  ansible.builtin.include_tasks: sysctl.yml

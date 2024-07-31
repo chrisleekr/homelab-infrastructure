@@ -238,6 +238,31 @@ resource "kubernetes_secret" "gitlab_registry_storage_secret" {
   }
 }
 
+# https://docs.gitlab.com/charts/charts/registry/metadata_database.html
+resource "random_password" "gitlab_registry_database_password" {
+  length  = 64
+  special = false
+}
+
+resource "kubernetes_secret" "gitlab_registry_database_password" {
+  depends_on = [
+    kubernetes_namespace.gitlab,
+    random_password.gitlab_registry_database_password
+  ]
+  metadata {
+    name      = "registry-database-password"
+    namespace = kubernetes_namespace.gitlab.metadata[0].name
+  }
+
+  data = {
+    "password" = random_password.gitlab_registry_database_password.result
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels]
+  }
+}
+
 resource "kubernetes_secret" "gitlab_runner_s3_access" {
   depends_on = [
     kubernetes_namespace.gitlab

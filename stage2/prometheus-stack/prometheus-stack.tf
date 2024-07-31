@@ -26,12 +26,33 @@ resource "random_password" "grafana_admin_password" {
   special = false
 }
 
+locals {
+  prometheus_rules = fileset("${path.module}/prometheus-rules", "*.tftpl")
+}
+
+resource "kubectl_manifest" "prometheus_rules" {
+  for_each = { for rule in local.prometheus_rules : rule => rule }
+
+  depends_on = [
+    kubernetes_namespace.prometheus_namespace
+  ]
+
+  yaml_body = templatefile(
+    "${path.module}/prometheus-rules/${each.value}",
+    {
+      namespace = kubernetes_namespace.prometheus_namespace.metadata[0].name
+    }
+  )
+}
+
+
 
 resource "helm_release" "prometheus_operator" {
   depends_on = [
     kubernetes_namespace.prometheus_namespace,
     kubernetes_secret.frontend_basic_auth,
-    random_password.grafana_admin_password
+    random_password.grafana_admin_password,
+    kubectl_manifest.prometheus_rules
   ]
 
   name       = "kube-prometheus-stack"
@@ -53,6 +74,14 @@ resource "helm_release" "prometheus_operator" {
         ingress_class_name              = var.prometheus_ingress_class_name
         prometheus_domain               = var.prometheus_prometheus_domain
         persistence_storage_class_name  = var.prometheus_persistence_storage_class_name
+
+        alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
+        alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
+
+        minio_job_bearer_token          = var.prometheus_minio_job_bearer_token
+        minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
+        minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
+        minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
       }
     )
   ]

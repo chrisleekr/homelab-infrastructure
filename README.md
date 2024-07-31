@@ -7,12 +7,21 @@
 This project aims to provision Kubernetes on a Ubuntu server and consists of three stages:
 
 - Stage 1: Ansible
-  - Repository: <https://github.com/k3s-io/k3s-ansible>
-  - Copied `inventory-sample.yml` and renamed it to `inventory.yml`. Updated the cluster inventory.
-  - Copied `site.yml` and stripped down to only include the `prereq` and `k3s_server` roles.
-  - Copied `prereq` and `k3s_server` in the `roles` folder.
+  - Provision a single-node Kubernetes cluster using k3s.
+    - Repository: <https://github.com/k3s-io/k3s-ansible>
+    - Copied `inventory-sample.yml` and renamed it to `inventory.yml`. Updated the cluster inventory.
+    - Copied `site.yml` and stripped down to only include the `prereq` and `k3s_server` roles.
+    - Copied `prereq` and `k3s_server` in the `roles` folder.
+  - Install Fail2ban
+  - Disable multipath
 
 - Stage 2: Terraform
+  - Nginx
+  - Cert manager
+  - Longhorn
+  - Minio
+  - Gitlab
+  - Prometheus
 
 ## Prerequisite
 

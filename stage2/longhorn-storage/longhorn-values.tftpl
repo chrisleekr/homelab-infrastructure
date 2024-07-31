@@ -1,3 +1,4 @@
+# https://github.com/longhorn/longhorn/blob/master/chart/values.yaml
 
 global:
   cattle:
@@ -218,4 +219,22 @@ serviceAccount:
 
 metrics:
   serviceMonitor:
-    enabled: false
+    # -- Setting that allows the creation of a Prometheus ServiceMonitor resource for Longhorn Manager components.
+    enabled: true
+    # -- Additional labels for the Prometheus ServiceMonitor resource.
+    additionalLabels:
+      release: kube-prometheus-stack
+    # -- Annotations for the Prometheus ServiceMonitor resource.
+    annotations: {}
+    # -- Interval at which Prometheus scrapes the metrics from the target.
+    interval: "30s"
+    # -- Timeout after which Prometheus considers the scrape to be failed.
+    scrapeTimeout: "10s"
+    # -- Configures the relabeling rules to apply the target’s metadata labels. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    relabelings: []
+    # -- Configures the relabeling rules to apply to the samples before ingestion. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    metricRelabelings: []

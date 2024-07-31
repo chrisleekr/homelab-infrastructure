@@ -1,0 +1,42 @@
+default:
+  image: docker:27
+  services:
+    - name: docker:27-dind
+      alias: docker
+
+variables:
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+.before_script_template: &before-script
+  before_script:
+    - apk add curl git jq
+    - docker info
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin $REGISTRY_DOMAIN
+    - docker context create dind
+    - docker buildx create --use dind --buildkitd-flags '--allow-insecure-entitlement network.host'
+
+stages:
+  - build
+
+docker-build:
+  stage: build
+  only:
+    - master
+    - main
+  <<: *before-script
+  # Use --provenance false to avoid the following error:
+  #   https://gitlab.com/gitlab-org/gitlab/-/issues/389577
+  script:
+    - docker buildx build
+      --platform linux/amd64,linux/arm64
+      --allow network.host
+      --provenance false
+      --pull
+      --cache-from $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:cache
+      --cache-to $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:cache
+      --tag $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:latest
+      --tag $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:v$(cat version.txt)
+      --push .

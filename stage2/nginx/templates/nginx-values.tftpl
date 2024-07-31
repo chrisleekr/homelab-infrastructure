@@ -1,4 +1,5 @@
 controller:
+  kind: Deployment
   service:
     type: LoadBalancer
     loadBalancerIP: ${nginx_service_loadbalancer_ip}
@@ -22,6 +23,20 @@ controller:
     upstream-keepalive-time:        30s # 30 second limit for connection reuse
     upstream-keepalive-timeout:       5 # 5 second timeout to hold open idle connections
     upstream-keepalive-requests:   1000 # 1000 requests per connection, before recycling
+    enable-brotli: "true"
+    brotli-level: "6"
+    brotli-types: "text/xml image/svg+xml application/x-font-ttf image/vnd.microsoft.icon application/x-font-opentype application/json font/eot application/vnd.ms-fontobject application/javascript font/otf application/xml application/xhtml+xml text/javascript application/x-javascript text/plain application/x-font-truetype application/xml+rss image/x-icon font/opentype text/css image/x-win-bitmap"
+    enable-real-ip: "true"
+    ignore-invalid-headers: "false"
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "10254"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
 scope:
   enabled: true
 tcp:

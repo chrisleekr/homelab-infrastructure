@@ -80,4 +80,11 @@ module "prometheus_stack" {
   prometheus_prometheus_domain     = var.prometheus_prometheus_domain
   prometehus_grafana_storage_class = var.prometheus_persistence_storage_class_name
 
+  prometheus_alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
+  prometheus_alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
+
+  prometheus_minio_job_bearer_token          = var.prometheus_minio_job_bearer_token
+  prometheus_minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
+  prometheus_minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
+  prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
 }

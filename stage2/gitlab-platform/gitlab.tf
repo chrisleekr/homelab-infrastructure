@@ -20,12 +20,13 @@ resource "helm_release" "gitlab" {
     kubernetes_secret.gitlab_object_store_connection,
     kubernetes_secret.gitlab_registry_httpsecret,
     kubernetes_secret.gitlab_registry_storage_secret,
+    kubernetes_secret.gitlab_registry_database_password
   ]
 
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "8.1.2"
+  version    = "8.2.1"
   namespace  = kubernetes_namespace.gitlab.metadata[0].name
   timeout    = 300
 
@@ -53,8 +54,10 @@ resource "helm_release" "gitlab" {
         object_store_connection_secret = kubernetes_secret.gitlab_object_store_connection.metadata[0].name
         registry_http_secret           = kubernetes_secret.gitlab_registry_httpsecret.metadata[0].name
         registry_storage_secret        = kubernetes_secret.gitlab_registry_storage_secret.metadata[0].name
-        runner_s3_access_secret        = kubernetes_secret.gitlab_runner_s3_access.metadata[0].name
-        toolbox_s3cmd_secret           = kubernetes_secret.gitlab_toolbox_s3cmd.metadata[0].name
+        registry_database_password     = kubernetes_secret.gitlab_registry_database_password.metadata[0].name
+
+        runner_s3_access_secret = kubernetes_secret.gitlab_runner_s3_access.metadata[0].name
+        toolbox_s3cmd_secret    = kubernetes_secret.gitlab_toolbox_s3cmd.metadata[0].name
 
         certmanager_issuer_email = var.gitlab_certmanager_issuer_email
 
