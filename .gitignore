@@ -8,3 +8,4 @@ container/root
 stage2/minio-object-storage/*.crt
 stage2/host-keys
 tmp
+.DS_Store
