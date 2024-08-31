@@ -1,0 +1,20 @@
+---
+- name: Check if cilium is already installed
+  ansible.builtin.stat:
+    path: "/usr/local/bin/cilium"
+  register: cilium_check
+
+- name: Install cilium
+  when: not cilium_check.stat.exists
+  block:
+    - name: Download Cilium CLI
+      ansible.builtin.get_url:
+        url: "https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-{{ host_machine_architecture }}.tar.gz"
+        dest: /tmp/cilium-linux-{{ host_machine_architecture }}.tar.gz
+        mode: "0644"
+
+    - name: Extract Cilium CLI
+      ansible.builtin.unarchive:
+        src: /tmp/cilium-linux-{{ host_machine_architecture }}.tar.gz
+        dest: /usr/local/bin/
+        remote_src: true

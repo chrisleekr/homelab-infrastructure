@@ -1,0 +1,70 @@
+---
+# https://github.com/nbigot/ansible-fail2ban/blob/master/tasks/main.yml
+
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: "{{ apt_install_state | default('latest') }}"
+  with_items: "{{ fail2ban_dependencies }}"
+
+- name: Update configuration file - /etc/fail2ban/fail2ban.local
+  ansible.builtin.template:
+    src: etc/fail2ban/fail2ban.local.j2
+    dest: /etc/fail2ban/fail2ban.local
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart fail2ban
+
+- name: Update configuration file - /etc/fail2ban/jail.local
+  ansible.builtin.template:
+    src: etc/fail2ban/jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart fail2ban
+
+- name: Copy filters
+  ansible.builtin.copy:
+    src: "{{ fail2ban_filterd_path }}"
+    dest: /etc/fail2ban/filter.d/
+    owner: root
+    group: root
+    mode: "0644"
+  when: fail2ban_filterd_path is defined
+  notify: restart fail2ban
+
+- name: Copy actions
+  ansible.builtin.copy:
+    src: "{{ fail2ban_actiond_path }}"
+    dest: /etc/fail2ban/action.d/
+    owner: root
+    group: root
+    mode: "0644"
+  when: fail2ban_actiond_path is defined
+  notify: restart fail2ban
+
+- name: Copy jails
+  ansible.builtin.copy:
+    src: "{{ fail2ban_jaild_path }}"
+    dest: /etc/fail2ban/jail.d/
+    owner: root
+    group: root
+    mode: "0644"
+  when: fail2ban_jaild_path is defined
+  notify: restart fail2ban
+
+- name: Start and enable service
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when: ansible_service_mgr == 'systemd'
+
+- name: Start and enable service
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when: ansible_service_mgr != 'systemd'

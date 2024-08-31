@@ -1,3 +1,74 @@
 ---
+kubernetes_cluster_type: '{{ lookup("env", "kubernetes_cluster_type") or "k3s" }}'
+sshd_port: '{{ lookup("env", "server_ssh_port") or 22 }}'
 docker_default_data_path: "/var/lib/docker"
 etc_hosts_json: "[]"
+
+# Start: fail2ban
+fail2ban_dependencies:
+  - fail2ban
+fail2ban_loglevel: INFO
+fail2ban_logtarget: /var/log/fail2ban.log
+fail2ban_syslog_target: /var/log/fail2ban.log
+fail2ban_syslog_facility: 1
+fail2ban_socket: /var/run/fail2ban/fail2ban.sock
+fail2ban_pidfile: /var/run/fail2ban/fail2ban.pid
+fail2ban_ignoreips:
+  - 127.0.0.1/8
+  - 192.168.1.1/8
+fail2ban_bantime: 600
+fail2ban_bantime_factor: 24
+fail2ban_bantime_maxtime: 5w
+fail2ban_maxretry: 3
+fail2ban_findtime: 600
+fail2ban_backend: systemd
+fail2ban_banaction: iptables-multiport
+fail2ban_mta: sendmail
+fail2ban_protocol: tcp
+fail2ban_chain: INPUT
+fail2ban_action: "%(action_)s"
+fail2ban_services:
+  - name: sshd
+# Finish: fail2ban
+
+# Start: remove-snapd.yml
+snapd_purge: true
+
+snapd_state: stopped
+snapd_enabled: false
+
+snapd_block_later_installation: true
+
+snapd_services:
+  - snapd.service
+
+snapd_files:
+  - /etc/apt/apt.conf.d/20snapd.conf
+
+snapd_block_packages: []
+
+snapd_defaults_services:
+  - snapd.apparmor.service
+  - snapd.seeded.service
+  - snapd.service
+
+snapd_defaults_files:
+  - /snap
+  - /var/snap
+  - /var/lib/snapd
+  - /var/cache/snapd
+  - /run/snapd-snap.socket
+  - /run/snapd.socket
+  - /etc/apt/apt.conf.d/20snapd.conf
+
+snapd_defaults_block_packages:
+  - snapd
+  - snap-confine
+  - ubuntu-core-snapd-units
+  - ubuntu-core-launcher
+  - libsnapd-glib1
+  - gir1.2-snapd-1
+  - libsnapd-qt1
+  - snapd-xdg-open
+  - qml-module-snapd
+# Finish: remove-snapd.yml

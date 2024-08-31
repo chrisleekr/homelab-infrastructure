@@ -1,0 +1,11 @@
+---
+- name: Clean apt cache
+  listen: "clean apt cache"
+  ansible.builtin.apt:
+    clean: true
+  when: "ansible_version.full is version_compare('2.13', '>=')"
+
+- name: Update package cache
+  listen: "update package cache"
+  ansible.builtin.package:
+    update_cache: true

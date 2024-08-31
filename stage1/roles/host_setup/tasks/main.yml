@@ -1,12 +1,24 @@
 ---
-# - name: Docker setup
-#   ansible.builtin.include_tasks: docker-setup.yml
+- name: Install packages
+  ansible.builtin.include_tasks: install-packages.yml
 
-- name: /etc/hosts setup
-  ansible.builtin.include_tasks: etc-hosts.yml
+- name: Remove snapd
+  ansible.builtin.include_tasks: remove-snapd.yml
 
-- name: Add multipath blacklist
-  ansible.builtin.include_tasks: multipath.yml
+- name: Update /etc/hosts
+  ansible.builtin.include_tasks: update-etc-hosts.yml
+
+- name: Update multipath blacklist
+  ansible.builtin.include_tasks: update-multipath.yml
 
 - name: Update sysctl settings
-  ansible.builtin.include_tasks: sysctl.yml
+  ansible.builtin.include_tasks: update-sysctl.yml
+
+- name: Install fail2ban
+  ansible.builtin.include_tasks: install-fail2ban.yml
+
+- name: Setup UFW
+  ansible.builtin.include_tasks: setup-ufw.yml
+
+- name: Disable swap
+  ansible.builtin.include_tasks: disable-swap.yml

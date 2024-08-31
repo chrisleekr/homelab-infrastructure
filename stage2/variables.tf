@@ -1,9 +1,14 @@
+variable "host_machine_architecture" {
+  description = "The architecture of the host machine. i.e. amd64, arm64"
+  type        = string
+  default     = "amd64"
+}
+
 variable "kubernetes_override_domains" {
   description = "The list of domains to be added to the CoreDNS configuration. Space delimiter. i.e. gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
   type        = string
   default     = "gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
 }
-
 
 variable "kubernetes_override_ip" {
   description = "The IP address of the host alias."

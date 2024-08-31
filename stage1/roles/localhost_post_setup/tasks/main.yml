@@ -1,0 +1,7 @@
+---
+- name: Rename kubeconfig
+  ansible.builtin.import_tasks: rename-kubeconfig.yml
+
+- name: Install MetalLB
+  ansible.builtin.include_tasks: install-metallb.yml
+  when: kubernetes_cluster_type == 'kubeadm'

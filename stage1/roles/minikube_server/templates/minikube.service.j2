@@ -1,0 +1,18 @@
+[Unit]
+Description=minikube
+After=network-online.target firewalld.service containerd.service docker.service
+Wants=network-online.target docker.service
+Requires=docker.socket containerd.service docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/root
+ExecStart=/bin/bash -c '/usr/local/bin/minikube start --driver docker --force --force-systemd true --cpus=$(expr $(lscpu -p=CPU | tail -n1) + 1) --memory=$(expr $(free -m | tr -s " " | grep Mem | cut -d " " -f2) - 2048) --listen-address 0.0.0.0 --apiserver-ips={{ ansible_host }}'
+ExecStop=/usr/local/bin/minikube stop
+StandardOutput=journal
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

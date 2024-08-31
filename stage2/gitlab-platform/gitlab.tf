@@ -34,6 +34,9 @@ resource "helm_release" "gitlab" {
     templatefile(
       "${path.module}/templates/gitlab-values.tftpl",
       {
+        # Workaround - https://gitlab.com/groups/gitlab-org/-/epics/10938
+        kubectl_image_tag = var.host_machine_architecture == "arm64" ? "16-5-arm64" : "master"
+
         global_hosts_domain      = var.gitlab_global_hosts_domain
         global_hosts_host_suffix = var.gitlab_global_hosts_host_suffix
         global_hosts_https       = var.gitlab_global_hosts_https
