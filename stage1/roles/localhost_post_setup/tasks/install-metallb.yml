@@ -1,0 +1,36 @@
+- name: Edit kube-proxy configmap
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: ConfigMap
+    namespace: kube-system
+    name: kube-proxy
+  register: kube_proxy_configmap
+
+- name: Update kube-proxy configmap
+  kubernetes.core.k8s:
+    state: present
+    # yamllint disable-line rule:line-length
+    definition: "{{ kube_proxy_configmap.resources[0] | combine({'data': {'config.conf': kube_proxy_configmap.resources[0].data['config.conf'] | regex_replace('strictARP: false', 'strictARP: true')}}) }}"
+
+- name: Install or upgrade MetalLB using Helm
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb
+    chart_repo_url: https://metallb.github.io/metallb
+    namespace: metallb-system
+    create_namespace: true
+    state: present
+
+- name: Apply MetalLB IPAddressPool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      metadata:
+        name: first-pool
+        namespace: metallb-system
+      spec:
+        autoAssign: false
+        addresses:
+          - "{{ server_ssh_host }}/32"

@@ -14,6 +14,7 @@
   loop:
     - ca-certificates
     - curl
+    - qemu-system
 
 - name: Create directory for Docker's GPG key
   ansible.builtin.file:
@@ -38,6 +39,23 @@
     executable: /bin/bash
   register: docker_apt_source
   changed_when: docker_apt_source.rc != 0
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
+    update_cache: true
+
+# # sudo usermod -aG docker $USER && newgrp docker
+# - name: Add user to docker group
+#   ansible.builtin.user:
+#     name: "{{ ansible_user }}"
+#     groups: docker
+#     append: true
+
+# - name: Refresh group membership
+#   ansible.builtin.command: newgrp docker
+#   become: true
+#   become_user: "{{ ansible_user }}"
+#   ignore_errors: true
 
 - name: Install Docker and related packages
   ansible.builtin.apt:

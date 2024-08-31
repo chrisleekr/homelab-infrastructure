@@ -1,0 +1,53 @@
+---
+- name: Install containerd
+  when: "'containerd.service' not in ansible_facts.services or ansible_facts.services['containerd.service'].state != 'running'"
+  block:
+    - name: Download containerd tarball
+      vars:
+        base_url: "https://github.com/containerd/containerd/releases/download"
+        path: "containerd-{{ containerd_version }}-linux-{{ host_machine_architecture }}.tar.gz"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ containerd_version }}/{{ path }}"
+        dest: "/tmp/{{ path }}"
+        mode: "0644"
+
+    - name: Extract containerd tarball to /usr/local
+      ansible.builtin.unarchive:
+        src: "/tmp/containerd-{{ containerd_version }}-linux-{{ host_machine_architecture }}.tar.gz"
+        dest: /usr/local
+        remote_src: true
+
+    - name: Download containerd.service file
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        dest: /lib/systemd/system/containerd.service
+        mode: "0644"
+
+    - name: Reload systemd daemon and enable containerd service
+      ansible.builtin.systemd:
+        daemon_reload: true
+        enabled: true
+        state: started
+        name: containerd
+
+    - name: Create /etc/containerd directory if it doesn't exist already.
+      ansible.builtin.file:
+        path: /etc/containerd/
+        state: directory
+        mode: "0644"
+
+    - name: Generate default config for containerd and save it to config.toml file.
+      ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
+      register: containerd_toml
+      changed_when: containerd_toml.rc != 0 and containerd_toml.stdout != ""
+
+    - name: Update the value of SystemdCgroup in the config.toml file.
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: "SystemdCgroup = false"
+        replace: "SystemdCgroup = true"
+
+    - name: Restart containerd service
+      ansible.builtin.service:
+        name: containerd
+        state: restarted

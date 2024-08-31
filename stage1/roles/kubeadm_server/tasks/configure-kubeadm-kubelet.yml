@@ -1,0 +1,73 @@
+---
+- name: Check if kubelet exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/kubelet.service
+  register: kubelet_stat
+
+- name: Download and extract kubelet
+  when: not kubelet_stat.stat.exists
+  block:
+    - name: Download kubeadm and kubelet
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ host_machine_architecture }}/{{ item }}"
+        dest: /usr/local/bin/{{ item }}
+        mode: "0755"
+      with_items:
+        - kubeadm
+        - kubelet
+
+    - name: Download kubelet.service file
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubelet/kubelet.service"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/kubelet.service
+        mode: "0644"
+
+    - name: Replace /usr/bin with /usr/local/bin in kubelet.service file
+      ansible.builtin.replace:
+        path: /tmp/kubelet.service
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy kubelet.service file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/kubelet.service
+        dest: /etc/systemd/system/kubelet.service
+        remote_src: true
+        mode: "0644"
+
+    - name: Create /etc/systemd/system/kubelet.service.d directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/kubelet.service.d
+        state: directory
+        mode: "0644"
+
+    - name: Download 10-kubeadm.conf
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubeadm/10-kubeadm.conf"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/10-kubeadm.conf
+        mode: "0644"
+
+    - name: Replace /usr/bin with /usr/local/bin in 10-kubeadm.conf file
+      ansible.builtin.replace:
+        path: /tmp/10-kubeadm.conf
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy 10-kubeadm.conf file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/10-kubeadm.conf
+        dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        remote_src: true
+        mode: "0644"
+
+    - name: Enable and start kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: true
+        state: started

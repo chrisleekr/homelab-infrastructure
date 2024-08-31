@@ -23,4 +23,4 @@
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
     create: true
     mode: '0644'
-  notify: Restart multipathd service
+  notify: "restart multipathd"

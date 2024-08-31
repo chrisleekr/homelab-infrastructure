@@ -1,15 +1,74 @@
-k3s_cluster:
+local:
+  hosts:
+    localhost:
+      ansible_connection: local
+
+  vars:
+    kubernetes_cluster_type: '{{ lookup("env", "kubernetes_cluster_type") or "kubeadm" }}'
+    server_ssh_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
+
+cluster:
   children:
     server:
       hosts:
         server_host:
-          ansible_host: '{{ lookup("env", "k3s_ssh_host") or "192.168.1.100" }}'
-          ansible_user: '{{ lookup("env", "k3s_ssh_user") or "ubuntu" }}'
-          ansible_port: '{{ lookup("env", "k3s_ssh_port") or 22 }}'
+          ansible_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
+          ansible_user: '{{ lookup("env", "server_ssh_user") or "ubuntu" }}'
+          ansible_port: '{{ lookup("env", "server_ssh_port") or 22 }}'
           ansible_python_interpreter: '/usr/bin/python3.12'  # Explicitly specify the Python interpreter
-    agent:
 
   vars:
+    kubernetes_cluster_type: '{{ lookup("env", "kubernetes_cluster_type") or "kubeadm" }}'
+
+    # The CPU architecture of the Minikube redistributable
+    host_machine_architecture: '{{ lookup("env", "host_machine_architecture") or "amd64" }}'
+
+    ########################
+    # Start: Kubeadm
+    runc_version: "1.1.13"
+    cni_version: "1.5.1"
+    crictl_version: "1.31.1"
+    containerd_version: "1.7.21"
+    nerdctl_version: "1.7.6"
+    kubeadm_version: "1.31.0"
+    kubelet_service_version: "0.17.2"
+    kubectl_version: "1.26.0"
+    cilium_cli_version: "0.16.16"
+    node_count: "1"
+    # Finish: Kubeadm
+    ########################
+
+    ########################
+    # Start: minikube - https://github.com/gantsign/ansible_role_minikube/blob/master/vars/main.yml
+    # Dir where minikube should be installed
+    minikube_install_dir: "/usr/local/bin"
+
+    # Path where minikube should be installed
+    minikube_install_path: "{{ minikube_install_dir }}/minikube"
+
+    # Mirror to download the minikube from
+    minikube_mirror: "https://github.com/kubernetes/minikube/releases/download/v{{ minikube_version }}"
+
+    # The OS of the minikube redistributable
+    minikube_os: "linux"
+
+    # File name of the minikube redistributable file
+    minikube_redis_filename: "minikube-{{ minikube_os }}-{{ host_machine_architecture }}"
+
+    # File name of the minikube download file
+    minikube_download_filename: "{{ minikube_redis_filename }}-{{ minikube_version }}"
+
+    # minikube version number
+    minikube_version: "1.33.1"
+
+    # Directory to store files downloaded for minikube
+    minikube_download_dir: "{{ x_ansible_download_dir | default(ansible_facts.env.HOME + '/.ansible/tmp/downloads') }}"
+
+    # Finish: minikube
+    ########################
+
+    ########################
+    # Start: k3s vars
     k3s_version: v1.30.2+k3s1
     token: '{{ lookup("env", "k3s_token") or ""}}'
     api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
@@ -17,10 +76,9 @@ k3s_cluster:
     extra_agent_args: ""
 
     docker_default_data_path: '{{ lookup("env", "docker_default_data_path") or "/var/lib/docker" }}'
-    etc_hosts_json: '{{ lookup("env", "etc_hosts_json") or "[]" }}'
+    etc_hosts_json: '{{ (lookup("env", "etc_hosts_json") | default("[]")) | from_json }}'
 
     # Optional vars
-
     cluster_context: k3s
     # api_port: 6443
     # k3s_server_location: /var/lib/rancher/k3s
@@ -41,3 +99,5 @@ k3s_cluster:
     #   Containerd can be configured to connect to private registries and use them to pull images as needed by the kubelet.
     #   YAML here will be placed as the content of /etc/rancher/k3s/registries.yaml
     #   See https://docs.k3s.io/installation/private-registry
+    # Finish: k3s vars
+    ########################

@@ -13,14 +13,28 @@
     "blockinfile",
     "certmanager",
     "chrisleekr",
+    "containerd",
+    "crictl",
+    "filterd",
     "gitaly",
     "gitleaks",
     "homelab",
+    "Kubeadm",
+    "kubeconfig",
+    "kubelet",
     "kubernetescrd",
+    "lineinfile",
+    "metallb",
     "minio",
+    "minitunnel",
     "multipathd",
+    "nerdctl",
+    "pipefail",
     "posix",
     "precommit",
+    "proto",
+    "redistributable",
+    "runc",
     "tflint",
     "traefik",
     "trivy"
@@ -48,5 +62,6 @@
   "[shellscript]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
   },
-  "[terraform]": {}
+  "[terraform]": {},
+  "ansible.python.interpreterPath": "/opt/homebrew/bin/python3.12"
 }

@@ -1,0 +1,49 @@
+---
+# https://github.com/gantsign/ansible_role_minikube/blob/master/tasks/main.yml
+- name: Create download directory
+  ansible.builtin.file:
+    state: directory
+    mode: "u=rwx,go=rx"
+    dest: "{{ minikube_download_dir }}"
+
+- name: Download sha256sum
+  ansible.builtin.get_url:
+    url: "{{ minikube_mirror }}/{{ minikube_redis_filename }}.sha256"
+    dest: "{{ minikube_download_dir }}/{{ minikube_download_filename }}.sha256"
+    force: false
+    use_proxy: true
+    validate_certs: true
+    mode: "u=rw,go=r"
+
+- name: Read sha256sum
+  ansible.builtin.slurp:
+    src: "{{ minikube_download_dir }}/{{ minikube_download_filename }}.sha256"
+  register: minikube_sha256sum
+
+- name: Download Minikube
+  ansible.builtin.get_url:
+    url: "{{ minikube_mirror }}/{{ minikube_redis_filename }}"
+    dest: "{{ minikube_download_dir }}/{{ minikube_download_filename }}"
+    checksum: "sha256:{{ minikube_sha256sum.content | b64decode | trim }}"
+    force: false
+    use_proxy: true
+    validate_certs: true
+    mode: "u=rw,go=r"
+
+- name: Create the Minikube installation dir
+  ansible.builtin.file:
+    state: directory
+    owner: root
+    group: root
+    mode: "u=rwx,go=rx"
+    dest: "{{ minikube_install_dir }}"
+
+- name: Install Minikube
+  ansible.builtin.copy:
+    src: "{{ minikube_download_dir }}/{{ minikube_download_filename }}"
+    remote_src: true
+    dest: "{{ minikube_install_path }}"
+    force: true
+    owner: root
+    group: root
+    mode: "u=rwx,go=rx"

@@ -1,0 +1,36 @@
+---
+- name: Install runc
+  ansible.builtin.include_tasks: install-runc.yml
+
+- name: Install cni
+  ansible.builtin.include_tasks: install-cni.yml
+
+- name: Configure containerd
+  ansible.builtin.include_tasks: configure-containerd.yml
+
+- name: Install nerdctl
+  ansible.builtin.include_tasks: install-nerdctl.yml
+
+- name: Install crictl
+  ansible.builtin.include_tasks: install-crictl.yml
+
+- name: Configure kubeadm and kubelet
+  ansible.builtin.include_tasks: configure-kubeadm-kubelet.yml
+
+- name: Install kubectl
+  ansible.builtin.include_tasks: install-kubectl.yml
+
+- name: Download cilium
+  ansible.builtin.include_tasks: download-cilium.yml
+
+- name: Initialise kubeadm
+  ansible.builtin.include_tasks: initialise-kubeadm.yml
+
+- name: Install cilium
+  ansible.builtin.include_tasks: install-cilium.yml
+
+- name: Download kubeconfig
+  ansible.builtin.include_tasks: download-kubeconfig.yml
+
+- name: Untaint node
+  ansible.builtin.include_tasks: untaint-node.yml

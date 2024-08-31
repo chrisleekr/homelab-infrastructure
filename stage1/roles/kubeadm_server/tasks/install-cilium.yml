@@ -1,0 +1,19 @@
+---
+- name: Check if cilium is already installed
+  ansible.builtin.command: kubectl get deployment cilium-operator -n kube-system
+  register: cilium_check
+  changed_when: cilium_check.rc != 0
+  ignore_errors: true
+
+- name: Install cilium
+  when: cilium_check.rc != 0
+  block:
+    - name: Install Cilium
+      ansible.builtin.command: cilium install --helm-set securityContext.privileged=true
+      register: cilium_install
+      changed_when: cilium_install.rc != 0
+
+    - name: Wait for Cilium status to be ready
+      ansible.builtin.command: cilium status --wait
+      register: cilium_status
+      changed_when: cilium_status.rc != 0

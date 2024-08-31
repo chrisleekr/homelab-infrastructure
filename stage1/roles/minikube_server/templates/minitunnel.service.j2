@@ -1,0 +1,18 @@
+[Unit]
+Description=minitunnel
+After=network-online.target minikube.service
+Wants=network-online.target minikube.service
+Requires=minikube.service
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+WorkingDirectory=/root
+ExecStart=/usr/local/bin/minikube tunnel
+ExecStop=/usr/local/bin/minikube stop
+StandardOutput=journal
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

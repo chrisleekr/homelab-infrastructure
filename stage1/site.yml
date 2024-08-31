@@ -1,39 +1,71 @@
 ---
-- name: Host setup - Not related with K3S
-  hosts: k3s_cluster
+- name: Server setup on cluster, not related with kubernetes
+  hosts: server
   become: true
   roles:
     - role: host_setup
   handlers:
-    - name: Restart multipathd service
-      ansible.builtin.include_tasks:
-        file: handlers/restart-multipathd-service.yml
+    - name: Multipathd handlers
+      ansible.builtin.import_tasks:
+        file: handlers/multipathd.yml
+    - name: Fail2ban handlers
+      ansible.builtin.import_tasks:
+        file: handlers/fail2ban.yml
+    - name: APT Cache handlers
+      ansible.builtin.import_tasks:
+        file: handlers/apt-cache.yml
 
-- name: K3S Cluster prep
-  hosts: k3s_cluster
-  gather_facts: true
-  become: true
-  roles:
-    - role: k3s_prereq
-
-- name: Setup K3S server
+- name: Kubernetes setup
   hosts: server
   become: true
-  roles:
-    - role: k3s_server
-
-- name: Fail2ban setup
-  hosts: server
-  become: true
-  roles:
-    - role: fail2ban
+  pre_tasks:
+    - name: Gather service state information as fact data
+      ansible.builtin.service_facts:
+  tasks:
+    - name: Setup kubeadm cluster
+      when: kubernetes_cluster_type == 'kubeadm'
+      block:
+        - name: Include kubeadm cluster preparation
+          ansible.builtin.include_role:
+            name: kubeadm_pre_setup
+        - name: Include kubeadm cluster server
+          ansible.builtin.include_role:
+            name: kubeadm_server
+    - name: Setup minikube cluster
+      when: kubernetes_cluster_type == 'minikube'
+      block:
+        - name: Include minikube cluster preparation
+          ansible.builtin.include_role:
+            name: minikube_pre_setup
+        - name: Include minikube cluster server
+          ansible.builtin.include_role:
+            name: minikube_server
+    - name: Setup k3s cluster
+      when: kubernetes_cluster_type == 'k3s'
+      block:
+        - name: Include k3s cluster preparation
+          ansible.builtin.include_role:
+            name: k3s_pre_setup
+        - name: Include k3s cluster server
+          ansible.builtin.include_role:
+            name: k3s_server
   handlers:
-    - name: Restart fail2ban service
-      ansible.builtin.include_tasks:
-        file: handlers/restart-fail2ban-service.yml
+    - name: Sysctl handlers
+      ansible.builtin.import_tasks:
+        file: handlers/sysctl.yml
+    - name: Systemd handlers
+      ansible.builtin.import_tasks:
+        file: handlers/systemd.yml
+    - name: Minikube handlers
+      ansible.builtin.import_tasks:
+        file: handlers/minikube.yml
 
-- name: Clean up
+- name: Post setup on local
   hosts: localhost
   connection: local
-  roles:
-    - role: rename_kubeconfig
+  tasks:
+    - name: Include localhost post setup
+      block:
+        - name: Run localhost post setup
+          ansible.builtin.include_role:
+            name: localhost_post_setup

@@ -1,0 +1,20 @@
+---
+- name: Check for existing taint
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail && \
+      kubectl describe node ${hostname} | grep "node-role.kubernetes.io/control-plane:NoSchedule"
+    executable: /bin/bash
+  register: taint_check
+  changed_when: false
+  failed_when: false
+
+- name: Untaint node
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail && \
+      kubectl taint nodes ${hostname} --all node-role.kubernetes.io/control-plane:NoSchedule-
+    executable: /bin/bash
+  when: taint_check.rc == 0
+  register: kubectl_taint_nodes
+  changed_when: kubectl_taint_nodes.rc != 0

@@ -1,0 +1,6 @@
+---
+- name: Update APT and install required packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ install_packages }}"

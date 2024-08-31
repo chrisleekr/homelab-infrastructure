@@ -1,4 +1,10 @@
 ## https://docs.gitlab.com/charts/charts/globals#configure-host-settings
+variable "host_machine_architecture" {
+  description = "The architecture of the host machine. i.e. amd64, arm64"
+  type        = string
+  default     = "amd64"
+}
+
 variable "gitlab_global_hosts_domain" {
   description = "The base domain. GitLab and Registry will be exposed on the subdomain of this setting. This defaults to example.com, but is not used for hosts that have their name property configured. See the gitlab.name, minio.name, and registry.name sections below."
   type        = string

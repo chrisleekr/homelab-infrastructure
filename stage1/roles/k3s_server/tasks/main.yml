@@ -83,7 +83,7 @@
       with_items: "{{ extra_service_envs }}"
 
     - name: Enable and check K3s service
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: k3s
         daemon_reload: true
         state: started
@@ -157,7 +157,7 @@
         mode: "0644"
 
     - name: Enable and check K3s service
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: k3s
         daemon_reload: true
         state: started

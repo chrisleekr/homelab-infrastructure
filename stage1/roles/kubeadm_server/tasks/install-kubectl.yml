@@ -1,0 +1,14 @@
+---
+- name: Check if kubectl exists
+  ansible.builtin.stat:
+    path: /usr/local/sbin/kubectl
+  register: kubectl_file
+
+- name: Install kubectl
+  when: not kubectl_file.stat.exists
+  block:
+    - name: Download kubectl
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/{{ host_machine_architecture }}/kubectl"
+        dest: /usr/local/sbin/kubectl
+        mode: "0755"

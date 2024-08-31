@@ -1,0 +1,40 @@
+---
+- name: Ensure UFW is installed
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Set logging
+  community.general.ufw:
+    logging: 'on'
+
+- name: Allow all access to tcp port 22
+  community.general.ufw:
+    rule: limit
+    port: ssh
+    proto: tcp
+
+- name: Allow all access to tcp port 80
+  community.general.ufw:
+    rule: deny
+    port: '80'
+    proto: tcp
+
+- name: Allow all access to tcp port 443
+  community.general.ufw:
+    rule: allow
+    port: '443'
+    proto: tcp
+
+- name: Allow all access from RFC1918 networks to this host
+  community.general.ufw:
+    rule: allow
+    src: '{{ item }}'
+  loop:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
