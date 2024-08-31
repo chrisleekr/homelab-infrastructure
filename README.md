@@ -11,7 +11,7 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
   - Provision a single-node Kubernetes cluster using k3s or kubeadm.
     - **k3s**: Repository: <https://github.com/k3s-io/k3s-ansible>
     - **kubeadm**: <https://kubernetes.io/docs/reference/setup-tools/kubeadm/>
-  
+
 - Stage 2: Terraform
   - Nginx
   - Cert manager
@@ -34,7 +34,7 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
 ### Stage 0: Setup the environment
 
 1. Copy the .env.sample file to a new file named .env and configure it accordingly.
-  
+
    ```bash
    cp .env.sample .env
    ```
