@@ -3,8 +3,4 @@
   ansible.builtin.package:
     name: "{{ item }}"
     state: present
-  loop:
-    - ca-certificates
-    - curl
-    - vim
-    - jq
+  loop: "{{ install_packages }}"

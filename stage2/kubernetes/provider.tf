@@ -7,15 +7,16 @@ terraform {
       version = ">= 2.31.0"
     }
 
+    http = {
+      source  = "hashicorp/http"
+      version = ">= 3.4.3"
+    }
+
     kubectl = {
       source  = "alekc/kubectl"
       version = ">= 2.0.4"
     }
 
-    http = {
-      source  = "hashicorp/http"
-      version = ">= 3.4.3"
-    }
 
     null = {
       source  = "hashicorp/null"
