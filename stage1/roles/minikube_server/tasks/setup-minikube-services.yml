@@ -13,7 +13,6 @@
   ansible.posix.sysctl:
     name: fs.protected_regular
     value: '0'
-    sysctl_set: true
     state: present
     reload: true
 
@@ -110,7 +109,6 @@
   ansible.posix.sysctl:
     name: fs.protected_regular
     value: '0'
-    sysctl_set: true
     state: present
     reload: true
 

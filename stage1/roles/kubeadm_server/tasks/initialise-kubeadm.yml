@@ -5,7 +5,7 @@
   register: kubernetes_admin_check
 
 - name: Initialise kubeadm
-  when: not kubernetes_admin_check.stat.exists
+  when: kubernetes_admin_check.stat.exists == False
   block:
     - name: Create kubeadm-config.yaml file from template
       ansible.builtin.template:

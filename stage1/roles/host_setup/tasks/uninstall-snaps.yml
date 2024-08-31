@@ -3,6 +3,7 @@
     name: "{{ item | split | first }}"
     state: absent
   failed_when: false
+  when: snap_list is defined and snap_list | length > 0
   loop: "{{ snap_list }}"
 
 - name: Check installed snaps

@@ -39,7 +39,7 @@
     - name: Generate default config for containerd and save it to config.toml file.
       ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
       register: containerd_toml
-      changed_when: containerd_toml.rc != 0
+      changed_when: containerd_toml.rc != 0 and containerd_toml.stdout != ""
 
     - name: Update the value of SystemdCgroup in the config.toml file.
       ansible.builtin.replace:

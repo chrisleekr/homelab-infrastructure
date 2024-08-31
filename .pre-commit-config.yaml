@@ -20,7 +20,7 @@ repos:
         #   - ansible
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.92.1
+    rev: v1.94.1
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
