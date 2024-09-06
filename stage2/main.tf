@@ -6,10 +6,11 @@ module "kubernetes" {
 }
 
 module "nginx" {
+  depends_on = [module.kubernetes]
+
   source                        = "./nginx"
   nginx_service_loadbalancer_ip = var.nginx_service_loadbalancer_ip
 }
-
 
 module "cert_manager_letsencrypt" {
   depends_on = [module.nginx]
@@ -51,6 +52,8 @@ module "minio_object_storage" {
 module "gitlab_platform" {
   depends_on = [module.minio_object_storage]
   source     = "./gitlab-platform"
+
+  host_machine_architecture = var.host_machine_architecture
 
   gitlab_global_hosts_domain      = var.gitlab_global_hosts_domain
   gitlab_global_hosts_host_suffix = var.gitlab_global_hosts_host_suffix
