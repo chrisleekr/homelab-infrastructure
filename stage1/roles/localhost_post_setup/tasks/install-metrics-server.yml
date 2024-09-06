@@ -13,3 +13,6 @@
     create_namespace: true
     values:
       replicas: 1
+      args: ['--kubelet-insecure-tls']
+      serviceMonitor:
+        enabled: true
