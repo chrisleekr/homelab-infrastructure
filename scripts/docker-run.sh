@@ -14,7 +14,6 @@ docker stop "homelab-infrastructure" || true
 
 docker run -it --rm -d \
   --name "homelab-infrastructure" \
-  --env-file ".env" \
   -v "$HOME/.ssh:/root/.ssh" \
   -v "$(pwd):/srv" \
   -v "$(pwd)/container/root:/root:rw" \

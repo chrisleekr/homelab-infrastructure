@@ -11,7 +11,13 @@
 - name: Allow all access to tcp port 22
   community.general.ufw:
     rule: limit
-    port: ssh
+    port: '22'
+    proto: tcp
+
+- name: Allow all access to tcp port {{ ansible_port }}
+  community.general.ufw:
+    rule: limit
+    port: '{{ ansible_port }}'
     proto: tcp
 
 - name: Allow all access to tcp port 80
