@@ -49,6 +49,10 @@ resource "helm_release" "longhorn" {
 resource "null_resource" "remove_default" {
   depends_on = [helm_release.longhorn]
   provisioner "local-exec" {
-    command = "kubectl patch storageclass local-path -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"false\"}}}'"
+    command = <<EOT
+if kubectl get storageclass local-path; then
+  kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+fi
+EOT
   }
 }

@@ -19,7 +19,7 @@ locals {
 resource "null_resource" "prometheus_crd" {
   triggers = {
     prometheus_crd_urls = join(",", local.prometheus_crds)
-    # always_run = "${timestamp()}"
+    # always_run          = "${timestamp()}"
   }
 
   # Should apply the CRDs in order; otherwise, timeout errors may occur.

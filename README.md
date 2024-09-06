@@ -26,6 +26,25 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
 
 2. Install Ubuntu AMD64 on a server.
    - Gitlab (`registry.gitlab.com/gitlab-org/build/cng/kubectl`) does not support ARM64 yet.
+   - Note that the server SSH port must not be `22`.
+
+     ```shell
+     $ ssh chrislee@192.168.1.100
+
+     >$ mkdir -p /etc/systemd/system/ssh.socket.d
+     >$ cat >/etc/systemd/system/ssh.socket.d/override.conf <<EOF
+      [Socket]
+      ListenStream=2222
+      EOF
+
+     >$ systemctl daemon-reload
+     >$ reboot
+
+     $ ssh chrislee@192.168.1.1000 -p2222
+
+     >$ vim ~/.ssh/authorized_keys
+     Add the public key located at ~/.ssh/id_rsa.pub to the authorized_keys file for the root user on Ubuntu.
+     ```
 
 3. Node installed in your computer.
 
@@ -52,9 +71,7 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
 
 ### Stage 1: Provision k3s
 
-1. Add the public key located at ~/.ssh/id_rsa.pub to the authorized_keys file for the root user on Ubuntu.
-
-2. Verify access by running the following commands:
+1. Verify access by running the following commands:
 
     ```bash
     $ npm run docker:exec
@@ -62,7 +79,7 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
     /srv/stage1# ansible all -i "inventories/inventory.yml" -m ping
     ```
 
-3. Prepare the VM template by running the following command:
+2. Prepare the VM template by running the following command:
 
     ```bash
     /srv/stage1# ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml

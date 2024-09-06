@@ -21,6 +21,18 @@
     create_namespace: true
     state: present
 
+- name: Wait for MetalLB pods to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: metallb-system
+    label_selectors:
+      - app.kubernetes.io/name=metallb
+  register: metallb_pods
+  until: metallb_pods.resources | length > 0
+  retries: 10
+  delay: 15
+
 - name: Apply MetalLB IPAddressPool
   kubernetes.core.k8s:
     state: present

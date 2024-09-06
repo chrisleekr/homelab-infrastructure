@@ -1,0 +1,15 @@
+---
+- name: Add Helm repository for metrics-server
+  kubernetes.core.helm_repository:
+    name: metrics-server
+    repo_url: https://kubernetes-sigs.github.io/metrics-server/
+
+- name: Install metrics-server using Helm
+  kubernetes.core.helm:
+    name: metrics-server
+    chart_ref: metrics-server/metrics-server
+    release_namespace: kube-system
+    state: present
+    create_namespace: true
+    values:
+      replicas: 1
