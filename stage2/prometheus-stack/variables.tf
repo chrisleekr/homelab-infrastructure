@@ -40,6 +40,12 @@ variable "prometheus_persistence_storage_class_name" {
   default     = "longhorn"
 }
 
+variable "prometheus_persistence_size" {
+  description = "The size of the persistence storage"
+  type        = string
+  default     = "10Gi"
+}
+
 variable "prometheus_alertmanager_slack_channel" {
   description = "The slack channel for the alertmanager"
   type        = string

@@ -74,6 +74,7 @@ resource "helm_release" "prometheus_operator" {
         ingress_class_name              = var.prometheus_ingress_class_name
         prometheus_domain               = var.prometheus_prometheus_domain
         persistence_storage_class_name  = var.prometheus_persistence_storage_class_name
+        persistence_size                = var.prometheus_persistence_size
 
         alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
         alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials

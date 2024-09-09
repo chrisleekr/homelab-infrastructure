@@ -1,0 +1,52 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+  namespace: ${namespace}
+spec:
+  version: 8.15.1
+  http:
+    tls:
+      selfSignedCertificate:
+        # Disable https so that we don't have to deal with X509 certificate errors
+        disabled: true
+  # Don't delete the volume when the cluster is deleted. This is useful for retaining data when we do a reprovision.
+  # https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-volume-claim-templates.html#k8s_controlling_volume_claim_deletion
+  volumeClaimDeletePolicy: "DeleteOnScaledownOnly"
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: false
+      podTemplate:
+        spec:
+          # This init container ensures that the max_map_count setting has been applied before starting Elasticsearch.
+          # This is not required, but is encouraged when using the previous Daemonset to set max_map_count.
+          # Do not use this if setting config.node.store.allow_mmap: false
+          initContainers:
+            - name: max-map-count-check
+              command:
+                [
+                  "sh",
+                  "-c",
+                  "while true; do mmc=$(cat /proc/sys/vm/max_map_count); if [ $${mmc} -eq 262144 ]; then exit 0; fi; sleep 1; done",
+                ]
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: ${resourceRequestMemory} # 2Gi
+                  cpu: ${resourceRequestCPU} # 1
+                limits:
+                  memory: ${resourceLimitMemory} # 4Gi
+                  cpu: ${resourceLimitCPU} # 2
+      volumeClaimTemplates:
+       - metadata:
+          name: elasticsearch-data
+         spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: ${storageSize}
+          storageClassName: ${storageClassName}

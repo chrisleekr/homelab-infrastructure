@@ -183,7 +183,7 @@ grafana:
     storageClassName: ${persistence_storage_class_name}
     accessModes:
       - ReadWriteOnce
-    size: 20Gi
+    size: ${persistence_size}
     finalizers:
       - kubernetes.io/pvc-protection
 

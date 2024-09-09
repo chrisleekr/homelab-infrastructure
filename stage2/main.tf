@@ -73,7 +73,7 @@ module "gitlab_platform" {
 
 
 module "prometheus_stack" {
-  depends_on = [module.gitlab_platform]
+  depends_on = [module.cert_manager_letsencrypt]
   source     = "./prometheus-stack"
 
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
@@ -82,6 +82,7 @@ module "prometheus_stack" {
   prometheus_ingress_class_name    = var.prometheus_ingress_class_name
   prometheus_prometheus_domain     = var.prometheus_prometheus_domain
   prometehus_grafana_storage_class = var.prometheus_persistence_storage_class_name
+  prometheus_persistence_size      = var.prometheus_persistence_size
 
   prometheus_alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
   prometheus_alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
@@ -90,4 +91,16 @@ module "prometheus_stack" {
   prometheus_minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
   prometheus_minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
+}
+
+module "elasticsearch_stack" {
+  depends_on = [module.prometheus_stack]
+  source     = "./elasticsearch-stack"
+
+  elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
+  elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
+  elasticsearch_resource_limit_memory   = var.elasticsearch_resource_limit_memory
+  elasticsearch_resource_limit_cpu      = var.elasticsearch_resource_limit_cpu
+  elasticsearch_storage_size            = var.elasticsearch_storage_size
+  elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
 }

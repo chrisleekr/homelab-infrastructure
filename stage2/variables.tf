@@ -206,6 +206,12 @@ variable "prometheus_persistence_storage_class_name" {
   default     = "longhorn"
 }
 
+variable "prometheus_persistence_size" {
+  description = "The size of the persistence storage"
+  type        = string
+  default     = "5Gi"
+}
+
 variable "prometheus_alertmanager_slack_channel" {
   description = "The slack channel for the alertmanager"
   type        = string
@@ -239,4 +245,40 @@ variable "prometheus_minio_job_resource_bearer_token" {
   description = "The bearer token for the minio job resource scraper"
   type        = string
   sensitive   = true
+}
+
+variable "elasticsearch_resource_request_memory" {
+  description = "Memory request for Elasticsearch"
+  type        = string
+  default     = "2Gi"
+}
+
+variable "elasticsearch_resource_request_cpu" {
+  description = "CPU request for Elasticsearch"
+  type        = string
+  default     = "1"
+}
+
+variable "elasticsearch_resource_limit_memory" {
+  description = "Memory limit for Elasticsearch"
+  type        = string
+  default     = "4Gi"
+}
+
+variable "elasticsearch_resource_limit_cpu" {
+  description = "CPU limit for Elasticsearch"
+  type        = string
+  default     = "1"
+}
+
+variable "elasticsearch_storage_size" {
+  description = "Storage size for Elasticsearch"
+  type        = string
+  default     = "5Gi"
+}
+
+variable "elasticsearch_storage_class_name" {
+  description = "Storage class name for Elasticsearch"
+  type        = string
+  default     = "longhorn"
 }
