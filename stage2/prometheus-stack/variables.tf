@@ -28,6 +28,12 @@ variable "prometheus_ingress_class_name" {
   default     = "nginx"
 }
 
+variable "prometheus_ingress_enable_tls" {
+  description = "Enable TLS for the prometheus stack"
+  type        = bool
+  default     = true
+}
+
 variable "prometheus_prometheus_domain" {
   description = "The domain name for the prometheus"
   type        = string

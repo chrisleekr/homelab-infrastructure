@@ -41,6 +41,12 @@ variable "gitlab_global_ingress_class" {
   default     = "nginx"
 }
 
+variable "gitlab_global_ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}
+
 variable "gitlab_certmanager_issuer_email" {
   description = "The email address to register certificates requested from Let's Encrypt."
   type        = string

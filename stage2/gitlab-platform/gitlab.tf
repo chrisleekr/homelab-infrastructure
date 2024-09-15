@@ -26,7 +26,7 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "8.2.1"
+  version    = "8.3.2"
   namespace  = kubernetes_namespace.gitlab.metadata[0].name
   timeout    = 300
 
@@ -35,15 +35,16 @@ resource "helm_release" "gitlab" {
       "${path.module}/templates/gitlab-values.tftpl",
       {
         # Workaround - https://gitlab.com/groups/gitlab-org/-/epics/10938
-        kubectl_image_tag = var.host_machine_architecture == "arm64" ? "16-5-arm64" : "master"
+        platform_image_tag = var.host_machine_architecture == "arm64" ? "16-5-arm64" : "master"
 
         global_hosts_domain      = var.gitlab_global_hosts_domain
         global_hosts_host_suffix = var.gitlab_global_hosts_host_suffix
         global_hosts_https       = var.gitlab_global_hosts_https
         global_hosts_external_ip = var.gitlab_global_hosts_external_ip
 
-        global_ingress_provider = var.gitlab_global_ingress_provider
-        global_ingress_class    = var.gitlab_global_ingress_class
+        global_ingress_provider   = var.gitlab_global_ingress_provider
+        global_ingress_class      = var.gitlab_global_ingress_class
+        global_ingress_enable_tls = var.gitlab_global_ingress_enable_tls
 
         global_initial_root_password_secret     = kubernetes_secret.initial_root_password.metadata[0].name
         global_redis_secret                     = kubernetes_secret.redis_password.metadata[0].name

@@ -103,9 +103,11 @@ ingress:
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    %{ if tenant_ingress_enable_tls }
     tls:
       - hosts: ["${tenant_ingress_api_host}"]
         secretName: "minio-tenant-api-tls"
+    %{ endif }
     host: ${tenant_ingress_api_host}
     path: /
     pathType: Prefix
@@ -118,9 +120,11 @@ ingress:
       nginx.ingress.kubernetes.io/auth-type: basic
       nginx.ingress.kubernetes.io/auth-secret: ${frontend_basic_auth_secret_name}
       nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+    %{ if tenant_ingress_enable_tls }
     tls:
       - hosts: ["${tenant_ingress_console_host}"]
         secretName: "minio-tenant-console-tls"
+    %{ endif }
     host: ${tenant_ingress_console_host}
     path: /
     pathType: Prefix

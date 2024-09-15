@@ -197,7 +197,7 @@ ingress:
   enabled: true
   ingressClassName: ${longhorn_ingress_class_name}
   host: ${longhorn_ingress_host}
-  tls: true
+  tls: ${longhorn_ingress_enable_tls}
   secureBackends: true
   tlsSecret: longhorn-tls
   path: /

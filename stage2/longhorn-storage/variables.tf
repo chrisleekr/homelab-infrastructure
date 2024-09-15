@@ -19,3 +19,9 @@ variable "longhorn_ingress_host" {
   description = "Hostname of the Layer 7 load balancer."
   type        = string
 }
+
+variable "longhorn_ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}

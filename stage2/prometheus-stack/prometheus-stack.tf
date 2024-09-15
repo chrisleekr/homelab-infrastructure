@@ -71,10 +71,13 @@ resource "helm_release" "prometheus_operator" {
         grafana_domain                  = var.prometheus_grafana_domain
         grafana_admin_password          = random_password.grafana_admin_password.result
         grafana_storage_class           = var.prometehus_grafana_storage_class
-        ingress_class_name              = var.prometheus_ingress_class_name
-        prometheus_domain               = var.prometheus_prometheus_domain
-        persistence_storage_class_name  = var.prometheus_persistence_storage_class_name
-        persistence_size                = var.prometheus_persistence_size
+
+        ingress_class_name = var.prometheus_ingress_class_name
+        ingress_enable_tls = var.prometheus_ingress_enable_tls
+
+        prometheus_domain              = var.prometheus_prometheus_domain
+        persistence_storage_class_name = var.prometheus_persistence_storage_class_name
+        persistence_size               = var.prometheus_persistence_size
 
         alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
         alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials

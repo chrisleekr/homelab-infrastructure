@@ -31,13 +31,14 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
      ```shell
      $ ssh chrislee@192.168.1.100
 
-     >$ mkdir -p /etc/systemd/system/ssh.socket.d
-     >$ cat >/etc/systemd/system/ssh.socket.d/override.conf <<EOF
+     >$ sudo mkdir -p /etc/systemd/system/ssh.socket.d
+     >$ sudo cat >/etc/systemd/system/ssh.socket.d/override.conf <<EOF
       [Socket]
       ListenStream=2222
-      EOF
 
-     >$ systemctl daemon-reload
+EOF
+
+     >$ sudo systemctl daemon-reload
      >$ reboot
 
      $ ssh chrislee@192.168.1.1000 -p2222

@@ -16,6 +16,11 @@ variable "kubernetes_override_ip" {
   default     = "192.168.1.100"
 }
 
+variable "ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}
 
 variable "nginx_frontend_basic_auth_base64" {
   description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"

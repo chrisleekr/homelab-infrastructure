@@ -109,10 +109,12 @@ alertmanager:
     paths:
       - /
     pathType: ImplementationSpecific
+    %{ if ingress_enable_tls }
     tls:
       - secretName: alertmanager-general-tls
         hosts:
         - ${alertmanager_domain}
+    %{ endif }
 
 # https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
 grafana:
@@ -170,10 +172,12 @@ grafana:
     hosts:
       - ${grafana_domain}
     path: /
+    %{ if ingress_enable_tls }
     tls:
     - secretName: grafana-general-tls
       hosts:
       - ${grafana_domain}
+    %{ endif }
 
   # To make Grafana persistent (Using Statefulset)
   #
@@ -253,7 +257,9 @@ prometheus:
     paths:
     - /
     pathType: ImplementationSpecific
+    %{ if ingress_enable_tls }
     tls:
       - secretName: prometheus-general-tls
         hosts:
           - ${prometheus_domain}
+    %{ endif }

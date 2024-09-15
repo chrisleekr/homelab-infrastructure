@@ -49,9 +49,11 @@ global:
     class: ${global_ingress_class}
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    %{ if global_ingress_enable_tls }
     tls:
       enabled: true
       secretName: "gitlab-tls"
+    %{ endif }
     path: /
     pathType: Prefix
   # Override enablement of ServiceMonitor and PodMonitor objects.
@@ -313,13 +315,14 @@ global:
   certificates:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/certificates
+      tag: ${platform_image_tag}
     customCAs: []
 
   ## kubectl image used by hooks to carry out specific jobs
   kubectl:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/kubectl
-      tag: ${kubectl_image_tag}
+      tag: ${platform_image_tag}
     securityContext:
       # in most base images, this is `nobody:nogroup`
       runAsUser: 65534
@@ -327,6 +330,7 @@ global:
   gitlabBase:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/gitlab-base
+      tag: ${platform_image_tag}
 
   ## https://docs.gitlab.com/charts/charts/globals#service-accounts
   serviceAccount:
@@ -369,9 +373,11 @@ registry:
       endpointConfig: {}
   ingress:
     enabled: true
+    %{ if global_ingress_enable_tls }
     tls:
       enabled: true
       secretName: "registry-tls"
+    %{ endif }
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
@@ -711,6 +717,7 @@ shared-secrets:
   selfsign:
     image:
       repository: registry.gitlab.com/gitlab-org/build/cng/cfssl-self-sign
+      tag: ${platform_image_tag}
     keyAlgorithm: "rsa"
     keySize: "4096"
     expiry: "3650d"
@@ -853,9 +860,11 @@ gitlab:
         enabled: true
         additionalLabels:
           release: kube-prometheus-stack
+    %{ if global_ingress_enable_tls }
     ingress:
       tls:
         secretName: "gitlab-webservice-tls"
+    %{ endif }
   sidekiq:
     enabled: true
     metrics:
@@ -906,6 +915,8 @@ gitlab:
         additionalLabels:
           release: kube-prometheus-stack
         endpointConfig: {}
+    %{ if global_ingress_enable_tls }
     ingress:
       tls:
         secretName: "gitlab-kas-tls"
+    %{ endif }

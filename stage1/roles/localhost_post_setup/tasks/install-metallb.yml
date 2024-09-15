@@ -31,7 +31,7 @@
   register: metallb_pods
   until: metallb_pods.resources | length > 0
   retries: 10
-  delay: 15
+  delay: 30
 
 - name: Apply MetalLB IPAddressPool
   kubernetes.core.k8s:
