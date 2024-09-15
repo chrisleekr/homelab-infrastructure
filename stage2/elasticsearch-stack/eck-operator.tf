@@ -4,25 +4,6 @@ resource "kubernetes_namespace" "elastic_system" {
   }
 }
 
-# locals {
-#   eck_crds = [
-#     "kubectl apply --server-side -f https://download.elastic.co/downloads/eck/2.14.0/crds.yaml"
-#   ]
-# }
-
-# resource "null_resource" "eck_crd" {
-#   triggers = {
-#     eck_crd_urls = join(",", local.eck_crds)
-#     # always_run          = "${timestamp()}"
-#   }
-
-#   # Should apply the CRDs in order; otherwise, timeout errors may occur.
-#   provisioner "local-exec" {
-#     command = local.eck_crds[0]
-#   }
-# }
-
-
 resource "helm_release" "eck_operator" {
   depends_on = [
     kubernetes_namespace.elastic_system,

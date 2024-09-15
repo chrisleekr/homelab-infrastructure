@@ -10,17 +10,17 @@ output "minio_tenant_user_secret_key" {
 }
 
 output "gitlab_initial_root_passwrd" {
-  value     = module.gitlab_platform.gitlab_initial_root_password
+  value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_initial_root_password : null
   sensitive = true
 }
 
 output "gitlab_runner_registration_token" {
-  value     = module.gitlab_platform.gitlab_runner_registration_token
+  value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_runner_registration_token : null
   sensitive = true
 }
 
 output "gitlab_shell_host_keys" {
-  value     = module.gitlab_platform.gitlab_shell_host_keys
+  value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_shell_host_keys : null
   sensitive = true
 }
 

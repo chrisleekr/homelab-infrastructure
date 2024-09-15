@@ -104,14 +104,17 @@ module "prometheus_stack" {
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
 }
 
-# module "elasticsearch_stack" {
-#   # depends_on = [module.prometheus_stack]
-#   source = "./elasticsearch-stack"
+module "elasticsearch_stack" {
+  depends_on = [module.cert_manager_letsencrypt]
+  source     = "./elasticsearch-stack"
 
-#   elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
-#   elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
-#   elasticsearch_resource_limit_memory   = var.elasticsearch_resource_limit_memory
-#   elasticsearch_resource_limit_cpu      = var.elasticsearch_resource_limit_cpu
-#   elasticsearch_storage_size            = var.elasticsearch_storage_size
-#   elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
-# }
+  elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
+  elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
+  elasticsearch_resource_limit_memory   = var.elasticsearch_resource_limit_memory
+  elasticsearch_resource_limit_cpu      = var.elasticsearch_resource_limit_cpu
+  elasticsearch_storage_size            = var.elasticsearch_storage_size
+  elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
+
+  elasticsearch_ingress_class_name = var.elasticsearch_ingress_class_name
+  elasticsearch_ingress_enable_tls = var.ingress_enable_tls
+}
