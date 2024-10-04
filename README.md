@@ -123,3 +123,31 @@ ssh-add
 ```
 
 Please note that this process has been added to the .bashrc file, and therefore it will automatically execute when you launch the Docker container.
+
+### Error with `no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"`
+
+```text
+module.nginx.helm_release.nginx: Creating...
+╷
+│ Error: unable to build kubernetes objects from release manifest: resource mapping not found for name: "nginx-ingress-nginx-controller" namespace: "nginx" from "": no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"
+│ ensure CRDs are installed first
+│
+│   with module.nginx.helm_release.nginx,
+│   on nginx/main.tf line 7, in resource "helm_release" "nginx":
+│    7: resource "helm_release" "nginx" {
+```
+
+This error occurs when Prometheus CRDs are not installed.
+
+1. Go to `stage2/kubernetes/prometheus-crd.tf`
+2. Uncomment the following line:
+
+   ```text
+   # always_run          = "${timestamp()}"
+   ```
+
+3. Re-run the following command:
+
+   ```bash
+   /srv/stage2# terraform apply
+   ```
