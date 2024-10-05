@@ -1,10 +1,10 @@
 # Homelab Infrastructure
 
-> Provisioning single-node Kubernetes cluster with kubeadm/k3s/minikube, Ansible and Terraform
+> Provisioning a single-node Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
 
 ## What is this project about?
 
-This project aims to provision Kubernetes on a Ubuntu server and consists of three stages:
+This project aims to provision a single-node Kubernetes cluster on a Ubuntu server and consists of three stages:
 
 - Stage 1: Ansible
   - Install fail2ban, disable multipathd, setup ufw and other tasks.
@@ -24,7 +24,7 @@ This project aims to provision Kubernetes on a Ubuntu server and consists of thr
 
 1. Set up Terraform Cloud and create an API key.
 
-2. Install Ubuntu AMD64 on a server.
+2. Install Ubuntu AMD64 on a server and configure the following:
    - Gitlab (`registry.gitlab.com/gitlab-org/build/cng/kubectl`) does not support ARM64 yet.
    - Note that the server SSH port must not be `22`.
 
@@ -46,8 +46,6 @@ EOF
      >$ vim ~/.ssh/authorized_keys
      Add the public key located at ~/.ssh/id_rsa.pub to the authorized_keys file for the root user on Ubuntu.
      ```
-
-3. Node installed in your computer.
 
 ## Steps
 
