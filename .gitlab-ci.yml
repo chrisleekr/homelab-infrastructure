@@ -14,7 +14,7 @@ variables:
   before_script:
     - apk add curl git jq
     - docker info
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin $REGISTRY_DOMAIN
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker context create dind
     - docker buildx create --use dind --buildkitd-flags '--allow-insecure-entitlement network.host'
 

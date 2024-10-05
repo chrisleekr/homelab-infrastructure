@@ -9,7 +9,7 @@ default_stages:
 
 repos:
   - repo: https://github.com/ansible/ansible-lint
-    rev: v24.7.0
+    rev: v24.9.2
     hooks:
       - id: ansible-lint
         args:
@@ -20,7 +20,7 @@ repos:
         #   - ansible
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.94.1
+    rev: v1.96.1
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
@@ -64,7 +64,7 @@ repos:
         args: ["--branch", "main"]
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.4
+    rev: v8.20.0
     hooks:
       - id: gitleaks
         stages: [commit]
