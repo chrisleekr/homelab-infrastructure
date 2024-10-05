@@ -3,9 +3,10 @@
 *.tfvars
 .env
 node_modules/
-container/root
-!container/root/.bashrc
 stage2/minio-object-storage/*.crt
 stage2/host-keys
 tmp
 .DS_Store
+
+# Ignore root directory container
+container/root

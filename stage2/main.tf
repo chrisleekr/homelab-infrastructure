@@ -122,6 +122,6 @@ module "elasticsearch_stack" {
   elasticsearch_storage_size            = var.elasticsearch_storage_size
   elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
 
-  elasticsearch_ingress_class_name = var.elasticsearch_ingress_class_name
-  elasticsearch_ingress_enable_tls = var.ingress_enable_tls
+  # elasticsearch_ingress_class_name = var.elasticsearch_ingress_class_name
+  # elasticsearch_ingress_enable_tls = var.ingress_enable_tls
 }
