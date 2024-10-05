@@ -33,10 +33,9 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
 
      >$ sudo mkdir -p /etc/systemd/system/ssh.socket.d
      >$ sudo cat >/etc/systemd/system/ssh.socket.d/override.conf <<EOF
-      [Socket]
-      ListenStream=2222
-
-EOF
+     [Socket]
+     ListenStream=2222
+     EOF
 
      >$ sudo systemctl daemon-reload
      >$ reboot
