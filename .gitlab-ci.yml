@@ -15,11 +15,31 @@ variables:
     - apk add curl git jq
     - docker info
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker context create dind
-    - docker buildx create --use dind --buildkitd-flags '--allow-insecure-entitlement network.host'
+    - docker context create docker-container
+    - docker buildx create --use docker-container --driver docker-container  --buildkitd-flags '--allow-insecure-entitlement network.host'
 
 stages:
   - build
+
+docker-build-dev:
+  stage: build
+  except:
+    - master
+    - main
+  interruptible: true
+  <<: *before-script
+  script:
+    - mkdir -p container && cp -r scripts/container/* container
+    - docker buildx build
+      --platform linux/amd64,linux/arm64
+      --allow network.host
+      --provenance false
+      --pull
+      --cache-from type=registry,ref=$CI_REGISTRY/chrisleekr/homelab-infrastructure:cache
+      --cache-to type=registry,ref=$CI_REGISTRY/chrisleekr/homelab-infrastructure:cache,oci-mediatypes=true,image-manifest=true
+      --tag $CI_REGISTRY/chrisleekr/homelab-infrastructure:dev-${CI_COMMIT_REF_SLUG}
+      --push .
+
 
 docker-build:
   stage: build
@@ -30,13 +50,14 @@ docker-build:
   # Use --provenance false to avoid the following error:
   #   https://gitlab.com/gitlab-org/gitlab/-/issues/389577
   script:
+    - mkdir -p container && cp -r scripts/container/* container
     - docker buildx build
       --platform linux/amd64,linux/arm64
       --allow network.host
       --provenance false
       --pull
-      --cache-from $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:cache
-      --cache-to $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:cache
-      --tag $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:latest
-      --tag $REGISTRY_DOMAIN/chrisleekr/homelab-infrastructure:v$(cat version.txt)
+      --cache-from type=registry,ref=$CI_REGISTRY/chrisleekr/homelab-infrastructure:cache
+      --cache-to type=registry,ref=$CI_REGISTRY/chrisleekr/homelab-infrastructure:cache,oci-mediatypes=true,image-manifest=true
+      --tag $CI_REGISTRY/chrisleekr/homelab-infrastructure:latest
+      --tag $CI_REGISTRY/chrisleekr/homelab-infrastructure:v$(cat version.txt)
       --push .

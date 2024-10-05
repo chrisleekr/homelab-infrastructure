@@ -3,13 +3,13 @@
 
 - name: Merge snapd configuration between defaults and custom
   ansible.builtin.set_fact:
-    snapd_services: "{{ snapd_defaults_services | union(snapd_services) | unique }}"
-    snapd_files: "{{ snapd_defaults_files | union(snapd_files) | unique }}"
-    snapd_block_packages: "{{ snapd_defaults_block_packages | union(snapd_block_packages) | unique | sort }}"
+    snapd_services: "{{ host_setup_snapd_defaults_services | union(host_setup_snapd_defaults_services) | unique }}"
+    snapd_files: "{{ host_setup_snapd_defaults_files | union(host_setup_snapd_files) | unique }}"
+    snapd_block_packages: "{{ host_setup_snapd_defaults_block_packages | union(host_setup_snapd_block_packages) | unique | sort }}"
 
 - name: Remove snap packages
   when:
-    - snapd_purge | bool
+    - host_setup_snapd_purge | bool
   block:
     - name: Check installed snaps
       ansible.builtin.command: "snap list"
@@ -36,17 +36,17 @@
 - name: Shutdown services, sockets and timers
   ansible.builtin.service:
     name: "{{ item }}"
-    state: "{{ snapd_state }}"
-    enabled: "{{ snapd_enabled }}"
+    state: "{{ host_setup_snapd_state }}"
+    enabled: "{{ host_setup_snapd_enabled }}"
   failed_when: false
   loop:
-    "{{ snapd_services }}"
+    "{{ host_setup_snapd_defaults_services }}"
   loop_control:
     label: "{{ item }}"
 
 - name: Purge all this bullshit
   when:
-    - snapd_purge
+    - host_setup_snapd_purge
   block:
     - name: Remove snapd packages
       ansible.builtin.package:
@@ -56,8 +56,8 @@
 
     - name: Block installation
       when:
-        - snapd_block_packages is defined
-        - snapd_block_packages | count > 0
+        - host_setup_snapd_block_packages is defined
+        - host_setup_snapd_block_packages | count > 0
       block:
         - name: Block later installations of snapd
           ansible.builtin.template:
@@ -74,7 +74,7 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
-      loop: "{{ snapd_files }}"
+      loop: "{{ host_setup_snapd_files }}"
       loop_control:
         label: "{{ item }}"
 

@@ -6,14 +6,14 @@
 
 [Definition]
 
-loglevel = {{ fail2ban_loglevel }}
-logtarget = {{ fail2ban_logtarget }}
+loglevel = {{ host_setup_fail2ban_loglevel }}
+logtarget = {{ host_setup_fail2ban_logtarget }}
 
-{% if fail2ban_logtarget == "SYSLOG" %}
-syslog-target = {{ fail2ban_syslog_target }}
-syslog-facility = {{ fail2ban_syslog_facility }}
+{% if host_setup_fail2ban_logtarget == "SYSLOG" %}
+syslog-target = {{ host_setup_fail2ban_syslog_target }}
+syslog-facility = {{ host_setup_fail2ban_syslog_facility }}
 {% endif %}
 
-socket = {{ fail2ban_socket }}
+socket = {{ host_setup_fail2ban_socket }}
 
-pidfile = {{ fail2ban_pidfile }}
+pidfile = {{ host_setup_fail2ban_pidfile }}

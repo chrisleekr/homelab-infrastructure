@@ -324,8 +324,8 @@ variable "elasticsearch_storage_class_name" {
   default     = "longhorn"
 }
 
-variable "elasticsearch_ingress_class_name" {
-  description = "Ingress class name for Elasticsearch"
-  type        = string
-  default     = "nginx"
-}
+# variable "elasticsearch_ingress_class_name" {
+#   description = "Ingress class name for Elasticsearch"
+#   type        = string
+#   default     = "nginx"
+# }

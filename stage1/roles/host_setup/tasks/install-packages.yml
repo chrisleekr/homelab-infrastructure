@@ -3,4 +3,4 @@
   ansible.builtin.package:
     name: "{{ item }}"
     state: present
-  loop: "{{ install_packages }}"
+  loop: "{{ host_setup_install_packages }}"

@@ -148,3 +148,19 @@ This error occurs when Prometheus CRDs are not installed.
    ```bash
    /srv/stage2# terraform apply
    ```
+
+### When gitlab registry is full with storage backend
+
+```bash
+$ kubectl logs -ngitlab gitlab-registry-75dfc7f8df-snfgj
+{"delay_s":0.637374452,"error":"XMinioStorageFull: Storage backend has reached its minimum free drive threshold. Please delete a few objects to proceed.\n\tstatus code: 507, request id: 17FB95EA70099F9E, host id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8","level":"info","msg":"S3: retrying after error","time":"2024-10-05T14:48:36.162Z"}
+```
+
+Expand `data*-minio-tenant-pool-0-0` PVC
+
+```bash
+kubectl edit -nminio-tenant pvc data0-minio-tenant-pool-0-0
+kubectl edit -nminio-tenant pvc data1-minio-tenant-pool-0-0
+kubectl edit -nminio-tenant pvc data2-minio-tenant-pool-0-0
+kubectl edit -nminio-tenant pvc data3-minio-tenant-pool-0-0
+```

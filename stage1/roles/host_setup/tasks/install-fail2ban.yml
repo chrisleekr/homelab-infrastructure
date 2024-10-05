@@ -5,7 +5,7 @@
   ansible.builtin.package:
     name: "{{ item }}"
     state: "{{ apt_install_state | default('latest') }}"
-  with_items: "{{ fail2ban_dependencies }}"
+  with_items: "{{ host_setup_fail2ban_dependencies }}"
 
 - name: Update configuration file - /etc/fail2ban/fail2ban.local
   ansible.builtin.template:
@@ -27,7 +27,7 @@
 
 - name: Copy filters
   ansible.builtin.copy:
-    src: "{{ fail2ban_filterd_path }}"
+    src: "{{ host_setup_fail2ban_filterd_path }}"
     dest: /etc/fail2ban/filter.d/
     owner: root
     group: root
@@ -37,7 +37,7 @@
 
 - name: Copy actions
   ansible.builtin.copy:
-    src: "{{ fail2ban_actiond_path }}"
+    src: "{{ host_setup_fail2ban_actiond_path }}"
     dest: /etc/fail2ban/action.d/
     owner: root
     group: root
@@ -47,7 +47,7 @@
 
 - name: Copy jails
   ansible.builtin.copy:
-    src: "{{ fail2ban_jaild_path }}"
+    src: "{{ host_setup_fail2ban_jaild_path }}"
     dest: /etc/fail2ban/jail.d/
     owner: root
     group: root
