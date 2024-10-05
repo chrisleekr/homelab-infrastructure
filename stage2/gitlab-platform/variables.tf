@@ -101,3 +101,21 @@ variable "gitlab_toolbox_persistence_size" {
   type        = string
   default     = "20Gi"
 }
+
+variable "gitlab_postgresql_primary_persistence_size" {
+  description = "The size of the postgresql primary persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_redis_master_persistence_size" {
+  description = "The size of the redis master persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_gitlay_persistence_size" {
+  description = "The size of the gitlay persistence"
+  type        = string
+  default     = "20Gi"
+}

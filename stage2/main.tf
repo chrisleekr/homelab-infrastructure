@@ -81,6 +81,10 @@ module "gitlab_platform" {
   gitlab_persistence_storage_class_name        = var.gitlab_persistence_storage_class_name
   gitlab_toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
   gitlab_toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
+
+  gitlab_postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
+  gitlab_redis_master_persistence_size       = var.gitlab_redis_master_persistence_size
+  gitlab_gitlay_persistence_size             = var.gitlab_gitlay_persistence_size
 }
 
 

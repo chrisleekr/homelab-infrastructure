@@ -73,6 +73,11 @@ resource "helm_release" "gitlab" {
 
         toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
         toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
+
+        postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
+
+        redis_master_persistence_size = var.gitlab_redis_master_persistence_size
+        gitlay_persistence_size       = var.gitlab_gitlay_persistence_size
       }
     ),
   ]
