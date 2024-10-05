@@ -1,16 +1,16 @@
-# Homelab Infrastructure - k3s/kubeadm/minikube + Kubernetes Infrastructure as a Code
+# Homelab Infrastructure
 
-> Provisioning Kubernetes with k3s/kubeadm/minikube, Ansible and Terraform
+> Provisioning single-node Kubernetes cluster with kubeadm/k3s/minikube, Ansible and Terraform
 
 ## What is this project about?
 
 This project aims to provision Kubernetes on a Ubuntu server and consists of three stages:
 
 - Stage 1: Ansible
-  - Install fail2ban, disable multipath, setup ufw and other tasks.
+  - Install fail2ban, disable multipathd, setup ufw and other tasks.
   - Provision a single-node Kubernetes cluster using k3s or kubeadm.
-    - **k3s**: Repository: <https://github.com/k3s-io/k3s-ansible>
-    - **kubeadm**: <https://kubernetes.io/docs/reference/setup-tools/kubeadm/>
+    - Main method to bootstrap the cluster: **kubeadm** <https://kubernetes.io/docs/reference/setup-tools/kubeadm/>
+    - Alternative method: **k3s** Repository: <https://github.com/k3s-io/k3s-ansible>
 
 - Stage 2: Terraform
   - Nginx
@@ -70,7 +70,7 @@ EOF
       npm run repo:setup
       ```
 
-### Stage 1: Provision k3s
+### Stage 1: Provision Kubernetes Cluster
 
 1. Verify access by running the following commands:
 
@@ -89,7 +89,7 @@ EOF
 
     - At the end of the playbook, the `.kube/config` should be copied to the local machine in `container/root/.kube/config`.
 
-### Stage 2: Launch VM for Kubernetes nodes
+### Stage 2: Deploy Kubernetes Infrastructure
 
 1. Initialize Terraform by running the following commands:
 
