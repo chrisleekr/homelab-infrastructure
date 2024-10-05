@@ -41,6 +41,12 @@ variable "gitlab_global_ingress_class" {
   default     = "nginx"
 }
 
+variable "gitlab_global_ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}
+
 variable "gitlab_certmanager_issuer_email" {
   description = "The email address to register certificates requested from Let's Encrypt."
   type        = string
@@ -82,4 +88,34 @@ variable "gitlab_persistence_storage_class_name" {
   description = "The storage class name for the GitLab persistence"
   type        = string
   default     = "longhorn"
+}
+
+variable "gitlab_toolbox_backups_cron_persistence_size" {
+  description = "The size of the toolbox backups cron persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_toolbox_persistence_size" {
+  description = "The size of the toolbox persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_postgresql_primary_persistence_size" {
+  description = "The size of the postgresql primary persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_redis_master_persistence_size" {
+  description = "The size of the redis master persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_gitlay_persistence_size" {
+  description = "The size of the gitlay persistence"
+  type        = string
+  default     = "20Gi"
 }

@@ -28,6 +28,12 @@ variable "prometheus_ingress_class_name" {
   default     = "nginx"
 }
 
+variable "prometheus_ingress_enable_tls" {
+  description = "Enable TLS for the prometheus stack"
+  type        = bool
+  default     = true
+}
+
 variable "prometheus_prometheus_domain" {
   description = "The domain name for the prometheus"
   type        = string
@@ -38,6 +44,12 @@ variable "prometheus_persistence_storage_class_name" {
   description = "The storage class name for the prometheus persistence storage"
   type        = string
   default     = "longhorn"
+}
+
+variable "prometheus_persistence_size" {
+  description = "The size of the persistence storage"
+  type        = string
+  default     = "10Gi"
 }
 
 variable "prometheus_alertmanager_slack_channel" {

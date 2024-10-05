@@ -56,3 +56,9 @@ variable "minio_tenant_ingress_console_host" {
   type        = string
   default     = "minio-console.chrislee.local"
 }
+
+variable "minio_tenant_ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}

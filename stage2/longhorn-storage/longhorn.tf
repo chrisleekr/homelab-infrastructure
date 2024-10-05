@@ -41,6 +41,7 @@ resource "helm_release" "longhorn" {
         longhorn_default_settings_default_data_path = var.longhorn_default_settings_default_data_path
         longhorn_ingress_class_name                 = var.longhorn_ingress_class_name
         longhorn_ingress_host                       = var.longhorn_ingress_host
+        longhorn_ingress_enable_tls                 = var.longhorn_ingress_enable_tls
       }
     ),
   ]

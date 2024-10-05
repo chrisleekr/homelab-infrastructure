@@ -17,6 +17,7 @@
     "crictl",
     "filterd",
     "gitaly",
+    "gitlay",
     "gitleaks",
     "homelab",
     "Kubeadm",

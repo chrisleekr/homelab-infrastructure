@@ -25,7 +25,7 @@ RUN set -eux; \
   \
   apk add --no-cache \
   ca-certificates=20240705-r0 \
-  curl=8.9.1-r1 \
+  curl=8.10.1-r0 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
   bind-tools=9.18.27-r0	\
@@ -58,7 +58,7 @@ RUN set -eux; \
   g++=13.2.1_git20240309-r0 \
   gcc=13.2.1_git20240309-r0 \
   libffi-dev=3.4.6-r0	\
-  python3-dev=3.12.3-r2 \
+  python3-dev=3.12.6-r0 \
   py3-pip=24.0-r2 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \

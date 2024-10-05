@@ -1,3 +1,9 @@
+variable "kubernetes_cluster_type" {
+  description = "The type of the kubernetes cluster. i.e. kubeadm, k3s"
+  type        = string
+  default     = "kubeadm"
+}
+
 variable "host_machine_architecture" {
   description = "The architecture of the host machine. i.e. amd64, arm64"
   type        = string
@@ -16,6 +22,11 @@ variable "kubernetes_override_ip" {
   default     = "192.168.1.100"
 }
 
+variable "ingress_enable_tls" {
+  description = "Enable TLS for the services"
+  type        = bool
+  default     = true
+}
 
 variable "nginx_frontend_basic_auth_base64" {
   description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
@@ -176,6 +187,36 @@ variable "gitlab_persistence_storage_class_name" {
   default     = "longhorn"
 }
 
+variable "gitlab_toolbox_backups_cron_persistence_size" {
+  description = "The size of the toolbox backups cron persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_toolbox_persistence_size" {
+  description = "The size of the toolbox persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_postgresql_primary_persistence_size" {
+  description = "The size of the postgresql primary persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_redis_master_persistence_size" {
+  description = "The size of the redis master persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_gitlay_persistence_size" {
+  description = "The size of the gitlay persistence"
+  type        = string
+  default     = "20Gi"
+}
+
 variable "prometheus_alertmanager_domain" {
   description = "The domain name for the alertmanager"
   type        = string
@@ -204,6 +245,12 @@ variable "prometheus_persistence_storage_class_name" {
   description = "The storage class name for the prometheus persistence storage"
   type        = string
   default     = "longhorn"
+}
+
+variable "prometheus_persistence_size" {
+  description = "The size of the persistence storage"
+  type        = string
+  default     = "5Gi"
 }
 
 variable "prometheus_alertmanager_slack_channel" {
@@ -239,4 +286,46 @@ variable "prometheus_minio_job_resource_bearer_token" {
   description = "The bearer token for the minio job resource scraper"
   type        = string
   sensitive   = true
+}
+
+variable "elasticsearch_resource_request_memory" {
+  description = "Memory request for Elasticsearch"
+  type        = string
+  default     = "2Gi"
+}
+
+variable "elasticsearch_resource_request_cpu" {
+  description = "CPU request for Elasticsearch"
+  type        = string
+  default     = "1"
+}
+
+variable "elasticsearch_resource_limit_memory" {
+  description = "Memory limit for Elasticsearch"
+  type        = string
+  default     = "4Gi"
+}
+
+variable "elasticsearch_resource_limit_cpu" {
+  description = "CPU limit for Elasticsearch"
+  type        = string
+  default     = "1"
+}
+
+variable "elasticsearch_storage_size" {
+  description = "Storage size for Elasticsearch"
+  type        = string
+  default     = "5Gi"
+}
+
+variable "elasticsearch_storage_class_name" {
+  description = "Storage class name for Elasticsearch"
+  type        = string
+  default     = "longhorn"
+}
+
+variable "elasticsearch_ingress_class_name" {
+  description = "Ingress class name for Elasticsearch"
+  type        = string
+  default     = "nginx"
 }
