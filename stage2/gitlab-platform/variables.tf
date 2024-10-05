@@ -89,3 +89,15 @@ variable "gitlab_persistence_storage_class_name" {
   type        = string
   default     = "longhorn"
 }
+
+variable "gitlab_toolbox_backups_cron_persistence_size" {
+  description = "The size of the toolbox backups cron persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_toolbox_persistence_size" {
+  description = "The size of the toolbox persistence"
+  type        = string
+  default     = "20Gi"
+}

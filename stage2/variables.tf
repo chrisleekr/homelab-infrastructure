@@ -1,3 +1,9 @@
+variable "kubernetes_cluster_type" {
+  description = "The type of the kubernetes cluster. i.e. kubeadm, k3s"
+  type        = string
+  default     = "kubeadm"
+}
+
 variable "host_machine_architecture" {
   description = "The architecture of the host machine. i.e. amd64, arm64"
   type        = string
@@ -179,6 +185,18 @@ variable "gitlab_persistence_storage_class_name" {
   description = "The storage class name for the gitlab persistence storage"
   type        = string
   default     = "longhorn"
+}
+
+variable "gitlab_toolbox_backups_cron_persistence_size" {
+  description = "The size of the toolbox backups cron persistence"
+  type        = string
+  default     = "20Gi"
+}
+
+variable "gitlab_toolbox_persistence_size" {
+  description = "The size of the toolbox persistence"
+  type        = string
+  default     = "20Gi"
 }
 
 variable "prometheus_alertmanager_domain" {

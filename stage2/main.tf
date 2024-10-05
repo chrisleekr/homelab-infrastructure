@@ -1,6 +1,7 @@
 module "kubernetes" {
   source = "./kubernetes"
 
+  kubernetes_cluster_type     = var.kubernetes_cluster_type
   kubernetes_override_domains = var.kubernetes_override_domains
   kubernetes_override_ip      = var.kubernetes_override_ip
 }
@@ -77,7 +78,9 @@ module "gitlab_platform" {
   gitlab_minio_access_key = var.minio_tenant_user_access_key
   gitlab_minio_secret_key = module.minio_object_storage.minio_tenant_user_secret_key
 
-  gitlab_persistence_storage_class_name = var.gitlab_persistence_storage_class_name
+  gitlab_persistence_storage_class_name        = var.gitlab_persistence_storage_class_name
+  gitlab_toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
+  gitlab_toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
 }
 
 

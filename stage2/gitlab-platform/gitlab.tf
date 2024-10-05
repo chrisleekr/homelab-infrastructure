@@ -28,7 +28,7 @@ resource "helm_release" "gitlab" {
   chart      = "gitlab"
   version    = "8.3.2"
   namespace  = kubernetes_namespace.gitlab.metadata[0].name
-  timeout    = 300
+  timeout    = 600 # 10 minutes
 
   values = [
     templatefile(
@@ -70,6 +70,9 @@ resource "helm_release" "gitlab" {
         minio_endpoint = var.gitlab_minio_endpoint
 
         persistence_storage_class_name = var.gitlab_persistence_storage_class_name
+
+        toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
+        toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
       }
     ),
   ]
