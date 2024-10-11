@@ -324,8 +324,26 @@ variable "elasticsearch_storage_class_name" {
   default     = "longhorn"
 }
 
-# variable "elasticsearch_ingress_class_name" {
-#   description = "Ingress class name for Elasticsearch"
-#   type        = string
-#   default     = "nginx"
-# }
+variable "kibana_resource_request_memory" {
+  description = "Memory request for Kibana"
+  type        = string
+  default     = "1Gi"
+}
+
+variable "kibana_resource_limit_memory" {
+  description = "Memory limit for Kibana"
+  type        = string
+  default     = "1Gi"
+}
+
+variable "kibana_ingress_class_name" {
+  description = "Ingress class name for Kibana"
+  type        = string
+  default     = "nginx"
+}
+
+variable "kibana_domain" {
+  description = "The domain name for the kibana"
+  type        = string
+  default     = "kibana.chrislee.local"
+}

@@ -111,9 +111,9 @@ module "prometheus_stack" {
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
 }
 
-module "elasticsearch_stack" {
+module "logging" {
   depends_on = [module.cert_manager_letsencrypt]
-  source     = "./elasticsearch-stack"
+  source     = "./logging"
 
   elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
   elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
@@ -122,6 +122,13 @@ module "elasticsearch_stack" {
   elasticsearch_storage_size            = var.elasticsearch_storage_size
   elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
 
-  # elasticsearch_ingress_class_name = var.elasticsearch_ingress_class_name
-  # elasticsearch_ingress_enable_tls = var.ingress_enable_tls
+  kibana_resource_request_memory   = var.kibana_resource_request_memory
+  kibana_resource_limit_memory     = var.kibana_resource_limit_memory
+  kibana_ingress_class_name        = var.kibana_ingress_class_name
+  kibana_ingress_enable_tls        = var.ingress_enable_tls
+  kibana_domain                    = var.kibana_domain
+  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
+
+  elasticsearch_user     = "elastic"
+  elasticsearch_password = module.logging.elasticsearch_password
 }

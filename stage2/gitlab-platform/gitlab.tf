@@ -29,6 +29,7 @@ resource "helm_release" "gitlab" {
   version    = "8.4.1"
   namespace  = kubernetes_namespace.gitlab.metadata[0].name
   timeout    = 600 # 10 minutes
+  wait       = true
 
   values = [
     templatefile(

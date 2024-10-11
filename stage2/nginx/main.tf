@@ -14,6 +14,7 @@ resource "helm_release" "nginx" {
   chart      = "ingress-nginx"
   version    = "4.11.0"
   namespace  = "nginx"
+  wait       = true
 
   values = [
     templatefile(
