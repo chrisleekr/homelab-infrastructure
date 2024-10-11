@@ -49,6 +49,7 @@ global:
     class: ${global_ingress_class}
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
     %{ if global_ingress_enable_tls }
     tls:
       enabled: true
