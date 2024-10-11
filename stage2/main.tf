@@ -11,6 +11,8 @@ module "nginx" {
 
   source                        = "./nginx"
   nginx_service_loadbalancer_ip = var.nginx_service_loadbalancer_ip
+  nginx_client_max_body_size    = var.nginx_client_max_body_size
+  nginx_client_body_buffer_size = var.nginx_client_body_buffer_size
 }
 
 module "cert_manager_letsencrypt" {
