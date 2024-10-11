@@ -61,6 +61,7 @@ resource "helm_release" "prometheus_operator" {
   version    = "61.3.2"
   namespace  = "prometheus"
   timeout    = 360
+  wait       = true
 
   values = [
     templatefile(

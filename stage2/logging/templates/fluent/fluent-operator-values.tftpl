@@ -1,0 +1,233 @@
+# https://github.com/fluent/helm-charts/blob/main/charts/fluent-operator/values.yaml
+# Default values for fluentbit-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Set this to containerd or crio if you want to collect CRI format logs
+containerRuntime: crio
+#  If you want to deploy a default Fluent Bit pipeline (including Fluent Bit Input, Filter, and output) to collect Kubernetes logs, you'll need to set the Kubernetes parameter to true
+# see https://github.com/fluent/fluent-operator/tree/master/manifests/logging-stack
+Kubernetes: true
+
+operator:
+  # The init container is to get the actual storage path of the docker log files so that it can be mounted to collect the logs.
+  # see https://github.com/fluent/fluent-operator/blob/master/manifests/setup/fluent-operator-deployment.yaml#L26
+  initcontainer:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 64Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+  # If set to false, this will disable the creation of ClusterRole, ClusterRoleBinding,
+  # Deployment, and ServiceAccount resources to avoid conflicts when deploying multiple instances.
+  enable: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 60Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+  logPath:
+    # The operator currently assumes a Docker container runtime path for the logs as the default, for other container runtimes you can set the location explicitly below.
+    # crio: /var/log
+    containerd: /var/log
+
+fluentbit:
+  # Installs a sub chart carrying the CRDs for the fluent-bit controller. The sub chart is enabled by default.
+  crdsEnable: true
+  enable: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200Mi
+    requests:
+      cpu: 10m
+      memory: 25Mi
+
+  # Set a limit of memory that Tail plugin can use when appending data to the Engine.
+  # You can find more details here: https://docs.fluentbit.io/manual/pipeline/inputs/tail#config
+  # If the limit is reach, it will be paused; when the data is flushed it resumes.
+  # if the inbound traffic is less than 2.4Mbps, setting memBufLimit to 5MB is enough
+  # if the inbound traffic is less than 4.0Mbps, setting memBufLimit to 10MB is enough
+  # if the inbound traffic is less than 13.64Mbps, setting memBufLimit to 50MB is enough
+  input:
+    tail:
+      enable: true
+      refreshIntervalSeconds: 10
+      memBufLimit: 100MB
+      bufferMaxSize: ""
+      path: "/var/log/containers/*.log"
+      skipLongLines: true
+      readFromHead: false
+      # parser: "cri"
+      parser: "json"
+      # Use storageType as "filesystem" if you want to use filesystem as the buffering mechanism for tail input.
+      storageType: memory
+      pauseOnChunksOverlimit: "off"
+      # multiline.parser: "cri"
+      # multilineParser: "docker, cri"
+    systemd:
+      enable: true
+      systemdFilter:
+        enable: true
+        filters: []
+      path: "/var/log/journal"
+      includeKubelet: true
+      stripUnderscores: "off"
+      # Use storageType as "filesystem" if you want to use filesystem as the buffering mechanism for systemd input.
+      storageType: memory
+      pauseOnChunksOverlimit: "off"
+    nodeExporterMetrics: {}
+
+
+  # Configure the output plugin parameter in FluentBit.
+  # You can set enable to true to output logs to the specified location.
+  output:
+    #  You can find more supported output plugins here: https://github.com/fluent/fluent-operator/tree/master/docs/plugins/fluentbit/output
+    # https://github.com/fluent/fluent-operator/blob/bc8a7562b90dd3664970291886dea20be39b5a3b/charts/fluent-operator/templates/fluentbit-output-elasticsearch.yaml#L43
+    # https://github.com/fluent/fluent-operator/blob/master/apis/fluentbit/v1alpha2/plugins/output/elasticsearch_types.go#L105
+    es:
+      enable: true
+      host: elasticsearch-es-internal-http.${namespace}.svc
+      port: 9200
+      logstashPrefix: ks-logstash-log
+      logstashFormat: true
+      bufferSize: 20MB
+      traceError: true
+      index: "fluent-bit"
+      suppressTypeName: "On" # When enabled, mapping types is removed and Type option is ignored. If using Elasticsearch 8.0.0 or higher - it no longer supports mapping types, so it shall be set to On.
+      replaceDots: true
+      enableTLS: false
+      generateID: true
+      writeOperation: upsert
+      timeKey: "@timestamp"
+      httpUser:
+        valueFrom:
+          secretKeyRef:
+            key: username
+            name: elasticsearch-credentials
+            optional: false
+      httpPassword:
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: elasticsearch-credentials
+            optional: false
+
+
+  # Configure the default filters in FluentBit.
+  # The `filter` will filter and parse the collected log information and output the logs into a uniform format. You can choose whether to turn this on or not.
+  filter:
+    parser:
+      enable: true
+      name: "json"
+      match: "*"
+      key_name: "log"
+      reserve_data: "true"
+    multiline:
+      enable: false
+      keyContent: log
+      # emitterMemBufLimit 120 (MB)
+      emitterMemBufLimit: 120
+      parsers:
+        - go
+        - python
+        - java
+        #  use custom multiline parser need set .Values.parsers.javaMultiline.enable = true
+        # - java-multiline
+    kubernetes:
+      enable: true
+      labels: true
+      annotations: false
+    containerd:
+      # This is customized lua containerd log format converter, you can refer here:
+      # https://github.com/fluent/fluent-operator/blob/master/charts/fluent-operator/templates/fluentbit-clusterfilter-containerd.yaml
+      # https://github.com/fluent/fluent-operator/blob/master/charts/fluent-operator/templates/fluentbit-containerd-config.yaml
+      enable: true
+    systemd:
+      enable: true
+
+
+fluentd:
+  # Installs a sub chart carrying the CRDs for the fluentd controller. The sub chart is enabled by default.
+  crdsEnable: true
+  enable: true
+  name: fluentd
+  # Valid modes include "collector" and "agent".
+  # The "collector" mode will deploy Fluentd as a StatefulSet as before.
+  # The new "agent" mode will deploy Fluentd as a DaemonSet.
+  mode: "collector"
+  port: 24224
+  # Numbers of the Fluentd instance
+  # Applicable when the mode is "collector", and will be ignored when the mode is "agent"
+  replicas: 1
+  forward:
+    port: 24224
+  watchedNamespaces:
+    - kube-system
+    - gitlab
+    - longhorn-system
+    - minio-operator
+    - minio-tenant
+    - nginx
+    - prometheus
+  resources:
+    limits:
+      cpu: 500m
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  schedulerName: ""
+  # Environment variables that can be passed to fluentd pods
+  envVars: []
+  #  - name: FOO
+  #    value: "bar"
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  # Pod security context for Fluentd pod. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  podSecurityContext: {}
+  # Container security context for Fluentd container. Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  securityContext: {}
+  imagePullSecrets: []
+  # - name: "image-pull-secret"
+  logLevel: ""
+  priorityClassName: ""
+  extras: {}
+  # Configure the output plugin parameter in Fluentd.
+  # Fluentd is disabled by default, if you enable it make sure to also set up an output to use.
+  output:
+    es:
+      enable: true
+      host: elasticsearch-es-internal-http.${namespace}.svc
+      port: 9200
+      logstashFormat: true
+      logstashPrefix: ks-logstash-log
+      buffer:
+        enable: false
+        type: file
+        path: /buffers/es
+      user:
+        valueFrom:
+          secretKeyRef:
+            key: username
+            name: elasticsearch-credentials
+            optional: false
+      password:
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: elasticsearch-credentials
+            optional: false
+    kafka:
+      enable: false
+      brokers: "my-cluster-kafka-bootstrap.default.svc:9091,my-cluster-kafka-bootstrap.default.svc:9092,my-cluster-kafka-bootstrap.default.svc:9093"
+      topicKey: kubernetes_ns
+      buffer:
+        enable: false
+        type: file
+        path: /buffers/kafka
+    opensearch: {}

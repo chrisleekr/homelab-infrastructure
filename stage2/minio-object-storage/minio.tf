@@ -40,6 +40,7 @@ resource "helm_release" "minio_operator" {
   version    = "5.0.15"
   namespace  = kubernetes_namespace.minio_operator.metadata[0].name
   timeout    = 300
+  wait       = true
 
   set {
     name  = "operator.replicaCount"
@@ -148,6 +149,7 @@ resource "helm_release" "minio_tenant" {
   version    = "5.0.15"
   namespace  = kubernetes_namespace.minio_tenant.metadata[0].name
   timeout    = 300
+  wait       = true
 
   values = [
     templatefile(

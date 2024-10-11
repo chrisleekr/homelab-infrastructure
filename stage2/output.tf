@@ -28,3 +28,8 @@ output "grafana_admin_password" {
   value     = module.prometheus_stack.grafana_admin_password
   sensitive = true
 }
+
+output "elasticsearch_password" {
+  value     = module.logging.elasticsearch_password
+  sensitive = true
+}

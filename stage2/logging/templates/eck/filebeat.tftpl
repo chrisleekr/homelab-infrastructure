@@ -1,0 +1,126 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat
+  namespace: ${namespace}
+spec:
+  type: filebeat
+  version: 8.15.1
+  elasticsearchRef:
+    name: elasticsearch
+  kibanaRef:
+    name: kibana
+  config:
+    filebeat.autodiscover.providers:
+    - node: ${"$"}{NODE_NAME} # Escape the dollar sign for Terraform template
+      type: kubernetes
+      hints.default_config.enabled: "false"
+      templates:
+      - condition:
+          equals:
+            kubernetes.namespace: nginx
+        config:
+          - module: nginx
+            ingress_controller:
+              enabled: true
+              input:
+                type: container
+                paths:
+                  - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
+            # access:
+            #   enabled: true
+            #   input:
+            #     type: container
+            #     paths:
+            #       - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
+            #     stream: stdout
+            # error:
+            #   enabled: true
+            #   input:
+            #     type: container
+            #     paths:
+            #       - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
+            #     stream: stderr
+      - config:
+        - type: container
+          exclude_files:
+            - '^/var/log/containers/nginx-' # Exclude nginx logs as they are already processed by the nginx module
+          paths:
+            - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
+    processors:
+    - drop_event:
+        when:
+          or:
+          - equals:
+              kubernetes.namespace: kube-system
+          - equals:
+              kubernetes.namespace: logging
+          - equals:
+              kubernetes.namespace: prometheus
+          - contains:
+              message: "kube-probe"
+    # - add_cloud_metadata: {} # It's not in cloud, so no need to add cloud metadata
+    # - add_host_metadata: {} # It's single node cluster, so no need to add host metadata
+    - add_kubernetes_metadata:
+        in_cluster: true
+        default_matchers.enabled: false
+        matchers:
+        - logs_path:
+            logs_path: /var/log/containers/
+    - decode_json_fields:
+        when.regexp.message: '^{'
+        fields: ["message"]
+        target: ""
+        overwrite_keys: true
+        process_array: true
+        expand_keys: false
+    logging.level: info
+    setup:
+      dashboards:
+        enabled: true
+      ilm:
+        enabled: true
+        overwrite: true
+        policy_file: /usr/share/filebeat/ilm/policy.json
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat
+        automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        containers:
+        - name: filebeat
+          securityContext:
+            runAsUser: 0
+            # If using Red Hat OpenShift uncomment this:
+            #privileged: true
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+          - name: filebeat-ilm
+            mountPath: /usr/share/filebeat/ilm
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+        volumes:
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: filebeat-ilm
+          configMap:
+            defaultMode: 0600
+            name: filebeat-ilm

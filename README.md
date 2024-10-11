@@ -4,7 +4,7 @@
 
 ## What is this project about?
 
-This project aims to provision a single-node Kubernetes cluster on a Ubuntu server and consists of three stages:
+This project aims to provision a single-node Kubernetes cluster on a Ubuntu server and consists of two stages:
 
 - Stage 1: Ansible
   - Install fail2ban, disable multipathd, setup ufw and other tasks.
@@ -19,6 +19,15 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
   - Minio
   - Gitlab
   - Prometheus
+  - Elasticsearch/Kibana/Filebeat (Elastic Cloud on Kubernetes)
+
+The docker image contains the following tools:
+
+- kubectl
+- helm
+- terraform
+- ansible
+- kubent
 
 ## Prerequisite
 
