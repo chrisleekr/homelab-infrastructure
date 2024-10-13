@@ -359,3 +359,22 @@ variable "kibana_domain" {
   type        = string
   default     = "kibana.chrislee.local"
 }
+
+variable "kubecost_token" {
+  description = "Kubecost token - retrieved from https://www.kubecost.com/install.html#show-instructions"
+  type        = string
+  sensitive   = true
+}
+
+
+variable "kubecost_ingress_host" {
+  description = "The host for the kubecost ingress"
+  type        = string
+  default     = "cost.chrislee.local"
+}
+
+variable "kubecost_ingress_class_name" {
+  description = "Ingress class name for the kubecost"
+  type        = string
+  default     = "nginx"
+}

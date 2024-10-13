@@ -219,6 +219,8 @@ prometheus:
     ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     additionalScrapeConfigs:
+    # Note:
+    #   curl http://minio.minio-tenant.svc.cluster.local:9000/minio/v2/metrics/cluster
     - job_name: minio-job
       bearer_token: ${minio_job_bearer_token}
       metrics_path: /minio/v2/metrics/cluster

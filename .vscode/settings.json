@@ -28,6 +28,7 @@
     "kubelet",
     "kubent",
     "kubernetescrd",
+    "letsencrypt",
     "lineinfile",
     "metallb",
     "minio",
