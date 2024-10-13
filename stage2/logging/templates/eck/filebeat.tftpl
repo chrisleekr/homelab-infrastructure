@@ -27,6 +27,12 @@ spec:
                 type: container
                 paths:
                   - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
+          - input:
+              type: tcp
+          - dissect:
+              tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
+              field: "message"
+              target_prefix: "nginx.ingress"
             # access:
             #   enabled: true
             #   input:

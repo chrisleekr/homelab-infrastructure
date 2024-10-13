@@ -1,0 +1,879 @@
+# https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml
+global:
+  # zone: cluster.local (use only if your DNS server doesn't live in the same zone as kubecost)
+  prometheus:
+    enabled: false  # Kubecost depends on Prometheus data, it is not optional. When enabled: false, Prometheus will not be installed and you must configure your own Prometheus to scrape kubecost as well as provide the fqdn below. -- Warning: Before changing this setting, please read to understand the risks https://docs.kubecost.com/install-and-configure/install/custom-prom
+    fqdn: http://kube-prometheus-stack-prometheus.prometheus.svc.cluster.local:9090  # example address of a prometheus to connect to. Include protocol (http:// or https://) Ignored if enabled: true
+    # insecureSkipVerify: false  # If true, kubecost will not check the TLS cert of prometheus
+    # queryServiceBasicAuthSecretName: dbsecret # kubectl create secret generic dbsecret -n kubecost --from-file=USERNAME --from-file=PASSWORD
+    # queryServiceBearerTokenSecretName: mcdbsecret  # kubectl create secret generic mcdbsecret -n kubecost --from-file=TOKEN
+
+  grafana:
+    enabled: false  # If false, Grafana will not be installed
+    domainName: kube-prometheus-stack-grafana.prometheus.svc.cluster.local  # example grafana domain Ignored if enabled: true
+    scheme: "http"  # http or https, for the domain name above.
+    proxy: true  # If true, the kubecost frontend will route to your grafana through its service endpoint
+    fqdn: kube-prometheus-stack-grafana.prometheus.svc.cluster.local
+
+  ## Kubecost Alerting
+  ## Ref: http://docs.kubecost.com/alerts
+  notifications:
+    # alertConfigs:
+    #   frontendUrl: http://localhost:9090  # Optional
+    #   globalSlackWebhookUrl:  # Optional
+    #   globalMsTeamsWebhookUrl:   # Optional
+    #   globalAlertEmails:
+    #     - recipient@example.com
+    #     - additionalRecipient@example.com
+    #   globalEmailSubject: Custom Subject
+    #   alerts:
+    #     # Daily namespace budget alert on namespace `kubecost`
+    #     - type: budget                # supported: budget, recurringUpdate
+    #       threshold: 50               # optional, required for budget alerts
+    #       window: daily               # or 1d
+    #       aggregation: namespace
+    #       filter: kubecost
+    #       ownerContact:               # optional, overrides globalAlertEmails default
+    #         - owner@example.com
+    #         - owner2@example.com
+    #       slackWebhookUrl:  # Optional
+    #       msTeamsWebhookUrl: # Optional
+    #     # Daily cluster budget alert on cluster `cluster-one`
+    #     - type: budget
+    #       threshold: 200.8        # optional, required for budget alerts
+    #       window: daily           # or 1d
+    #       aggregation: cluster
+    #       filter: cluster-one     # does not accept csv
+    #     # Recurring weekly update (weeklyUpdate alert)
+    #     - type: recurringUpdate
+    #       window: weekly          # or 7d
+    #       aggregation: namespace
+    #       filter: '*'
+    #     # Recurring weekly namespace update on kubecost namespace
+    #     - type: recurringUpdate
+    #       window: weekly # or 7d
+    #       aggregation: namespace
+    #       filter: kubecost
+    #     # Spend Change Alert
+    #     - type: spendChange         # change relative to moving avg
+    #       relativeThreshold: 0.20   # Proportional change relative to baseline. Must be greater than -1 (can be negative)
+    #       window: 1d                # accepts ‘d’, ‘h’
+    #       baselineWindow: 30d       # previous window, offset by window
+    #       aggregation: namespace
+    #       filter: kubecost, default # accepts csv
+    #     # Health Score Alert
+    #     - type: health              # Alerts when health score changes by a threshold
+    #       window: 10m
+    #       threshold: 5              # Send Alert if health scores changes by 5 or more
+    #     # Kubecost Health Diagnostic
+    #     - type: diagnostic          # Alerts when kubecost is unable to compute costs - ie: Prometheus unreachable
+    #       window: 10m
+
+    alertmanager:  # Supply an alertmanager FQDN to receive notifications from the app.
+      enabled: false  # If true, allow kubecost to write to your alertmanager
+      fqdn: http://alertmanager-operated.prometheus.svc.cluster.local  # example fqdn. Ignored if prometheus.enabled: true
+
+  ## Kubecost Saved Reports
+  ## Ref: http://docs.kubecost.com/saved-reports
+  savedReports:
+    enabled: false  # If true, overwrites report parameters set through UI
+    reports:
+      - title: "Example Saved Report 0"
+        window: "today"
+        aggregateBy: "namespace"
+        chartDisplay: "category"
+        idle: "separate"
+        rate: "cumulative"
+        accumulate: false   # daily resolution
+        filters:            # Ref: https://docs.kubecost.com/apis/filters-api
+          - key: "cluster"  # Ref: https://docs.kubecost.com/apis/filters-api#allocation-apis-request-sizing-v2-api
+            operator: ":"   # Ref: https://docs.kubecost.com/apis/filters-api#filter-operators
+            value: "dev"
+      - title: "Example Saved Report 1"
+        window: "month"
+        aggregateBy: "controllerKind"
+        chartDisplay: "category"
+        idle: "share"
+        rate: "monthly"
+        accumulate: false
+        filters:              # Ref: https://docs.kubecost.com/apis/filters-api
+          - key: "namespace"  # Ref: https://docs.kubecost.com/apis/filters-api#allocation-apis-request-sizing-v2-api
+            operator: "!:"    # Ref: https://docs.kubecost.com/apis/filters-api#filter-operators
+            value: "kubecost"
+      - title: "Example Saved Report 2"
+        window: "2020-11-11T00:00:00Z,2020-12-09T23:59:59Z"
+        aggregateBy: "service"
+        chartDisplay: "category"
+        idle: "hide"
+        rate: "daily"
+        accumulate: true  # entire window resolution
+        filters: []       # if no filters, specify empty array
+  assetReports:
+    enabled: false  # If true, overwrites report parameters set through UI
+    reports:
+    - title: "Example Asset Report 0"
+      window: "today"
+      aggregateBy: "type"
+      accumulate: false  # daily resolution
+      filters:
+        - property: "cluster"
+          value: "cluster-one"
+  cloudCostReports:
+    enabled: false  # If true, overwrites report parameters set through UI
+    reports:
+      - title: "Cloud Cost Report 0"
+        window: "today"
+        aggregateBy: "service"
+        accumulate: false  # daily resolution
+        # filters:
+        #   - property: "service"
+        #     value: "service1" # corresponds to a value to filter cloud cost aggregate by service data on.
+
+  podAnnotations: {}
+    # iam.amazonaws.com/role: role-arn
+
+  # Annotations to be added for all controllers (StatefulSets, Deployments, DaemonSets)
+  annotations: {}
+    # iam.amazonaws.com/role: role-arn
+
+  # Applies these labels to all Deployments, StatefulSets, DaemonSets, and their pod templates.
+  additionalLabels: {}
+
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    fsGroup: 1001
+    runAsGroup: 1001
+    runAsUser: 1001
+    fsGroupChangePolicy: OnRootMismatch
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+      enabled: false  # Set to true when using affected CI/CD tools for access to the below configuration options.
+      skipSanityChecks: false  # If true, skip all sanity/existence checks for resources like Secrets.
+
+
+# generated at http://kubecost.com/install, used for alerts tracking and free trials
+kubecostToken: "${kubecost_token}"
+
+kubecostFrontend:
+  enabled: true
+  deployMethod: singlepod  # haMode or singlepod - haMode is currently only supported with Enterprise tier
+  haReplicas: 2  # only used with haMode
+  image: "gcr.io/kubecost1/frontend"
+  imagePullPolicy: IfNotPresent
+  # fullImageName overrides the default image construction logic. The exact
+  # image provided (registry, image, tag) will be used for the frontend.
+  # fullImageName:
+
+  # extraEnv:
+  # - name: NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE
+  #   value: "1"
+  # securityContext:
+  #   readOnlyRootFilesystem: true
+  resources:
+    requests:
+      cpu: "10m"
+      memory: "55Mi"
+    # limits:
+    #   cpu: "100m"
+    #   memory: "256Mi"
+  deploymentStrategy: {}
+  #   rollingUpdate:
+  #     maxSurge: 1
+  #     maxUnavailable: 1
+  #   type: RollingUpdate
+
+  # Define a readiness probe for the Kubecost frontend container.
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 1
+    periodSeconds: 5
+    failureThreshold: 6
+
+  # Define a liveness probe for the Kubecost frontend container.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 1
+    periodSeconds: 5
+    failureThreshold: 6
+  ipv6:
+    enabled: true  # disable if the cluster does not support ipv6
+  # timeoutSeconds: 600  # should be rarely used, but can be increased if needed
+  # allow customizing nginx-conf server block
+  # extraServerConfig: |-
+  #   proxy_busy_buffers_size   512k;
+  #   proxy_buffers   4 512k;
+  #   proxy_buffer_size   256k;
+  #   large_client_header_buffers 4 64k;
+  # hideDiagnostics: false  # useful if the primary is not monitored. Supported in limited environments.
+  # hideOrphanedResources: false  # OrphanedResources works on the primary-cluster's cloud-provider only.
+
+  # set to true to set all upstreams to use <service>.<namespace>.svc.cluster.local instead of just <service>.<namespace>
+  useDefaultFqdn: false
+#  api:
+#    fqdn: kubecost-api.kubecost.svc.cluster.local:9001
+#  model:
+#    fqdn: kubecost-model.kubecost.svc.cluster.local:9003
+#  forecasting:
+#    fqdn: kubecost-forcasting.kubecost.svc.cluster.local:5000
+#  aggregator:
+#    fqdn: kubecost-aggregator.kubecost.svc.cluster.local:9004
+#  cloudCost:
+#    fqdn: kubecost-cloud-cost.kubecost.svc.cluster.local:9005
+#  multiClusterDiagnostics:
+#    fqdn: kubecost-multi-diag.kubecost.svc.cluster.local:9007
+#  clusterController:
+#    fqdn: cluster-controller.kubecost.svc.cluster.local:9731
+
+
+
+# Basic Kubecost ingress, more examples available at https://docs.kubecost.com/install-and-configure/install/ingress-examples
+ingress:
+  enabled: true
+  className: ${ingress_class_name}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: ${kubecost_basic_auth_secret_name}
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+  paths: ["/"]  # There's no need to route specifically to the pods-- we have an nginx deployed that handles routing
+  pathType: ImplementationSpecific
+  hosts:
+    - ${kubecost_ingress_host}
+  %{ if ingress_enable_tls }
+  tls:
+    - secretName: kubecost-tls
+      hosts:
+      - ${kubecost_ingress_host}
+  %{ endif }
+
+nodeSelector: {}
+
+tolerations: []
+#  - key: "key"
+#    operator: "Equal|Exists"
+#    value: "value"
+#    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+affinity: {}
+
+topologySpreadConstraints: []
+
+# If true, creates a PriorityClass to be used by the cost-analyzer pod
+priority:
+  enabled: false
+  name: ""  # Provide name of existing priority class only. If left blank, upstream chart will create one from default template.
+
+# If true, enable creation of NetworkPolicy resources.
+networkPolicy:
+  enabled: false
+  denyEgress: true  # create a network policy that denies egress from kubecost
+  sameNamespace: true  # Set to true if cost analyzer and prometheus are on the same namespace
+#  namespace: kubecost # Namespace where prometheus is installed
+
+  # Cost-analyzer specific vars using the new template
+  costAnalyzer:
+    enabled: false  # If true, create a network policy for cost-analyzer
+    annotations: {}  # annotations to be added to the network policy
+    additionalLabels: {}  # additional labels to be added to the network policy
+    # Examples rules:
+    # ingressRules:
+    #   - selectors: # allow ingress from self on all ports
+    #     - podSelector:
+    #         matchLabels:
+    #           app.kubernetes.io/name: cost-analyzer
+    #   - selectors: # allow egress access to prometheus
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           name: prometheus
+    #       podSelector:
+    #         matchLabels:
+    #           app: prometheus
+    #     ports:
+    #       - protocol: TCP
+    #         port: 9090
+    # egressRules:
+    #   - selectors: # restrict egress to inside cluster
+    #     - namespaceSelector: {}
+
+## @param extraVolumes A list of volumes to be added to the pod
+##
+extraVolumes: []
+## @param extraVolumeMounts A list of volume mounts to be added to the pod
+##
+extraVolumeMounts: []
+
+# Define persistence volume for cost-analyzer, more information at https://docs.kubecost.com/install-and-configure/install/storage
+persistentVolume:
+  size: 32Gi
+  dbSize: 32.0Gi
+  enabled: true  # Note that setting this to false means configurations will be wiped out on pod restart.
+  # storageClass: "-" #
+  # existingClaim: kubecost-cost-analyzer # a claim in the same namespace as kubecost
+  labels: {}
+  annotations: {}
+    # helm.sh/resource-policy: keep  # https://helm.sh/docs/howto/charts_tips_and_tricks/#tell-helm-not-to-uninstall-a-resource
+
+  # Enables a separate PV specifically for ETL data. This should be avoided, but
+  # is kept for legacy compatibility.
+  dbPVEnabled: false
+
+service:
+  type: ClusterIP
+  port: 9090
+  targetPort: 9090
+  nodePort: {}
+  labels: {}
+  annotations: {}
+  # loadBalancerSourceRanges: []
+  sessionAffinity:
+    enabled: false  # Makes sure that connections from a client are passed to the same Pod each time, when set to `true`. You should set it when you enabled authentication through OIDC or SAML integration.
+    timeoutSeconds: 10800
+
+
+## Optional daemonset to more accurately attribute network costs to the correct workload
+## https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration
+networkCosts:
+  enabled: false
+  image:
+    repository: gcr.io/kubecost1/kubecost-network-costs
+    tag: v0.17.6
+  imagePullPolicy: IfNotPresent
+  updateStrategy:
+    type: RollingUpdate
+  # For existing Prometheus Installs, use the serviceMonitor: or prometheusScrape below.
+  # the below setting annotates the networkCost service endpoints for each of the network-costs pods.
+  # The Service is annotated with prometheus.io/scrape: "true" to automatically get picked up by the prometheus config.
+  # NOTE: Setting this option to true and leaving the above extraScrapeConfig "job_name: kubecost-networking" configured will cause the
+  # NOTE: pods to be scraped twice.
+  prometheusScrape: false
+  # Traffic Logging will enable logging the top 5 destinations for each source
+  # every 30 minutes.
+  trafficLogging: true
+
+  logLevel: info
+
+  # Port will set both the containerPort and hostPort to this value.
+  # These must be identical due to network-costs being run on hostNetwork
+  port: 3001
+  # this daemonset can use significant resources on large clusters: https://guide.kubecost.com/hc/en-us/articles/4407595973527-Network-Traffic-Cost-Allocation
+  resources:
+    limits:  # remove the limits by setting cpu: null
+      cpu: 500m  # can be less, will depend on cluster size
+      # memory: it is not recommended to set a memory limit
+    requests:
+      cpu: 50m
+      memory: 20Mi
+  extraArgs: []
+  config:
+    # Configuration for traffic destinations, including specific classification
+    # for IPs and CIDR blocks. This configuration will act as an override to the
+    # automatic classification provided by network-costs.
+    destinations:
+      # In Zone contains a list of address/range that will be
+      # classified as in zone.
+      in-zone:
+        # Loopback Addresses in "IANA IPv4 Special-Purpose Address Registry"
+        - "127.0.0.0/8"
+        # IPv4 Link Local Address Space
+        - "169.254.0.0/16"
+        # Private Address Ranges in RFC-1918
+        - "10.0.0.0/8"  # Remove this entry if using Multi-AZ Kubernetes
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+
+      # In Region contains a list of address/range that will be
+      # classified as in region. This is synonymous with cross
+      # zone traffic, where the regions between source and destinations
+      # are the same, but the zone is different.
+      in-region: []
+
+      # Cross Region contains a list of address/range that will be
+      # classified as non-internet egress from one region to another.
+      cross-region: []
+
+      # Internet contains a list of address/range that will be
+      # classified as internet traffic. This is synonymous with traffic
+      # that cannot be classified within the cluster.
+      # NOTE: Internet classification filters are executed _after_
+      # NOTE: direct-classification, but before in-zone, in-region,
+      # NOTE: and cross-region.
+      internet: []
+
+      # Direct Classification specifically maps an ip address or range
+      # to a region (required) and/or zone (optional). This classification
+      # takes priority over in-zone, in-region, and cross-region configurations.
+      direct-classification: []
+      # - region: "us-east1"
+      #   zone: "us-east1-c"
+      #   ips:
+      #     - "10.0.0.0/24"
+    services:
+      # google-cloud-services: when set to true, enables labeling traffic metrics with google cloud
+      # service endpoints
+      google-cloud-services: true
+      # amazon-web-services: when set to true, enables labeling traffic metrics with amazon web service
+      # endpoints.
+      amazon-web-services: true
+      # azure-cloud-services: when set to true, enables labeling traffic metrics with azure cloud service
+      # endpoints
+      azure-cloud-services: true
+      # user defined services provide a way to define custom service endpoints which will label traffic metrics
+      # falling within the defined address range.
+      # services:
+      #  - service: "test-service-1"
+      #    ips:
+      #      - "19.1.1.2"
+      #  - service: "test-service-2"
+      #    ips:
+      #      - "15.128.15.2"
+      #      - "20.0.0.0/8"
+
+  ## Node tolerations for server scheduling to nodes with taints
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  tolerations: []
+  #  - key: "key"
+  #    operator: "Equal|Exists"
+  #    value: "value"
+  #    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+  affinity: {}
+
+  service:
+    annotations: {}
+    labels: {}
+
+  ## PriorityClassName
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+  priorityClassName: ""
+  ## PodMonitor
+  ## Allows scraping of network metrics from a dedicated prometheus operator setup
+  podMonitor:
+    enabled: false
+    additionalLabels: {}
+  # match the default extraScrapeConfig
+  additionalLabels: {}
+  nodeSelector: {}
+  # Annotations to be added to network cost daemonset template and pod template annotations
+  annotations: {}
+  healthCheckProbes: {}
+    # readinessProbe:
+    #   tcpSocket:
+    #     port: 3001
+    #   initialDelaySeconds: 5
+    #   periodSeconds: 10
+    #   failureThreshold: 5
+    # livenessProbe:
+    #   tcpSocket:
+    #     port: 3001
+    #   initialDelaySeconds: 5
+    #   periodSeconds: 10
+    #   failureThreshold: 5
+  additionalSecurityContext: {}
+    # readOnlyRootFilesystem: true
+
+## Kubecost Deployment Configuration
+## Used for HA mode in Business & Enterprise tier
+##
+kubecostDeployment:
+  replicas: 1
+  # deploymentStrategy:
+  #   rollingUpdate:
+  #     maxSurge: 1
+  #     maxUnavailable: 1
+  #   type: RollingUpdate
+  labels: {}
+  annotations: {}
+
+
+## Kubecost Forecasting forecasts future cost patterns based on historical
+## patterns observed by Kubecost.
+forecasting:
+  enabled: true
+
+  # fullImageName overrides the default image construction logic. The exact
+  # image provided (registry, image, tag) will be used for the forecasting
+  # container.
+  # Example: fullImageName: gcr.io/kubecost1/forecasting:v0.0.1
+  fullImageName: gcr.io/kubecost1/kubecost-modeling:v0.1.16
+  imagePullPolicy: IfNotPresent
+
+  # Resource specification block for the forecasting container.
+  resources:
+    requests:
+      cpu: 200m
+      memory: 300Mi
+    limits:
+      cpu: 1500m
+      memory: 1Gi
+
+  # Set environment variables for the forecasting container as key/value pairs.
+  env:
+    # -t is the worker timeout which primarily affects model training time;
+    # if it is not high enough, training workers may die mid training
+    "GUNICORN_CMD_ARGS": "--log-level info -t 1200"
+
+  # Define a priority class for the forecasting Deployment.
+  priority:
+    enabled: false
+    name: ""
+
+  # Define a nodeSelector for the forecasting Deployment.
+  nodeSelector: {}
+
+  # Define tolerations for the forecasting Deployment.
+  tolerations: []
+
+  # Annotations to be added for the forecasting Deployment.
+  annotations: {}
+
+  # Define Pod affinity for the forecasting Deployment.
+  affinity: {}
+
+  # Define a readiness probe for the forecasting container
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 200
+
+  # Define a liveness probe for the forecasting container.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 200
+
+## The Kubecost Aggregator is the primary query backend for Kubecost
+## Ref: https://docs.kubecost.com/install-and-configure/install/multi-cluster/federated-etl/aggregator
+##
+kubecostAggregator:
+  # deployMethod determines how Aggregator is deployed. Current options are
+  # "singlepod" (within cost-analyzer Pod) "statefulset" (separate
+  # StatefulSet), and "disabled". Only use "disabled" if this is a secondary
+  # Federated ETL cluster which does not need to answer queries.
+  deployMethod: singlepod
+
+  # fullImageName overrides the default image construction logic. The exact
+  # image provided (registry, image, tag) will be used for aggregator.
+  # fullImageName:
+  imagePullPolicy: IfNotPresent
+
+  # For legacy configuration support, `enabled: true` overrides deployMethod
+  # and causes `deployMethod: "statefulset"`
+  enabled: false
+
+  # Replicas sets the number of Aggregator replicas. It only has an effect if
+  # `deployMethod: "statefulset"`
+  replicas: 1
+
+  logLevel: info
+
+  # stagingEmptyDirSizeLimit changes how large the "staging"
+  # /var/configs/waterfowl emptyDir is. It only takes effect in StatefulSet
+  # configurations of Aggregator, other configurations are unaffected.
+  #
+  # It should be set to approximately 8x the size of the largest bingen file in
+  # object storage. For example, if your largest bingen file is a daily
+  # Allocation file with size 300MiB, this value should be set to approximately
+  # 2400Mi. In most environments, the default should suffice.
+  stagingEmptyDirSizeLimit: 2Gi
+
+  # this is the number of partitions the datastore is split into for copying
+  # the higher this number, the lower the ram usage but the longer it takes for
+  # new data to show in the kubecost UI
+  # set to 0 for max partitioning (minimum possible ram usage, but the slowest)
+  # the default of 25 is sufficient for 95%+ of users. This should only be modified
+  # after consulting with Kubecost's support team
+  numDBCopyPartitions: 25
+
+  # How many threads the read database is configured with (i.e. Kubecost API /
+  # UI queries). If increasing this value, it is recommended to increase the
+  # aggregator's memory requests & limits.
+  # default: 1
+  dbReadThreads: 1
+
+  # How many threads the write database is configured with (i.e. ingestion of
+  # new data from S3). If increasing this value, it is recommended to increase
+  # the aggregator's memory requests & limits.
+  # default: 1
+  dbWriteThreads: 1
+
+  # How many threads to use when ingesting Asset/Allocation/CloudCost data
+  # from the federated store bucket. In most cases the default is sufficient,
+  # but can be increased if trying to backfill historical data.
+  # default: 1
+  dbConcurrentIngestionCount: 1
+
+  # Memory limit applied to read database and write database connections. The
+  # default of "no limit" is appropriate when first establishing a baseline of
+  # resource usage required. It is eventually recommended to set these values
+  # such that dbMemoryLimit + dbWriteMemoryLimit < the total memory available
+  # to the aggregator pod.
+  # default: 0GB is no limit
+  dbMemoryLimit: 0GB
+  dbWriteMemoryLimit: 0GB
+
+  # How much data to ingest from the federated store bucket, and how much data
+  # to keep in the DB before rolling the data off.
+  #
+  # Note: If increasing this value to backfill historical data, it will take
+  # time to gradually ingest and process those historical ETL files. Consider
+  # also increasing the resources available to the aggregator as well as the
+  # refresh and concurrency env vars.
+  #
+  # default: 91
+  etlDailyStoreDurationDays: 91
+
+  # How much hourly data to ingest from the federated store bucket, and how much
+  # to keep in the DB before rolling the data off.
+  #
+  # In high scale environments setting this to `0` can improve performance if hourly
+  # resolution is not a requirement.
+  #
+  # default: 49
+  etlHourlyStoreDurationHours: 49
+
+  # How much container resource usage data to retain in the DB, in terms of days.
+  #
+  # In high scale environments setting this to `0` can improve performance if hourly
+  # resolution is not a requirement.
+  #
+  # default: 1
+  containerResourceUsageRetentionDays: 1
+
+  # Trim memory on close, only change if advised by Kubecost support.
+  dbTrimMemoryOnClose: true
+
+  persistentConfigsStorage:
+    storageClass: ""  # default storage class
+    storageRequest: 1Gi
+  aggregatorDbStorage:
+    storageClass: ""  # default storage class
+    storageRequest: 128Gi
+
+  resources: {}
+    # requests:
+    #   cpu: 1000m
+    #   memory: 1Gi
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 200
+
+  ## Set additional environment variables for the aggregator pod
+  # extraEnv:
+  # - name: SOME_VARIABLE
+  #   value: "some_value"
+
+  ## Add a priority class to the aggregator pod
+  # priority:
+  #   enabled: false
+  #   name: ""
+
+  ## Optional - add extra ports to the aggregator container. For kubecost development purposes only - not recommended for users.
+  # extraPorts: []
+  #   - name: debug
+  #     port: 40000
+  #     targetPort: 40000
+  #     containerPort: 40000
+
+  ## Define a securityContext for the aggregator pod. This will take highest precedence.
+  # securityContext: {}
+
+  ## Define the container-level security context for the aggregator pod. This will take highest precedence.
+  # containerSecurityContext: {}
+
+  ## Provide a Service Account name for aggregator.
+  # serviceAccountName: ""
+
+  ## Define a nodeSelector for the aggregator pod
+  # nodeSelector: {}
+
+  ## Define tolerations for the aggregator pod
+  # tolerations: []
+
+  ## Annotations to be added for aggregator deployment or statefulset
+  # annotations: {}
+
+  ## Define Pod affinity for the aggregator pod
+  # affinity: {}
+
+  ## Define extra volumes for the aggregator pod
+  # extraVolumes: []
+
+  ## Define extra volumemounts for the aggregator pod
+  # extraVolumeMounts: []
+
+  ## Creates a new container/pod to retrieve CloudCost data. By default it uses
+  ## the same serviceaccount as the cost-analyzer pod. A custom serviceaccount
+  ## can be specified.
+  cloudCost:
+    # The cloudCost component of Aggregator depends on
+    # kubecostAggregator.deployMethod:
+    # kA.dM = "singlepod" -> cloudCost is run as container inside cost-analyzer
+    # kA.dM = "statefulset" -> cloudCost is run as single-replica Deployment
+    resources: {}
+      # requests:
+      #   cpu: 1000m
+      #   memory: 1Gi
+    # refreshRateHours:
+    # queryWindowDays:
+    # runWindowDays:
+    # serviceAccountName:
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 200
+
+    ## Add a nodeSelector for aggregator cloud costs
+    # nodeSelector: {}
+
+    ## Tolerations for the aggregator cloud costs
+    # tolerations: []
+
+    ## Affinity for the aggregator cloud costs
+    # affinity: {}
+
+    ## ServiceAccount for the aggregator cloud costs
+    # serviceAccountName: ""
+
+    ## Define environment variables for cloud cost
+    # env: {}
+
+    ## Define extra volumes for the cloud cost pod
+    # extraVolumes: []
+
+    ## Define extra volumemounts for the cloud cost pod
+    # extraVolumeMounts: []
+
+    ## Configure the Collections service for aggregator.
+    # collections:
+    #   cache:
+    #     enabled: false
+
+  # Jaeger is an optional container attached to wherever the Aggregator
+  # container is running. It is used for performance investigation. Enable if
+  # Kubecost Support asks.
+  jaeger:
+    enabled: false
+    image: jaegertracing/all-in-one
+    imageVersion: latest
+    # containerSecurityContext:
+
+  service:
+    labels: {}
+
+## Kubecost Multi-cluster Diagnostics (beta)
+## A single view into the health of all agent clusters. Each agent cluster sends
+## its diagnostic data to a storage bucket. Future versions may include
+## repairing & alerting from the primary.
+## Ref: https://docs.kubecost.com/install-and-configure/install/multi-cluster/multi-cluster-diagnostics
+##
+diagnostics:
+  enabled: false
+
+  ## The primary aggregates all diagnostic data and handles API requests. It's
+  ## also responsible for deleting diagnostic data (on disk & bucket) beyond
+  ## retention. When in readonly mode it does not push its own diagnostic data
+  ## to the bucket.
+  primary:
+    enabled: false
+    retention: "7d"
+    readonly: false
+
+  ## How frequently to run & push diagnostics. Defaults to 5 minutes.
+  pollingInterval: "300s"
+
+  ## Creates a new Diagnostic file in the bucket for every run.
+  keepDiagnosticHistory: false
+
+  ## Pushes the cluster's Kubecost Helm Values to the bucket once upon startup.
+  ## This may contain sensitive information and is roughly 30kb per cluster.
+  collectHelmValues: false
+
+  ## By default, the Multi-cluster Diagnostics service runs within the
+  ## cost-model container in the cost-analyzer pod. For higher availability, it
+  ## can be run as a separate deployment.
+  deployment:
+    enabled: false
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "20Mi"
+    env: {}
+    labels: {}
+    securityContext: {}
+    containerSecurityContext: {}
+    nodeSelector: {}
+    tolerations: []
+    ## Annotations to be added for diagnostics Deployment.
+    annotations: {}
+    affinity: {}
+
+reporting:
+  # Kubecost bug report feature: Logs access/collection limited to .Release.Namespace
+  # Ref: http://docs.kubecost.com/bug-report
+  logCollection: true
+  # Basic frontend analytics
+  productAnalytics: true
+
+  # Report Javascript errors
+  errorReporting: true
+  valuesReporting: true
+  # googleAnalyticsTag allows you to embed your Google Global Site Tag to track usage of Kubecost.
+  # googleAnalyticsTag is only included in our Enterprise offering.
+  # googleAnalyticsTag: G-XXXXXXXXX
+
+serviceMonitor:  # the kubecost included prometheus uses scrapeConfigs and does not support service monitors. The following options assume an existing prometheus that supports serviceMonitors.
+  enabled: false
+  interval: 1m
+  scrapeTimeout: 10s
+  additionalLabels: {}
+  metricRelabelings: []
+  relabelings: []
+  networkCosts:
+    enabled: false
+    interval: 1m
+    scrapeTimeout: 10s
+    additionalLabels: {}
+    metricRelabelings: []
+    relabelings: []
+  aggregatorMetrics:
+    enabled: false
+    interval: 1m
+    scrapeTimeout: 10s
+    additionalLabels: {}
+    metricRelabelings: []
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_namespace
+      targetLabel: namespace
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+
+supportNFS: false
+# initChownDataImage ensures all Kubecost filepath permissions on PV or local storage are set up correctly.
+initChownDataImage: "busybox"  # Supports a fully qualified Docker image, e.g. registry.hub.docker.com/library/busybox:latest
+initChownData:
+  resources: {}
+    # requests:
+    #   cpu: "50m"
+    #   memory: "20Mi"
+
+serviceAccount:
+  create: true  # Set this to false if you're bringing your own service account.
+  annotations: {}
+  # name: kc-test

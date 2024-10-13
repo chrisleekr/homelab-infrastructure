@@ -8,7 +8,7 @@ resource "kubernetes_config_map" "coredns_custom" {
   }
 
   data = {
-    "default.server" = <<EOF
+    "default.server"   = <<EOF
 ${trim(var.kubernetes_override_domains, "\"")} {
     hosts {
           ${var.kubernetes_override_ip} ${trim(var.kubernetes_override_domains, "\"")}
@@ -16,6 +16,7 @@ ${trim(var.kubernetes_override_domains, "\"")} {
     }
 }
 EOF
+    "default.override" = ""
   }
 }
 

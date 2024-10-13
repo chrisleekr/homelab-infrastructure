@@ -71,14 +71,14 @@ variable "kibana_domain" {
   default     = "kibana.chrislee.local"
 }
 
-variable "elasticsearch_user" {
-  description = "Elasticsearch user"
-  type        = string
-  default     = "elastic"
-}
+# variable "elasticsearch_user" {
+#   description = "Elasticsearch user"
+#   type        = string
+#   default     = "elastic"
+# }
 
-variable "elasticsearch_password" {
-  description = "Elasticsearch password"
-  type        = string
-  sensitive   = true
-}
+# variable "elasticsearch_password" {
+#   description = "Elasticsearch password"
+#   type        = string
+#   sensitive   = true
+# }
