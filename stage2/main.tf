@@ -73,8 +73,8 @@ module "gitlab_platform" {
 
   gitlab_certmanager_issuer_email = var.gitlab_certmanager_issuer_email
 
-  gitlab_minio_host     = var.minio_tenant_ingress_api_host
-  gitlab_minio_endpoint = var.ingress_enable_tls ? "https://${var.minio_tenant_ingress_api_host}" : "http://${var.minio_tenant_ingress_api_host}"
+  gitlab_minio_host     = "minio.minio-tenant.svc.cluster.local"
+  gitlab_minio_endpoint = "http://minio.minio-tenant.svc.cluster.local"
 
 
   gitlab_minio_access_key = var.minio_tenant_user_access_key
