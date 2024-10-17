@@ -57,16 +57,27 @@
   changed_when: false
   ignore_errors: true
 
-- name: Update kubeadm-config
+- name: Update kubeadm-config and kube-proxy configmap
   when: check_control_plane_endpoint.rc != 0
   block:
-    - name: Update kubeadm-config configmap
+    - name: Update kubeadm-config configmap to bind control plane endpoint to host IP
       ansible.builtin.shell: |
         set -o pipefail && \
         kubectl -n kube-system get configmap kubeadm-config -o json |
         jq 'if (.data.ClusterConfiguration | contains("controlPlaneEndpoint")) then
         .data.ClusterConfiguration |= sub("controlPlaneEndpoint: .*"; "controlPlaneEndpoint: {{ ansible_host }}:6443")
         else .data.ClusterConfiguration |= . + "\ncontrolPlaneEndpoint: {{ ansible_host }}:6443" end' |
+        kubectl apply -f -
+      args:
+        executable: /bin/bash
+      changed_when: false
+    - name: Update kube-proxy configmap to bind metrics endpoint to 0.0.0.0
+      ansible.builtin.shell: |
+        set -o pipefail && \
+        kubectl -n kube-system get configmap kube-proxy -o json |
+        jq 'if (.data."config.conf" | contains("metricsBindAddress")) then
+        .data."config.conf" |= sub("metricsBindAddress: .*"; "metricsBindAddress: \"0.0.0.0:10249\"")
+        else .data."config.conf" |= . + "\nmetricsBindAddress: \"0.0.0.0:10249\"" end' |
         kubectl apply -f -
       args:
         executable: /bin/bash
