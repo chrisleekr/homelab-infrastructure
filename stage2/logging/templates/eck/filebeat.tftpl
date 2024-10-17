@@ -58,8 +58,6 @@ spec:
         when:
           or:
           - equals:
-              kubernetes.namespace: kube-system
-          - equals:
               kubernetes.namespace: logging
           - equals:
               kubernetes.namespace: prometheus
