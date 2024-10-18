@@ -76,7 +76,6 @@ module "gitlab_platform" {
   gitlab_minio_host     = "minio.minio-tenant.svc.cluster.local"
   gitlab_minio_endpoint = "http://minio.minio-tenant.svc.cluster.local"
 
-
   gitlab_minio_access_key = var.minio_tenant_user_access_key
   gitlab_minio_secret_key = module.minio_object_storage.minio_tenant_user_secret_key
 
@@ -87,6 +86,8 @@ module "gitlab_platform" {
   gitlab_postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
   gitlab_redis_master_persistence_size       = var.gitlab_redis_master_persistence_size
   gitlab_gitlay_persistence_size             = var.gitlab_gitlay_persistence_size
+
+  gitlab_runner_authentication_token = var.gitlab_runner_authentication_token
 }
 
 

@@ -137,28 +137,52 @@ resource "kubernetes_secret" "rails_secret" {
   }
 }
 
-# https://docs.gitlab.com/charts/installation/secrets#gitlab-runner-secret
-resource "random_password" "runner_registration_token" {
-  length  = 64
-  special = false
-}
-
-resource "kubernetes_secret" "runner_registration_token" {
+resource "kubernetes_secret" "runner_registration_token_deprecated" {
   depends_on = [
     kubernetes_namespace.gitlab,
-    random_password.runner_registration_token
   ]
   metadata {
-    name      = "runner-registration-token"
+    name      = "gitlab-gitlab-runner-secret-deprecated"
+    namespace = kubernetes_namespace.gitlab.metadata[0].name
+
+    # Set labels and annotations to prevent Gitlab Chart to create it again
+    labels = {
+      "app.kubernetes.io/managed-by" = "Helm"
+    }
+
+    annotations = {
+      "meta.helm.sh/release-name"      = kubernetes_namespace.gitlab.metadata[0].name
+      "meta.helm.sh/release-namespace" = "gitlab"
+    }
+  }
+
+  data = {
+    "runner-registration-token" = ""
+    "runner-token"              = var.gitlab_runner_authentication_token
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
+  }
+}
+
+# This secret is currently not used. Set it up for future use if supporting by Gitlab Runner Chart.
+resource "kubernetes_secret" "runner_token" {
+  depends_on = [
+    kubernetes_namespace.gitlab,
+  ]
+  metadata {
+    name      = "gitlab-gitlab-runner-secret"
     namespace = kubernetes_namespace.gitlab.metadata[0].name
   }
 
   data = {
-    "runner-registration-token" = random_password.runner_registration_token.result
+    "runner-registration-token" = ""
+    "runner-token"              = var.gitlab_runner_authentication_token
   }
 
   lifecycle {
-    ignore_changes = [metadata[0].labels]
+    ignore_changes = [metadata[0].labels, metadata[0].annotations]
   }
 }
 
