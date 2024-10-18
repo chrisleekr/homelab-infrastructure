@@ -14,11 +14,6 @@ output "gitlab_initial_root_passwrd" {
   sensitive = true
 }
 
-output "gitlab_runner_registration_token" {
-  value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_runner_registration_token : null
-  sensitive = true
-}
-
 output "gitlab_shell_host_keys" {
   value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_shell_host_keys : null
   sensitive = true

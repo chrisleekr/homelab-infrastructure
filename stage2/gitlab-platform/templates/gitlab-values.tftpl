@@ -265,13 +265,12 @@ global:
       enabled: true
     sessionStore:
       sessionCookieTokenPrefix: ""
-
   ## GitLab Runner
-  ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#gitlab-runner-secret
-  ## If allowing shared-secrets generation, this is OPTIONAL.
+  # Should set to arbitrary value; otherwise, Gitlab chart will generate the secret with registration token, which is not compatible with Gitlab Runner chart.
+  # Here: https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/templates/shared-secrets/_generate_secrets.sh.tpl?ref_type=heads#L105
   runner:
     registrationToken:
-      secret: ${global_runner_registration_token_secret}
+      secret: "gitlab-gitlab-runner-secret-deprecated"
 
   ## https://docs.gitlab.com/charts/charts/globals#outgoing-email
   ## Outgoing email server settings
@@ -755,24 +754,18 @@ gitlab-runner:
   envVars:
     - name: RUNNER_ENV
       value: "DOCKER_TLS_CERTDIR=/certs"
-    - name: REGISTER_RUN_UNTAGGED
-      value: "true"
+  gitlabUrl: ${gitlab_runner_gitlab_url}
+  # Must define runnerToken; so, the chart can generate the secret. Cannot use pre-generated secret.
+  runnerToken: ${gitlab_runner_authentication_token}
+  # secret: ${gitlab_runner_token_secret}
   runners:
-    locked: false
     privileged: true
-    # Set secret to an arbitrary value because the runner chart renders the gitlab-runner.secret template only if it is not empty.
-    # The parent/GitLab chart overrides the template to render the actual secret name.
-    # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#docker-in-docker-with-tls-enabled-in-kubernetes
-    # https://docs.gitlab.com/runner/executors/kubernetes/index.html#exposed-varrundockersock
-    # https://stackoverflow.com/questions/72490488/user-systemserviceaccountgitlabdefault-cannot-get-resource-deployments-in
-    secret: ${global_runner_registration_token_secret}
     config: |
       [[runners]]
         [runners.kubernetes]
           namespace = "{{.Release.Namespace}}"
           image = "docker:stable"
           privileged = true
-          # service_account = "gitlab-gitlab-runner"
           [runners.cache]
             Type = "s3"
             Path = "gitlab-runner"

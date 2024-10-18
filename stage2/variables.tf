@@ -229,6 +229,13 @@ variable "gitlab_gitlay_persistence_size" {
   default     = "20Gi"
 }
 
+variable "gitlab_runner_authentication_token" {
+  description = "The authentication token for the gitlab runner. Refer https://git.math.duke.edu/gitlab/help/ci/runners/new_creation_workflow.md"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "prometheus_alertmanager_domain" {
   description = "The domain name for the alertmanager"
   type        = string
