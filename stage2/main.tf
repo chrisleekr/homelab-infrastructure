@@ -131,9 +131,6 @@ module "logging" {
   kibana_ingress_enable_tls        = var.ingress_enable_tls
   kibana_domain                    = var.kibana_domain
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-
-  # elasticsearch_user     = "elastic"
-  # elasticsearch_password = module.logging.elasticsearch_password
 }
 
 module "kubecost" {
@@ -145,4 +142,14 @@ module "kubecost" {
   kubecost_ingress_host            = var.kubecost_ingress_host
   kubecost_ingress_enable_tls      = var.ingress_enable_tls
   kubecost_ingress_class_name      = var.kubecost_ingress_class_name
+}
+
+module "vpn" {
+  depends_on = [module.kubernetes]
+  source     = "./vpn"
+
+  tailscale_enable           = var.tailscale_enable
+  tailscale_auth_key         = var.tailscale_auth_key
+  tailscale_advertise_routes = var.tailscale_advertise_routes
+  tailscale_hostname         = var.tailscale_hostname
 }
