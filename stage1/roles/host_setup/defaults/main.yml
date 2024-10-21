@@ -12,6 +12,13 @@ host_setup_install_packages:
   - jq
 # Finish: install packages
 
+# Start: ufw
+host_setup_ufw_rules:
+  - rule: limit
+    port: "{{ lookup('env', 'wireguard_port') or 51820 }}"
+    proto: udp
+# Finish: ufw
+
 # Start: fail2ban
 host_setup_fail2ban_dependencies:
   - fail2ban

@@ -21,6 +21,8 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
   - Prometheus
   - Elasticsearch/Kibana/Filebeat (Elastic Cloud on Kubernetes)
   - Kubecost (<https://www.kubecost.com/>)
+  - Tailscale (<https://tailscale.com/>)
+  - Wireguard
 
 The docker image contains the following tools:
 

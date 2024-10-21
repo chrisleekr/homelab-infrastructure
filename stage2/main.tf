@@ -13,6 +13,8 @@ module "nginx" {
   nginx_service_loadbalancer_ip = var.nginx_service_loadbalancer_ip
   nginx_client_max_body_size    = var.nginx_client_max_body_size
   nginx_client_body_buffer_size = var.nginx_client_body_buffer_size
+
+  wireguard_port = var.wireguard_port
 }
 
 module "cert_manager_letsencrypt" {
@@ -152,4 +154,10 @@ module "vpn" {
   tailscale_auth_key         = var.tailscale_auth_key
   tailscale_advertise_routes = var.tailscale_advertise_routes
   tailscale_hostname         = var.tailscale_hostname
+
+  wireguard_enable       = var.wireguard_enable
+  wireguard_ingress_host = var.wireguard_ingress_host
+  wireguard_timezone     = var.wireguard_timezone
+  wireguard_port         = var.wireguard_port
+  wireguard_peers        = var.wireguard_peers
 }

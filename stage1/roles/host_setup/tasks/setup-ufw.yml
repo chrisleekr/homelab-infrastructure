@@ -32,6 +32,13 @@
     port: '443'
     proto: tcp
 
+- name: Allow defined rules
+  community.general.ufw:
+    rule: '{{ item.rule }}'
+    port: '{{ item.port }}'
+    proto: '{{ item.proto }}'
+  loop: "{{ host_setup_ufw_rules }}"
+
 - name: Allow all access from RFC1918 networks to this host
   community.general.ufw:
     rule: allow
