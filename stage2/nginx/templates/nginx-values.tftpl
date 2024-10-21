@@ -43,3 +43,5 @@ scope:
   enabled: true
 tcp:
   22: "gitlab/gitlab-gitlab-shell:22"
+udp:
+  ${wireguard_port}: "vpn/wireguard:${wireguard_port}"

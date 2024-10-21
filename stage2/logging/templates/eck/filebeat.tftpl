@@ -57,8 +57,8 @@ spec:
     - drop_event:
         when:
           or:
-          - equals:
-              kubernetes.namespace: logging
+          # - equals:
+          #     kubernetes.namespace: logging
           - equals:
               kubernetes.namespace: prometheus
           - contains:
