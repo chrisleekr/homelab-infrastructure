@@ -1,13 +1,8 @@
-resource "kubernetes_namespace" "prometheus_namespace" {
-  metadata {
-    name = "prometheus"
-  }
-}
 
 resource "kubernetes_secret" "frontend_basic_auth" {
   metadata {
     name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace.prometheus_namespace.metadata[0].name
+    namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
   }
 
   data = {
@@ -34,13 +29,13 @@ resource "kubectl_manifest" "prometheus_rules" {
   for_each = { for rule in local.prometheus_rules : rule => rule }
 
   depends_on = [
-    kubernetes_namespace.prometheus_namespace
+    kubernetes_namespace.monitoring_namespace
   ]
 
   yaml_body = templatefile(
     "${path.module}/prometheus-rules/${each.value}",
     {
-      namespace = kubernetes_namespace.prometheus_namespace.metadata[0].name
+      namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
     }
   )
 }
@@ -49,7 +44,7 @@ resource "kubectl_manifest" "prometheus_rules" {
 
 resource "helm_release" "prometheus_operator" {
   depends_on = [
-    kubernetes_namespace.prometheus_namespace,
+    kubernetes_namespace.monitoring_namespace,
     kubernetes_secret.frontend_basic_auth,
     random_password.grafana_admin_password,
     kubectl_manifest.prometheus_rules
@@ -59,7 +54,7 @@ resource "helm_release" "prometheus_operator" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
   version    = "61.3.2"
-  namespace  = "prometheus"
+  namespace  = kubernetes_namespace.monitoring_namespace.metadata[0].name
   timeout    = 360
   wait       = true
 
