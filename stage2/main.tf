@@ -93,8 +93,26 @@ module "gitlab_platform" {
 }
 
 
-module "monitoring" {
+module "logging" {
   depends_on = [module.cert_manager_letsencrypt]
+  source     = "./logging"
+
+  elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
+  elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
+  elasticsearch_resource_limit_memory   = var.elasticsearch_resource_limit_memory
+  elasticsearch_resource_limit_cpu      = var.elasticsearch_resource_limit_cpu
+  elasticsearch_storage_size            = var.elasticsearch_storage_size
+  elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
+
+  kibana_resource_request_memory   = var.kibana_resource_request_memory
+  kibana_resource_limit_memory     = var.kibana_resource_limit_memory
+  kibana_ingress_class_name        = var.kibana_ingress_class_name
+  kibana_ingress_enable_tls        = var.ingress_enable_tls
+  kibana_domain                    = var.kibana_domain
+  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
+}
+module "monitoring" {
+  depends_on = [module.cert_manager_letsencrypt, module.logging]
   source     = "./monitoring"
 
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
@@ -114,26 +132,13 @@ module "monitoring" {
   prometheus_minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
   prometheus_minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
+
+  elastalert2_elasticsearch_host     = module.logging.elasticsearch_host
+  elastalert2_elasticsearch_port     = module.logging.elasticsearch_port
+  elastalert2_elasticsearch_username = module.logging.elasticsearch_username
+  elastalert2_elasticsearch_password = module.logging.elasticsearch_password
 }
 
-module "logging" {
-  depends_on = [module.cert_manager_letsencrypt]
-  source     = "./logging"
-
-  elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
-  elasticsearch_resource_request_cpu    = var.elasticsearch_resource_request_cpu
-  elasticsearch_resource_limit_memory   = var.elasticsearch_resource_limit_memory
-  elasticsearch_resource_limit_cpu      = var.elasticsearch_resource_limit_cpu
-  elasticsearch_storage_size            = var.elasticsearch_storage_size
-  elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
-
-  kibana_resource_request_memory   = var.kibana_resource_request_memory
-  kibana_resource_limit_memory     = var.kibana_resource_limit_memory
-  kibana_ingress_class_name        = var.kibana_ingress_class_name
-  kibana_ingress_enable_tls        = var.ingress_enable_tls
-  kibana_domain                    = var.kibana_domain
-  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-}
 
 module "kubecost" {
   depends_on = [module.cert_manager_letsencrypt]

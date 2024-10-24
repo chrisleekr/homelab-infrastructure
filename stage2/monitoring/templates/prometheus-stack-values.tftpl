@@ -52,6 +52,9 @@ alertmanager:
           severity: critical
       - receiver: 'default-receiver'
         match:
+          severity: error
+      - receiver: 'default-receiver'
+        match:
           severity: warning
       - receiver: 'default-receiver'
         match:

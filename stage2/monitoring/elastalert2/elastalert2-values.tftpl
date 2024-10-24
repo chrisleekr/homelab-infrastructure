@@ -1,0 +1,390 @@
+# https://github.com/jertel/elastalert2/blob/master/chart/elastalert2/values.yaml
+
+appKubernetesIoComponent: elastalert2
+
+# Folder where Helm can find local rules prior to deployment to the k8s cluster. By default,
+# 'rules' folder must be located in the root of the chart directory. Note that this setting
+# will override the rules and secretRulesName values. Again, these rules are only read
+# during the time of the chart deployment (installation) into the cluster.
+# rootRulesFolder: "rules"
+# enabledRules: ["deadman_slack", "deadman_pagerduty"]
+
+# number of replicas to run
+replicaCount: 1
+
+# number of helm release revisions to retain
+revisionHistoryLimit: 5
+
+# number of seconds for which a newly created Pod should be ready without any of its containers crashing, for it to be considered available.
+minReadySeconds: 5
+
+# Default internal between alert checks against the elasticsearch datasource, in minutes
+runIntervalMins: 1
+
+# Location of directory where rules reside
+rulesFolder: "/opt/elastalert/rules"
+
+# Enable/disable subdirectory scanning for rules
+scanSubdirectories: true
+
+# Default rule buffer duration, in minutes
+bufferTimeMins: 15
+
+# Amount of time to retry and deliver failed alerts (1440 minutes per day)
+alertRetryLimitMins: 2880
+
+# Default time before realerting, in minutes
+realertIntervalMins: ""
+
+# For ES 5: The name of the index which stores elastalert 2 statuses, typically elastalert_status
+# For ES 6: The prefix of the names of indices which store elastalert 2 statuses, typically elastalert
+#
+writebackIndex: elastalert
+
+image:
+  # docker image
+  repository: jertel/elastalert2
+  # docker image tag
+  # tag: 2.20.0
+  pullPolicy: IfNotPresent
+  pullSecret: ""
+
+resources: {}
+
+# Annotations to be added to deployment
+deploymentAnnotations: {}
+
+# Annotations to be added to pods
+podAnnotations: {}
+
+# Optional env variables for the pod
+optEnv:
+  - name: ES_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: ${elasticsearch_credentials_secret}
+        key: username
+  - name: ES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: ${elasticsearch_credentials_secret}
+        key: password
+
+## Specify optional additional containers to run alongside the Elastalert2 container.
+extraContainers:
+  - name: heartbeat
+    image: alpine:latest
+    imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 25m
+        memory: 32Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
+    command:
+      - /bin/sh
+      - -c
+      - >
+        while true; do
+          # Do something like calling the heartbeat API
+          echo "I'm alive"
+          sleep 60
+        done
+
+
+## Specify optional additional initContainers to run prior to the Elastalert2 container.
+extraInitContainers: []
+
+extraConfigOptions:
+  # # Options to propagate to all rules, e.g. a common slack_webhook_url or kibana_url
+  # # Please note at the time of implementing this value, it will not work for required_locals
+  # # Which MUST be set at the rule level, these are: ['alert', 'type', 'name', 'index']
+  # kibana_url: https://kibana.yourdomain.com
+  # slack_webhook_url: dummy
+
+# To load ElastAlert 2 config via secret, uncomment the line below
+secretConfigName: ${secret_config_name}
+
+
+
+# To load ElastAlert's rules via secret, uncomment the line below
+#secretRulesName: elastalert-rules-secret
+
+# Additionally, you must specificy which rules to load from the secret
+#secretRulesList: [ "rule_1", "rule_2" ]
+
+# Example of secret rules
+
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: elastalert-rules-secret
+#  namespace: elastic-system
+#type: Opaque
+#stringData:
+#   rule_1: |-
+#     name: Rule 1
+#     type: frequency
+#     index: index1-*
+#     num_events: 3
+#     timeframe:
+#       minutes: 1
+#     alert:
+#     - "slack"
+#   rule_2: |-
+#     name: Rule 2
+#     type: frequency
+#     index: index2-*
+#     num_events: 5
+#     timeframe:
+#       minutes: 10
+#     alert:
+#     - "slack"
+
+# Command and args override for container e.g. (https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/)
+# command: ["YOUR_CUSTOM_COMMAND"]
+# args: ["YOUR", "CUSTOM", "ARGS"]
+
+# specifies the rules volume to be used
+rulesVolumeName: "rules"
+
+# additional rule configurations e.g. (http://elastalert2.readthedocs.io/en/latest/)
+rules:
+  filebeat_no_logs: |-
+    ---
+    name: Filebeat No Logs for 5 minutes
+    type: flatline
+    threshold: 1 # Minimum number of events to trigger an alert
+    index: filebeat-*
+    timeframe:
+      minutes: 5
+    alert:
+    - "alertmanager"
+    doc_type: _doc
+  # deadman_slack: |-
+  #   ---
+  #   name: Deadman Switch Slack
+  #   type: frequency
+  #   index: containers-*
+  #   num_events: 3
+  #   timeframe:
+  #     minutes: 3
+  #   filter:
+  #   - term:
+  #       message: "deadmanslack"
+  #   alert:
+  #   - "slack"
+  #   slack:
+  #   slack_webhook_url: dummy
+  # deadman_pagerduty: |-
+  #   ---
+  #   name: Deadman Switch PagerDuty
+  #   type: frequency
+  #   index: containers-*
+  #   num_events: 3
+  #   timeframe:
+  #     minutes: 3
+  #   filter:
+  #   - term:
+  #       message: "deadmanpd"
+  #   alert:
+  #   - "pagerduty"
+  #   pagerduty:
+  #   pagerduty_service_key: dummy
+  #   pagerduty_client_name: ElastAlert Deadman Switch
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+# Enable pod security policy
+# https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+# DEPRECATED in Kubernetes 1.21 (https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/)
+podSecurityPolicy:
+  create: false
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# Support using node selectors and tolerations
+# nodeSelector:
+#   "node-role.kubernetes.io/infra_worker": "true"
+nodeSelector: {}
+
+# Specify node affinity or anti-affinity specifications
+affinity: {}
+
+# tolerations:
+#   - key: "node_role"
+#     operator: "Equal"
+#     value: "infra_worker"
+#     effect: "NoSchedule"
+tolerations: []
+
+# Optional automatic SMTP mail server credential management.
+# smtp_auth:
+#   username: ""
+#   password: ""
+
+extraVolumes: []
+  # - name: smtp-auth
+  #   secret:
+  #     secretName: elastalert-smtp-auth
+  #     items:
+  #       - key: smtp_auth.yaml
+  #         path: smtp_auth.yaml
+  #         mode: 0400
+
+extraVolumeMounts: []
+  # - name: smtp-auth
+  #   mountPath: /opt/elastalert/config-smtp/smtp_auth.yaml
+  #   subPath: smtp_auth.yaml
+  #   readOnly: true
+
+
+## @section Metrics parameters
+
+## Prometheus metrics
+##
+metrics:
+  ## @param metrics.enabled Enable the export of Prometheus metrics
+  ##
+  enabled: true
+  prometheusPort: 8080
+  prometheusPortName: http-alt
+  # Prometheus Exporter defined by port:
+  prometheusScrapeAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/"
+
+  service:
+    type: ClusterIP
+    # clusterIP: ""
+    # externalTrafficPolicy: Cluster
+    # loadBalancerIP: ""
+    # loadBalancerSourceRanges: {}
+    # nodePorts: ""
+
+  ## Prometheus Operator ServiceMonitor configuration
+  ##
+  serviceMonitor:
+    ## @param metrics.serviceMonitor.enabled Specify if a ServiceMonitor will be deployed for Prometheus Operator
+    ##
+    enabled: true
+
+    ## @param metrics.serviceMonitor.namespace Namespace in which Prometheus is running
+    ##
+    namespace: "${prometheus_namespace}"
+
+    ## @param metrics.serviceMonitor.labels Extra labels for the ServiceMonitor
+    ## Normally used for prometheus operator to detect the servicemonitor if deployed to different namespace
+    ## labels:
+    ##   release: prometheus-operator
+    labels: {}
+
+    ## @param metrics.serviceMonitor.jobLabel The name of the label on the target service to use as the job name in Prometheus
+    ##
+    jobLabel: ""
+
+    ## @param metrics.serviceMonitor.interval How frequently to scrape metrics
+    ## e.g:
+    ## interval: 10s
+    ##
+    interval: ""
+    ## @param metrics.serviceMonitor.scrapeTimeout Timeout after which the scrape is ended
+    ## e.g:
+    ## scrapeTimeout: 10s
+    ##
+    scrapeTimeout: ""
+    ## @param metrics.serviceMonitor.metricRelabelings [array] Specify additional relabeling of metrics
+    ## metricRelabelings:
+    ##   # Drop GO metrics
+    ##   - sourceLabels: [__name__]
+    ##     regex: go_.*
+    ##     action: drop
+    ##   # Drop python_gc metrics
+    ##   - sourceLabels: [__name__]
+    ##     regex: python_gc.*
+    ##     action: drop
+    ##   # Normalise POD names
+    ##   - sourceLabels: [pod]
+    ##     regex: (.+elastalert2)\-([\w\d]+)\-([\w\d]+)
+    ##     replacement: $1
+    ##     targetLabel: pod
+    metricRelabelings: []
+
+    ## @param metrics.serviceMonitor.relabelings [array] Specify general relabeling
+    ##
+    relabelings: []
+    ## @param metrics.serviceMonitor.selector Prometheus instance selector labels
+    ## ref: https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-configuration
+    ##
+    selector: {}
+
+  ## PrometheusRule CRD configuration
+  ##
+  prometheusRule:
+    ## @param metrics.prometheusRule.enabled If `true`, creates a Prometheus Operator PrometheusRule (also requires `metrics.enabled` to be `true`)
+    ##
+    enabled: true
+    ## @param metrics.prometheusRule.namespace Namespace in which the PrometheusRule CRD is created
+    ##
+    namespace: "${prometheus_namespace}"
+
+    ## @param metrics.prometheusRule.additionalLabels Additional labels for the prometheusRule
+    ## to be detected by prometheus-operator
+    ## additionalLabels:
+    ##   release: prometheus-operator
+    additionalLabels: {}
+
+    ## @param metrics.prometheusRule.rules Prometheus Rules for ElastAlert 2.
+    ## These are just examples rules, please adapt them to your needs.
+    rules: |-
+        groups:
+          - name: elastalert
+            rules:
+              - alert: elastalert Pod down
+                annotations:
+                  description: Prometheus is unable to scrape metrics service. Check pod logs for details
+                  summary: elastalert POD is down
+                expr: up{service="{{ template "common.names.servicename" . }}",container="elastalert"} == 0
+                for: 5m
+                labels:
+                  severity: critical
+                  production: 'True'
+              - alert: elastalert file descriptors use
+                annotations:
+                  description: Elastalert pod nearly exhausting file descriptors
+                  summary: too many file descriptors used
+                expr: |-
+                    process_open_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+                    /
+                    process_max_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+                    > 0.9
+                for: 3m
+                labels:
+                  severity: critical
+                  production: 'True'
+              - alert: elastalert scrapes failing
+                annotations:
+                  description: Elastalert is not scraping for a rule {{ "{{" }} $labels.rule_name  {{ "}}" }}
+                  summary: scrapes for rule stalled {{ "{{" }} $labels.rule_name {{ "}}" }}
+                expr: |-
+                    rate(elastalert_scrapes_total{service="{{ template "common.names.servicename" . }}",container="elastalert"}[1m]) == 0
+                for: 5m
+                labels:
+                  severity: critical
+                  production: 'True'
+    # rules: []
