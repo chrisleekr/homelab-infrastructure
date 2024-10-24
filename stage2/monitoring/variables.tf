@@ -86,3 +86,26 @@ variable "prometheus_minio_job_resource_bearer_token" {
   type        = string
   sensitive   = true
 }
+
+# ElastAlert2
+
+variable "elastalert2_elasticsearch_host" {
+  description = "The host for the elastalert2"
+  type        = string
+}
+
+variable "elastalert2_elasticsearch_port" {
+  description = "The port for the elastalert2"
+  type        = number
+}
+
+variable "elastalert2_elasticsearch_username" {
+  description = "The username for the elastalert2"
+  type        = string
+}
+
+variable "elastalert2_elasticsearch_password" {
+  description = "The password for the elastalert2"
+  type        = string
+  sensitive   = true
+}

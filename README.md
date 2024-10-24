@@ -20,6 +20,7 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
   - Gitlab
   - Prometheus
   - Elasticsearch/Kibana/Filebeat (Elastic Cloud on Kubernetes)
+  - ElastAlert2
   - Kubecost (<https://www.kubecost.com/>)
   - Tailscale (<https://tailscale.com/>)
   - Wireguard
