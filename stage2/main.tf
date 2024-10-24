@@ -93,9 +93,9 @@ module "gitlab_platform" {
 }
 
 
-module "prometheus_stack" {
+module "monitoring" {
   depends_on = [module.cert_manager_letsencrypt]
-  source     = "./prometheus-stack"
+  source     = "./monitoring"
 
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
   prometheus_alertmanager_domain   = var.prometheus_alertmanager_domain

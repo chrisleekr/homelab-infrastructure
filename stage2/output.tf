@@ -20,7 +20,7 @@ output "gitlab_shell_host_keys" {
 }
 
 output "grafana_admin_password" {
-  value     = module.prometheus_stack.grafana_admin_password
+  value     = module.monitoring.grafana_admin_password
   sensitive = true
 }
 
