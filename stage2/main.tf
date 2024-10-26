@@ -166,3 +166,16 @@ module "vpn" {
   wireguard_port         = var.wireguard_port
   wireguard_peers        = var.wireguard_peers
 }
+
+module "argocd" {
+  depends_on = [module.gitlab_platform]
+  source     = "./argocd"
+
+  prometheus_namespace             = module.monitoring.monitoring_namespace
+  global_ingress_enable_tls        = var.ingress_enable_tls
+  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
+
+  argocd_domain                 = var.argocd_domain
+  argocd_ingress_class_name     = var.argocd_ingress_class_name
+  argocd_ssh_known_hosts_base64 = var.argocd_ssh_known_hosts_base64
+}

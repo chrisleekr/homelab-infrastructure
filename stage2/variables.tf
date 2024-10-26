@@ -439,3 +439,21 @@ variable "wireguard_peers" {
   type        = string
   default     = 3
 }
+
+variable "argocd_domain" {
+  description = "The domain name for the argocd"
+  type        = string
+  default     = "argocd.chrislee.local"
+}
+
+variable "argocd_ingress_class_name" {
+  description = "The ingress class name for the argocd"
+  type        = string
+  default     = "nginx"
+}
+
+variable "argocd_ssh_known_hosts_base64" {
+  description = "SSH known hosts for Git repositories - base64 encoded"
+  type        = string
+  default     = ""
+}

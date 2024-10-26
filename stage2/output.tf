@@ -28,3 +28,8 @@ output "elasticsearch_password" {
   value     = module.logging.elasticsearch_password
   sensitive = true
 }
+
+output "argocd_initial_admin_password" {
+  value     = module.argocd.argocd_initial_admin_password
+  sensitive = true
+}
