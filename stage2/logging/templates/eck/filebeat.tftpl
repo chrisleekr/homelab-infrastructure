@@ -5,7 +5,7 @@ metadata:
   namespace: ${namespace}
 spec:
   type: filebeat
-  version: 8.15.1
+  version: 8.15.3
   elasticsearchRef:
     name: elasticsearch
   kibanaRef:
@@ -86,6 +86,15 @@ spec:
         enabled: true
         overwrite: true
         policy_file: /usr/share/filebeat/ilm/policy.json
+    output.elasticsearch:
+      # worker: 5
+      preset: latency # https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html#_preset
+      # bulk_max_size: 1000
+    # queue.disk: # https://www.elastic.co/guide/en/beats/filebeat/current/configuring-internal-queue.html
+    #   events: 4096
+    #   max_size: 10GB
+    #   flush.min_events: 512
+    #   flush.timeout: 5s
   daemonSet:
     podTemplate:
       spec:

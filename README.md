@@ -18,12 +18,13 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
   - Longhorn
   - Minio
   - Gitlab
-  - Prometheus
+  - Prometheus/Grafana/AlertManager
   - Elasticsearch/Kibana/Filebeat (Elastic Cloud on Kubernetes)
   - ElastAlert2
   - Kubecost (<https://www.kubecost.com/>)
   - Tailscale (<https://tailscale.com/>)
   - Wireguard
+  - ArgoCD
 
 The docker image contains the following tools:
 
