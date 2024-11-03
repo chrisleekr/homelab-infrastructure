@@ -34,3 +34,21 @@ variable "argocd_ssh_known_hosts_base64" {
   type        = string
   default     = ""
 }
+
+variable "argocd_config_repositories" {
+  description = "The repositories for the argocd"
+  type = list(object({
+    name = string
+    type = string
+    url  = string
+    usernameSecret = object({
+      key  = string
+      name = string
+    })
+    passwordSecret = object({
+      key  = string
+      name = string
+    })
+  }))
+  default = []
+}
