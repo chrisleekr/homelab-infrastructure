@@ -478,7 +478,27 @@ configs:
   # -- Repositories list to be used by applications
   ## Creates a secret for each key/value specified below to create repositories
   ## Note: the last example in the list would use a repository credential template, configured under "configs.credentialTemplates".
+  %{ if length(argocd_config_repositories) > 0 }
+  repositories:
+    %{ for repo in argocd_config_repositories ~}
+      ${repo.name}:
+        url: ${repo.url}
+        name: ${repo.name}
+        type: ${repo.type}
+        %{ if repo.usernameSecret ~}
+        usernameSecret:
+          key: ${repo.usernameSecret.key}
+          name: ${repo.usernameSecret.name}
+        %{ endif ~}
+        %{ if repo.passwordSecret ~}
+        passwordSecret:
+          key: ${repo.passwordSecret.key}
+          name: ${repo.passwordSecret.name}
+        %{ endif ~}
+    %{ endfor ~}
+  %{ else }
   repositories: {}
+  %{ endif }
     # istio-helm-repo:
     #   url: https://storage.googleapis.com/istio-prerelease/daily-build/master-latest-daily/charts
     #   name: istio.io

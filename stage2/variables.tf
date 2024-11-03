@@ -457,3 +457,9 @@ variable "argocd_ssh_known_hosts_base64" {
   type        = string
   default     = ""
 }
+
+variable "argocd_config_repositories_json_encoded" {
+  description = "The repositories for the argocd - json encoded"
+  type        = string
+  default     = "[]"
+}
