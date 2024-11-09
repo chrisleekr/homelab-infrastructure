@@ -196,6 +196,20 @@ configs:
     ## Ref: https://argo-cd.readthedocs.io/en/stable/user-guide/status-badge/
     statusbadge.enabled: false
 
+    resource.exclusions: |
+      - apiGroups:
+        - repositories.stash.appscode.com
+        kinds:
+        - Snapshot
+        clusters:
+        - "*.local"
+      - apiGroups:
+        - cilium.io
+        kinds:
+        - CiliumIdentity
+        clusters:
+        - "*"
+
     # Extension Configuration
     ## Ref: https://argo-cd.readthedocs.io/en/latest/developer-guide/extensions/proxy-extensions/
     # extension.config: |

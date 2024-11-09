@@ -236,6 +236,18 @@ variable "gitlab_runner_authentication_token" {
   sensitive   = true
 }
 
+variable "gitlab_minio_host" {
+  description = "The hostname of the minio"
+  type        = string
+  default     = "minio.chrislee.local"
+}
+
+variable "gitlab_minio_endpoint" {
+  description = "The endpoint of the minio"
+  type        = string
+  default     = "https://minio.chrislee.local"
+}
+
 variable "prometheus_alertmanager_domain" {
   description = "The domain name for the alertmanager"
   type        = string
