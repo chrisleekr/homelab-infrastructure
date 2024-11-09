@@ -3,17 +3,17 @@ global:
   # zone: cluster.local (use only if your DNS server doesn't live in the same zone as kubecost)
   prometheus:
     enabled: false  # Kubecost depends on Prometheus data, it is not optional. When enabled: false, Prometheus will not be installed and you must configure your own Prometheus to scrape kubecost as well as provide the fqdn below. -- Warning: Before changing this setting, please read to understand the risks https://docs.kubecost.com/install-and-configure/install/custom-prom
-    fqdn: http://kube-prometheus-stack-prometheus.prometheus.svc.cluster.local:9090  # example address of a prometheus to connect to. Include protocol (http:// or https://) Ignored if enabled: true
+    fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090  # example address of a prometheus to connect to. Include protocol (http:// or https://) Ignored if enabled: true
     # insecureSkipVerify: false  # If true, kubecost will not check the TLS cert of prometheus
     # queryServiceBasicAuthSecretName: dbsecret # kubectl create secret generic dbsecret -n kubecost --from-file=USERNAME --from-file=PASSWORD
     # queryServiceBearerTokenSecretName: mcdbsecret  # kubectl create secret generic mcdbsecret -n kubecost --from-file=TOKEN
 
   grafana:
     enabled: false  # If false, Grafana will not be installed
-    domainName: kube-prometheus-stack-grafana.prometheus.svc.cluster.local  # example grafana domain Ignored if enabled: true
+    domainName: kube-prometheus-stack-grafana.monitoring.svc.cluster.local  # example grafana domain Ignored if enabled: true
     scheme: "http"  # http or https, for the domain name above.
     proxy: true  # If true, the kubecost frontend will route to your grafana through its service endpoint
-    fqdn: kube-prometheus-stack-grafana.prometheus.svc.cluster.local
+    fqdn: kube-prometheus-stack-grafana.monitoring.svc.cluster.local
 
   ## Kubecost Alerting
   ## Ref: http://docs.kubecost.com/alerts
@@ -71,7 +71,7 @@ global:
 
     alertmanager:  # Supply an alertmanager FQDN to receive notifications from the app.
       enabled: false  # If true, allow kubecost to write to your alertmanager
-      fqdn: http://alertmanager-operated.prometheus.svc.cluster.local  # example fqdn. Ignored if prometheus.enabled: true
+      fqdn: http://alertmanager-operated.monitoring.svc.cluster.local  # example fqdn. Ignored if prometheus.enabled: true
 
   ## Kubecost Saved Reports
   ## Ref: http://docs.kubecost.com/saved-reports
