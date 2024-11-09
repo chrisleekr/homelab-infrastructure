@@ -14,40 +14,39 @@ spec:
     filebeat.autodiscover.providers:
     - node: ${"$"}{NODE_NAME} # Escape the dollar sign for Terraform template
       type: kubernetes
-      hints.default_config.enabled: "false"
+      hints.enabled: true
+      hints.default_config:
+        type: container
+        paths:
+          - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log  # CRI path
       templates:
       - condition:
           equals:
             kubernetes.namespace: nginx
         config:
-          - module: nginx
-            ingress_controller:
-              enabled: true
-              input:
-                type: container
-                paths:
-                  - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
-          - input:
-              type: tcp
-          - dissect:
-              tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
-              field: "message"
-              target_prefix: "nginx.ingress"
-            # access:
-            #   enabled: true
-            #   input:
-            #     type: container
-            #     paths:
-            #       - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
-            #     stream: stdout
-            # error:
-            #   enabled: true
-            #   input:
-            #     type: container
-            #     paths:
-            #       - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
-            #     stream: stderr
-      - config:
+        - type: container
+          paths:
+            - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
+          processors:
+            - dissect:
+                tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
+                field: "message"
+                target_prefix: "nginx.ingress"
+          # - module: nginx
+          #   ingress_controller:
+          #     enabled: true
+          #     input:
+          #       type: container
+          #       paths:
+          #         - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
+          # - input:
+          #     type: tcp
+          # - dissect:
+          #     tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
+          #     field: "message"
+          #     target_prefix: "nginx.ingress"
+      - condition: ~ # This is for all other containers
+        config:
         - type: container
           exclude_files:
             - '^/var/log/containers/nginx-' # Exclude nginx logs as they are already processed by the nginx module
@@ -63,6 +62,12 @@ spec:
               kubernetes.namespace: prometheus
           - contains:
               message: "kube-probe"
+    # - decode_json_fields:
+    #     fields: ["message"]
+    #     target: ""
+    #     overwrite_keys: true
+    #     process_array: false
+    #     expand_keys: true
     # - add_cloud_metadata: {} # It's not in cloud, so no need to add cloud metadata
     # - add_host_metadata: {} # It's single node cluster, so no need to add host metadata
     - add_kubernetes_metadata:
@@ -71,13 +76,6 @@ spec:
         matchers:
         - logs_path:
             logs_path: /var/log/containers/
-    - decode_json_fields:
-        when.regexp.message: '^{'
-        fields: ["message"]
-        target: ""
-        overwrite_keys: true
-        process_array: true
-        expand_keys: false
     logging.level: info
     setup:
       dashboards:
@@ -87,10 +85,17 @@ spec:
         overwrite: true
         policy_file: /usr/share/filebeat/ilm/policy.json
     output.elasticsearch:
-      # worker: 5
-      preset: latency # https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html#_preset
+      preset: custom
+      worker: 2 # Increased from 1 to 2 for better parallelism
+      bulk_max_size: 50 # Increased from 20 to 50 for better batch processing
+      queue.mem.events: 2000 # Increased from 1000 to 2000
+      queue.mem.flush.min_events: 1000 # Increased from 512 to 1000
+      queue.mem.flush.timeout: 5s # Increased from 1s to 5s to allow more batching
+      compression_level: 3 # Changed from 1 to 3 for better compression
+      idle_connection_timeout: 60s
+      # preset: latency # https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html#_preset
       # bulk_max_size: 1000
-    # queue.disk: # https://www.elastic.co/guide/en/beats/filebeat/current/configuring-internal-queue.html
+      # queue.disk: # https://www.elastic.co/guide/en/beats/filebeat/current/configuring-internal-queue.html
     #   events: 4096
     #   max_size: 10GB
     #   flush.min_events: 512
