@@ -334,7 +334,7 @@ variable "elasticsearch_resource_request_cpu" {
 variable "elasticsearch_resource_limit_memory" {
   description = "Memory limit for Elasticsearch"
   type        = string
-  default     = "4Gi"
+  default     = "3Gi"
 }
 
 variable "elasticsearch_resource_limit_cpu" {

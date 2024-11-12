@@ -25,7 +25,7 @@ RUN set -eux; \
   \
   apk add --no-cache \
   ca-certificates=20240705-r0 \
-  curl=8.10.1-r0 \
+  curl=8.11.0-r2 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
   bind-tools=9.18.27-r0	\
