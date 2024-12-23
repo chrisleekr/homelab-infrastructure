@@ -32,6 +32,7 @@
     "letsencrypt",
     "lineinfile",
     "metallb",
+    "metricbeat",
     "minio",
     "minitunnel",
     "multipathd",
@@ -42,6 +43,7 @@
     "proto",
     "redistributable",
     "runc",
+    "templatefile",
     "tflint",
     "traefik",
     "trivy"

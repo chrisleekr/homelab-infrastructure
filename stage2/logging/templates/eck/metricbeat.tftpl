@@ -1,0 +1,65 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: metricbeat
+  namespace: ${namespace}
+spec:
+  type: metricbeat
+  version: 8.15.3
+  elasticsearchRef:
+    name: elasticsearch
+  config:
+    metricbeat:
+      modules:
+        - module: elasticsearch
+          metricsets:
+            - ccr
+            - cluster_stats
+            - index
+            - index_recovery
+            - index_summary
+            - ml_job
+            - node_stats
+            - shard
+          period: 10s
+          hosts: ["http://elasticsearch-es-http:9200"]
+          username: elastic
+          password: ${elasticsearch_password}
+        - module: kubernetes
+          metricsets:
+            - container
+            - node
+            - pod
+            - system
+            - volume
+          period: 10s
+          host: "${node_name}"
+          hosts: ["https://${node_name}:10250"]
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          ssl.verification_mode: "none"
+    processors:
+      - add_cloud_metadata: {}
+      - add_host_metadata: {}
+  deployment:
+    replicas: 1
+    podTemplate:
+      spec:
+        serviceAccount: metricbeat
+        automountServiceAccountToken: true
+        securityContext:
+          runAsUser: 0
+        containers:
+        - name: metricbeat
+          resources:
+            requests:
+              memory: 100Mi
+              cpu: 100m
+            limits:
+              memory: 200Mi
+              cpu: 200m
+          volumeMounts:
+            - name: metricbeat-data
+              mountPath: /usr/share/metricbeat/data
+        volumes:
+          - name: metricbeat-data
+            emptyDir: {}
