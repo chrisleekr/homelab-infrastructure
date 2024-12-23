@@ -233,3 +233,83 @@ resource "kubectl_manifest" "filebeat" {
     }
   )
 }
+
+resource "kubernetes_manifest" "metricbeat_service_account" {
+  manifest = {
+    "apiVersion" = "v1"
+    "kind"       = "ServiceAccount"
+    "metadata" = {
+      "name"      = "metricbeat"
+      "namespace" = kubernetes_namespace.logging.metadata[0].name
+    }
+  }
+}
+
+resource "kubernetes_manifest" "metricbeat_cluster_role" {
+  manifest = {
+    "apiVersion" = "rbac.authorization.k8s.io/v1"
+    "kind"       = "ClusterRole"
+    "metadata" = {
+      "name" = "metricbeat"
+    }
+    "rules" = [
+      {
+        "apiGroups" = [""]
+        "resources" = ["nodes", "namespaces", "events", "pods"]
+        "verbs"     = ["get", "list", "watch"]
+      },
+      {
+        "apiGroups" = ["extensions"]
+        "resources" = ["replicasets"]
+        "verbs"     = ["get", "list", "watch"]
+      },
+      {
+        "apiGroups" = ["apps"]
+        "resources" = ["statefulsets", "deployments", "replicasets"]
+        "verbs"     = ["get", "list", "watch"]
+      },
+      {
+        "apiGroups" = [""]
+        "resources" = ["nodes/stats"]
+        "verbs"     = ["get"]
+      }
+    ]
+  }
+}
+
+resource "kubernetes_manifest" "metricbeat_cluster_role_binding" {
+  manifest = {
+    "apiVersion" = "rbac.authorization.k8s.io/v1"
+    "kind"       = "ClusterRoleBinding"
+    "metadata" = {
+      "name" = "metricbeat"
+    }
+    "subjects" = [
+      {
+        "kind"      = "ServiceAccount"
+        "name"      = "metricbeat"
+        "namespace" = kubernetes_namespace.logging.metadata[0].name
+      }
+    ]
+    "roleRef" = {
+      "kind"     = "ClusterRole"
+      "name"     = "metricbeat"
+      "apiGroup" = "rbac.authorization.k8s.io"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "metricbeat" {
+  depends_on = [
+    kubectl_manifest.elasticsearch,
+    kubernetes_manifest.metricbeat_service_account,
+    kubernetes_manifest.metricbeat_cluster_role,
+    kubernetes_manifest.metricbeat_cluster_role_binding
+  ]
+
+  manifest = yamldecode(templatefile("${path.module}/templates/eck/metricbeat.tftpl", {
+    namespace              = kubernetes_namespace.logging.metadata[0].name
+    elasticsearch_password = random_password.elastic_password.result
+    node_name              = "kubernetes.default.svc"
+  }))
+}
