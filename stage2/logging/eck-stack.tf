@@ -54,20 +54,21 @@ resource "null_resource" "elasticsearch_ready" {
   }
 }
 
-resource "kubernetes_config_map" "filebeat_ilm" {
-  depends_on = [
-    kubectl_manifest.elasticsearch
-  ]
+# Comment out because ilm will be created by post setup.
+# resource "kubernetes_config_map" "filebeat_ilm" {
+#   depends_on = [
+#     kubectl_manifest.elasticsearch
+#   ]
 
-  metadata {
-    name      = "filebeat-ilm"
-    namespace = kubernetes_namespace.logging.metadata[0].name
-  }
+#   metadata {
+#     name      = "filebeat-ilm"
+#     namespace = kubernetes_namespace.logging.metadata[0].name
+#   }
 
-  data = {
-    "policy.json" = file("${path.module}/templates/eck/filebeat-ilm-policy.json")
-  }
-}
+#   data = {
+#     "policy.json" = file("${path.module}/templates/eck/filebeat-ilm-policy.json")
+#   }
+# }
 
 
 resource "kubectl_manifest" "kibana" {
@@ -221,9 +222,10 @@ resource "kubernetes_manifest" "filebeat_cluster_role_binding" {
 resource "kubectl_manifest" "filebeat" {
   depends_on = [
     kubectl_manifest.elasticsearch,
+    kubernetes_job.elasticsearch_post_setup,
     kubernetes_manifest.filebeat_cluster_role,
     kubernetes_manifest.filebeat_service_account,
-    kubernetes_manifest.filebeat_cluster_role_binding
+    kubernetes_manifest.filebeat_cluster_role_binding,
   ]
 
   yaml_body = templatefile(
@@ -299,7 +301,7 @@ resource "kubernetes_manifest" "metricbeat_cluster_role_binding" {
   }
 }
 
-resource "kubernetes_manifest" "metricbeat" {
+resource "kubectl_manifest" "metricbeat" {
   depends_on = [
     kubectl_manifest.elasticsearch,
     kubernetes_manifest.metricbeat_service_account,
@@ -307,9 +309,12 @@ resource "kubernetes_manifest" "metricbeat" {
     kubernetes_manifest.metricbeat_cluster_role_binding
   ]
 
-  manifest = yamldecode(templatefile("${path.module}/templates/eck/metricbeat.tftpl", {
-    namespace              = kubernetes_namespace.logging.metadata[0].name
-    elasticsearch_password = random_password.elastic_password.result
-    node_name              = "kubernetes.default.svc"
-  }))
+  yaml_body = templatefile(
+    "${path.module}/templates/eck/metricbeat.tftpl",
+    {
+      namespace              = kubernetes_namespace.logging.metadata[0].name
+      elasticsearch_password = random_password.elastic_password.result
+      node_name              = "kubernetes.default.svc"
+    }
+  )
 }

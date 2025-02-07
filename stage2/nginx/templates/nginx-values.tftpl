@@ -33,6 +33,7 @@ controller:
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "10254"
+    co.elastic.logs/enabled: "true"
   metrics:
     enabled: true
     serviceMonitor:

@@ -771,7 +771,7 @@ gitlab-runner:
             Path = "gitlab-runner"
             Shared = true
             [runners.cache.s3]
-              ServerAddress = "${minio_endpoint}"
+              ServerAddress = "${minio_host}"
               BucketName = "runner-cache"
               BucketLocation = "us-east-1"
               Insecure = false
@@ -780,8 +780,8 @@ gitlab-runner:
           name = "docker-certs"
           mount_path = "/certs/client"
           medium = "Memory"
-  cache:
-    secretName: ${runner_s3_access_secret}
+    cache:
+      secretName: ${runner_s3_access_secret}
   podAnnotations:
     gitlab.com/prometheus_scrape: "true"
     gitlab.com/prometheus_port: 9252
