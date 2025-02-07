@@ -71,7 +71,10 @@ resource "helm_release" "gitlab" {
 
         time_zone = var.gitlab_time_zone
 
-        minio_endpoint = var.gitlab_minio_endpoint
+        minio_host       = var.gitlab_minio_host
+        minio_access_key = var.gitlab_minio_access_key
+        minio_secret_key = var.gitlab_minio_secret_key
+        # minio_endpoint = var.gitlab_minio_endpoint
 
         persistence_storage_class_name = var.gitlab_persistence_storage_class_name
 

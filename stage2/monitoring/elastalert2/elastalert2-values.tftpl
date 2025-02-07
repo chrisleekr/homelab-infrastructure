@@ -61,7 +61,8 @@ resources:
 deploymentAnnotations: {}
 
 # Annotations to be added to pods
-podAnnotations: {}
+podAnnotations:
+  co.elastic.logs/enabled: "true"
 
 # Optional env variables for the pod
 optEnv:

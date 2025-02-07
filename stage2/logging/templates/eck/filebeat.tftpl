@@ -12,13 +12,21 @@ spec:
     name: kibana
   config:
     filebeat.autodiscover.providers:
-    - node: ${"$"}{NODE_NAME} # Escape the dollar sign for Terraform template
+    - node: ${"$"}{NODE_NAME}
       type: kubernetes
       hints.enabled: true
       hints.default_config:
+        enabled: false # Add enabled: false to the hints.default_config section. This makes Filebeat only collect logs from pods that explicitly enable logging via the co.elastic.logs/enabled: "true" annotation.
         type: container
         paths:
-          - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log  # CRI path
+          - /var/log/containers/*${"$"}{data.kubernetes.container.id}.log
+        close_removed: true
+        close_renamed: true
+        close_inactive: 2m
+        clean_removed: true
+        scan_frequency: 30s
+        harvester_buffer_size: 8192
+        max_bytes: 5242880
       templates:
       - condition:
           equals:
@@ -26,66 +34,107 @@ spec:
         config:
         - type: container
           paths:
-            - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
+            - /var/log/containers/nginx-*${"$"}{data.kubernetes.container.id}.log
           processors:
             - dissect:
-                tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
+                tokenizer: "${"%"}{client_ip} - ${"%"}{user} [${"%"}{timestamp}] \"${"%"}{method} ${"%"}{path} ${"%"}{protocol}/${"%"}{?protocol_version}\" ${"%"}{status_code} ${"%"}{size} \"${"%"}{referrer}\" \"${"%"}{agent}\" ${"%"}{request_time} ${"%"}{?upstream_time} [${"%"}{service}] [${"%"}{?trace}] ${"%"}{upstream_addr}:${"%"}{upstream_port} ${"%"}{upstream_size} ${"%"}{?upstream_response_time} ${"%"}{status_code} ${"%"}{request_id}"
                 field: "message"
                 target_prefix: "nginx.ingress"
-          # - module: nginx
-          #   ingress_controller:
-          #     enabled: true
-          #     input:
-          #       type: container
-          #       paths:
-          #         - /var/log/containers/nginx-*-${"$"}{data.kubernetes.container.id}.log
-          # - input:
-          #     type: tcp
-          # - dissect:
-          #     tokenizer: "${"%"}{client_ip} [${"%"}{timestamp}] ${"%"}{protocol} ${"%"}{status} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
-          #     field: "message"
-          #     target_prefix: "nginx.ingress"
-      - condition: ~ # This is for all other containers
+                when:
+                  or:
+                    - contains:
+                        message: "HTTP/1.1"
+                    - contains:
+                        message: "HTTP/2.0"
+            - dissect:
+                tokenizer: "[${"%"}{client_ip}] [${"%"}{timestamp}] TCP ${"%"}{status_code} ${"%"}{size} ${"%"}{request_time} ${"%"}{upstream_response_time}"
+                field: "message"
+                target_prefix: "nginx.ingress"
+                when:
+                  contains:
+                    message: " TCP "
+      - condition:
+          equals:
+            kubernetes.annotations.co.elastic.logs/enabled: "true"
         config:
         - type: container
           exclude_files:
-            - '^/var/log/containers/nginx-' # Exclude nginx logs as they are already processed by the nginx module
+            - '^/var/log/containers/nginx-'
           paths:
             - /var/log/containers/*-${"$"}{data.kubernetes.container.id}.log
+
     processors:
     - drop_event:
         when:
           or:
-          # - equals:
-          #     kubernetes.namespace: logging
+          - equals:
+              kubernetes.namespace: logging
           - equals:
               kubernetes.namespace: prometheus
           - contains:
               message: "kube-probe"
-    # - decode_json_fields:
-    #     fields: ["message"]
-    #     target: ""
-    #     overwrite_keys: true
-    #     process_array: false
-    #     expand_keys: true
-    # - add_cloud_metadata: {} # It's not in cloud, so no need to add cloud metadata
-    # - add_host_metadata: {} # It's single node cluster, so no need to add host metadata
     - add_kubernetes_metadata:
         in_cluster: true
-        default_matchers.enabled: false
         matchers:
         - logs_path:
             logs_path: /var/log/containers/
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 2        # Increased from 1
+        target: "json"
+        overwrite_keys: true
+        when:
+          and:
+            - has_fields: ["message"]
+            - regexp:
+                message: "^[{[].*[}\\]]$"
+
     logging.level: info
     setup:
       dashboards:
         enabled: true
       ilm:
         enabled: true
-        overwrite: true
-        policy_file: /usr/share/filebeat/ilm/policy.json
+        overwrite: false
+        policy_name: "filebeat-custom"
+        # overwrite: true
+        # policy_file: /usr/share/filebeat/ilm/policy.json
+      # https://www.elastic.co/guide/en/beats/filebeat/current/configuration-template.html
+      template:
+        enabled: true
+        # A boolean that specifies whether to overwrite the existing template. The default is false. Do not enable this option if you start more than one instance of Filebeat at the same time. It can overload Elasticsearch by sending too many template update requests.
+        overwrite: false
+        name: "filebeat-custom"
+        pattern: "filebeat-custom"
+        # settings:
+        #   index:
+        #     number_of_shards: 1
+        #     codec: best_compression
+        #     # Add data stream settings
+        #     data_stream: {}
+        #     lifecycle:
+        #       name: filebeat-custom
+        # settings:
+        #   index:
+        #     number_of_shards: 1
+        #     codec: best_compression
+
+    # https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html
     output.elasticsearch:
-      preset: custom
+      pipeline: "main-pipeline"
+      index: "filebeat-custom"
+      # https://www.elastic.co/guide/en/beats/filebeat/current/ilm.html
+      # ilm:
+      #   enabled: true
+      #   overwrite: false
+      #   policy_name: "filebeat-custom"
+      # data_stream:
+      #   enabled: true
+      #   dataset: custom
+      #   # dataset: filebeat-custom
+      #   type: logs
+      #   namespace: default
       worker: 2 # Increased from 1 to 2 for better parallelism
       bulk_max_size: 50 # Increased from 20 to 50 for better batch processing
       queue.mem.events: 2000 # Increased from 1000 to 2000
@@ -93,13 +142,7 @@ spec:
       queue.mem.flush.timeout: 5s # Increased from 1s to 5s to allow more batching
       compression_level: 3 # Changed from 1 to 3 for better compression
       idle_connection_timeout: 60s
-      # preset: latency # https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html#_preset
-      # bulk_max_size: 1000
-      # queue.disk: # https://www.elastic.co/guide/en/beats/filebeat/current/configuring-internal-queue.html
-    #   events: 4096
-    #   max_size: 10GB
-    #   flush.min_events: 512
-    #   flush.timeout: 5s
+
   daemonSet:
     podTemplate:
       spec:
@@ -107,13 +150,11 @@ spec:
         automountServiceAccountToken: true
         terminationGracePeriodSeconds: 30
         dnsPolicy: ClusterFirstWithHostNet
-        hostNetwork: true # Allows to provide richer host metadata
+        hostNetwork: true
         containers:
         - name: filebeat
           securityContext:
             runAsUser: 0
-            # If using Red Hat OpenShift uncomment this:
-            #privileged: true
           volumeMounts:
           - name: varlogcontainers
             mountPath: /var/log/containers
@@ -121,8 +162,10 @@ spec:
             mountPath: /var/log/pods
           - name: varlibdockercontainers
             mountPath: /var/lib/docker/containers
-          - name: filebeat-ilm
-            mountPath: /usr/share/filebeat/ilm
+          # - name: filebeat-ilm
+          #   mountPath: /usr/share/filebeat/ilm
+          - name: data
+            mountPath: /usr/share/filebeat/data
           env:
             - name: NODE_NAME
               valueFrom:
@@ -130,11 +173,11 @@ spec:
                   fieldPath: spec.nodeName
           resources:
             requests:
-              memory: 200Mi
-              # cpu: 100m
+              cpu: "50m"
+              memory: "64Mi"
             limits:
-              memory: 300Mi
-              # cpu: 100m
+              cpu: "100m"
+              memory: "256Mi"
         volumes:
         - name: varlogcontainers
           hostPath:
@@ -145,7 +188,9 @@ spec:
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
-        - name: filebeat-ilm
-          configMap:
-            defaultMode: 0600
-            name: filebeat-ilm
+        # - name: filebeat-ilm
+        #   configMap:
+        #     defaultMode: 0600
+        #     name: filebeat-ilm
+        - name: data
+          emptyDir: {}
