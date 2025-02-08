@@ -1,4 +1,4 @@
-# https://github.com/argoproj/argo-helm/blob/main/charts/argo-cd/values.yaml
+# https://github.com/argoproj/argo-helm/blob/argo-cd-7.6.12/charts/argo-cd/values.yaml
 
 ## Argo CD configuration
 ## Ref: https://github.com/argoproj/argo-cd
@@ -743,8 +743,8 @@ controller:
       cpu: 500m
       memory: 512Mi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 155m
+      memory: 779Mi
 
   # Application controller container ports
   containerPorts:
@@ -923,6 +923,308 @@ controller:
     enabled: false
     # -- List of custom rules for the application controller's ClusterRole resource
     rules: []
+
+
+## Dex
+dex:
+  # -- Enable dex
+  enabled: true
+  # -- Dex name
+  name: dex-server
+
+  # -- Additional command line arguments to pass to the Dex server
+  extraArgs: []
+
+  # -- Runtime class name for Dex
+  # @default -- `""` (defaults to global.runtimeClassName)
+  runtimeClassName: ""
+
+  metrics:
+    # -- Deploy metrics service
+    enabled: false
+    service:
+      # -- Metrics service annotations
+      annotations: {}
+      # -- Metrics service labels
+      labels: {}
+      # -- Metrics service port name
+      portName: http-metrics
+    serviceMonitor:
+      # -- Enable a prometheus ServiceMonitor
+      enabled: false
+      # -- Prometheus ServiceMonitor interval
+      interval: 30s
+      # -- Prometheus [RelabelConfigs] to apply to samples before scraping
+      relabelings: []
+      # -- Prometheus [MetricRelabelConfigs] to apply to samples before ingestion
+      metricRelabelings: []
+      # -- Prometheus ServiceMonitor selector
+      selector: {}
+        # prometheus: kube-prometheus
+
+      # -- Prometheus ServiceMonitor scheme
+      scheme: ""
+      # -- Prometheus ServiceMonitor tlsConfig
+      tlsConfig: {}
+      # -- Prometheus ServiceMonitor namespace
+      namespace: "" # "monitoring"
+      # -- Prometheus ServiceMonitor labels
+      additionalLabels: {}
+      # -- Prometheus ServiceMonitor annotations
+      annotations: {}
+
+  ## Dex Pod Disruption Budget
+  ## Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  pdb:
+    # -- Deploy a [PodDisruptionBudget] for the Dex server
+    enabled: false
+    # -- Labels to be added to Dex server pdb
+    labels: {}
+    # -- Annotations to be added to Dex server pdb
+    annotations: {}
+    # -- Number of pods that are available after eviction as number or percentage (eg.: 50%)
+    # @default -- `""` (defaults to 0 if not specified)
+    minAvailable: ""
+    # -- Number of pods that are unavailble after eviction as number or percentage (eg.: 50%).
+    ## Has higher precedence over `dex.pdb.minAvailable`
+    maxUnavailable: ""
+
+  ## Dex image
+  image:
+    # -- Dex image repository
+    repository: ghcr.io/dexidp/dex
+    # -- Dex image tag
+    tag: v2.38.0
+    # -- Dex imagePullPolicy
+    # @default -- `""` (defaults to global.image.imagePullPolicy)
+    imagePullPolicy: ""
+
+  # -- Secrets with credentials to pull images from a private registry
+  # @default -- `[]` (defaults to global.imagePullSecrets)
+  imagePullSecrets: []
+
+  # Argo CD init image that creates Dex config
+  initImage:
+    # -- Argo CD init image repository
+    # @default -- `""` (defaults to global.image.repository)
+    repository: ""
+    # -- Argo CD init image tag
+    # @default -- `""` (defaults to global.image.tag)
+    tag: ""
+    # -- Argo CD init image imagePullPolicy
+    # @default -- `""` (defaults to global.image.imagePullPolicy)
+    imagePullPolicy: ""
+    # -- Argo CD init image resources
+    # @default -- `{}` (defaults to dex.resources)
+    resources: {}
+    #  requests:
+    #    cpu: 5m
+    #    memory: 96Mi
+    #  limits:
+    #    cpu: 10m
+    #    memory: 144Mi
+
+  # -- Environment variables to pass to the Dex server
+  env: []
+
+  # -- envFrom to pass to the Dex server
+  # @default -- `[]` (See [values.yaml])
+  envFrom: []
+  # - configMapRef:
+  #     name: config-map-name
+  # - secretRef:
+  #     name: secret-name
+
+  # -- Additional containers to be added to the dex pod
+  ## Note: Supports use of custom Helm templates
+  extraContainers: []
+
+  # -- Init containers to add to the dex pod
+  ## Note: Supports use of custom Helm templates
+  initContainers: []
+
+  # -- Additional volumeMounts to the dex main container
+  volumeMounts: []
+
+  # -- Additional volumes to the dex pod
+  volumes: []
+
+  ## Dex server emptyDir volumes
+  emptyDir:
+    # -- EmptyDir size limit for Dex server
+    # @default -- `""` (defaults not set if not specified i.e. no size limit)
+    sizeLimit: ""
+    # sizeLimit: "1Gi"
+
+  # TLS certificate configuration via Secret
+  ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/tls/#configuring-tls-to-argocd-dex-server
+  ## Note: Issuing certificates via cert-manager in not supported right now because it's not possible to restart Dex automatically without extra controllers.
+  certificateSecret:
+    # -- Create argocd-dex-server-tls secret
+    enabled: false
+    # -- Labels to be added to argocd-dex-server-tls secret
+    labels: {}
+    # -- Annotations to be added to argocd-dex-server-tls secret
+    annotations: {}
+    # -- Certificate authority. Required for self-signed certificates.
+    ca: ''
+    # -- Certificate private key
+    key: ''
+    # -- Certificate data. Must contain SANs of Dex service (ie: argocd-dex-server, argocd-dex-server.argo-cd.svc)
+    crt: ''
+
+  # -- Annotations to be added to the Dex server Deployment
+  deploymentAnnotations: {}
+
+  # -- Annotations to be added to the Dex server pods
+  podAnnotations: {}
+
+  # -- Labels to be added to the Dex server pods
+  podLabels: {}
+
+  # -- Resource limits and requests for dex
+  resources:
+   limits:
+     cpu: 50m
+     memory: 64Mi
+   requests:
+     cpu: 10m
+     memory: 42Mi
+
+  # Dex container ports
+  # NOTE: These ports are currently hardcoded and cannot be changed
+  containerPorts:
+    # -- HTTP container port
+    http: 5556
+    # -- gRPC container port
+    grpc: 5557
+    # -- Metrics container port
+    metrics: 5558
+
+  # -- [DNS configuration]
+  dnsConfig: {}
+  # -- Alternative DNS policy for Dex server pods
+  dnsPolicy: "ClusterFirst"
+
+  # -- Dex container-level security context
+  # @default -- See [values.yaml]
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+
+  ## Probes for Dex server
+  ## Supported from Dex >= 2.28.0
+  livenessProbe:
+    # -- Enable Kubernetes liveness probe for Dex >= 2.28.0
+    enabled: false
+    # -- Http path to use for the liveness probe
+    httpPath: /healthz/live
+    # -- Http port to use for the liveness probe
+    httpPort: metrics
+    # -- Scheme to use for for the liveness probe (can be HTTP or HTTPS)
+    httpScheme: HTTP
+    # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
+    failureThreshold: 3
+    # -- Number of seconds after the container has started before [probe] is initiated
+    initialDelaySeconds: 10
+    # -- How often (in seconds) to perform the [probe]
+    periodSeconds: 10
+    # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
+    successThreshold: 1
+    # -- Number of seconds after which the [probe] times out
+    timeoutSeconds: 1
+
+  readinessProbe:
+    # -- Enable Kubernetes readiness probe for Dex >= 2.28.0
+    enabled: false
+    # -- Http path to use for the readiness probe
+    httpPath: /healthz/ready
+    # -- Http port to use for the readiness probe
+    httpPort: metrics
+    # -- Scheme to use for for the liveness probe (can be HTTP or HTTPS)
+    httpScheme: HTTP
+    # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
+    failureThreshold: 3
+    # -- Number of seconds after the container has started before [probe] is initiated
+    initialDelaySeconds: 10
+    # -- How often (in seconds) to perform the [probe]
+    periodSeconds: 10
+    # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
+    successThreshold: 1
+    # -- Number of seconds after which the [probe] times out
+    timeoutSeconds: 1
+
+  # -- terminationGracePeriodSeconds for container lifecycle hook
+  terminationGracePeriodSeconds: 30
+
+  # -- Automount API credentials for the Service Account into the pod.
+  automountServiceAccountToken: true
+
+  serviceAccount:
+    # -- Create dex service account
+    create: true
+    # -- Dex service account name
+    name: argocd-dex-server
+    # -- Annotations applied to created service account
+    annotations: {}
+    # -- Automount API credentials for the Service Account
+    automountServiceAccountToken: true
+
+  # -- Service port for HTTP access
+  servicePortHttp: 5556
+  # -- Service port name for HTTP access
+  servicePortHttpName: http
+  # -- Service port for gRPC access
+  servicePortGrpc: 5557
+  # -- Service port name for gRPC access
+  servicePortGrpcName: grpc
+  # -- Service port for metrics access
+  servicePortMetrics: 5558
+
+  # -- Priority class for the dex pods
+  # @default -- `""` (defaults to global.priorityClassName)
+  priorityClassName: ""
+
+  # -- [Node selector]
+  # @default -- `{}` (defaults to global.nodeSelector)
+  nodeSelector: {}
+
+  # -- [Tolerations] for use with node taints
+  # @default -- `[]` (defaults to global.tolerations)
+  tolerations: []
+
+  # -- Assign custom [affinity] rules to the deployment
+  # @default -- `{}` (defaults to global.affinity preset)
+  affinity: {}
+
+  # -- Assign custom [TopologySpreadConstraints] rules to dex
+  # @default -- `[]` (defaults to global.topologySpreadConstraints)
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+  ## If labelSelector is left out, it will default to the labelSelector configuration of the deployment
+  topologySpreadConstraints: []
+    # - maxSkew: 1
+    #   topologyKey: topology.kubernetes.io/zone
+    #   whenUnsatisfiable: DoNotSchedule
+
+  # -- Deployment strategy to be added to the Dex server Deployment
+  deploymentStrategy: {}
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxSurge: 25%
+    #   maxUnavailable: 25%
+
+  # -- Dex log format. Either `text` or `json`
+  # @default -- `""` (defaults to global.logging.format)
+  logFormat: ""
+  # -- Dex log level. One of: `debug`, `info`, `warn`, `error`
+  # @default -- `""` (defaults to global.logging.level)
+  logLevel: ""
 
 ## Redis
 redis:
@@ -1105,8 +1407,8 @@ redis:
       cpu: 200m
       memory: 128Mi
     requests:
-      cpu: 100m
-      memory: 64Mi
+      cpu: 10m
+      memory: 20Mi
 
   # -- Redis pod-level security context
   # @default -- See [values.yaml]
@@ -1633,8 +1935,8 @@ server:
       cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 0
-      memory: 64Mi
+      cpu: 10m
+      memory: 84Mi
 
   # Server container ports
   containerPorts:
@@ -2281,10 +2583,10 @@ repoServer:
   resources:
     limits:
       cpu: 50m
-      memory: 128Mi
+      memory: 200Mi
     requests:
       cpu: 10m
-      memory: 64Mi
+      memory: 131Mi
 
   # Repo server container ports
   containerPorts:
@@ -2649,8 +2951,8 @@ applicationSet:
       cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 10m
+      memory: 53Mi
 
   # ApplicationSet controller container ports
   containerPorts:
@@ -3023,13 +3325,13 @@ notifications:
   podLabels: {}
 
   # -- Resource limits and requests for the notifications controller
-  resources: {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 34Mi
 
   # Notification controller container ports
   containerPorts:

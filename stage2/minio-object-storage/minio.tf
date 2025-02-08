@@ -42,30 +42,13 @@ resource "helm_release" "minio_operator" {
   timeout    = 300
   wait       = true
 
-  set {
-    name  = "operator.replicaCount"
-    value = "1"
-  }
-
-  set {
-    name  = "operator.env[0].name"
-    value = "OPERATOR_STS_AUTO_TLS_ENABLED"
-  }
-
-  set {
-    name  = "operator.env[0].value"
-    value = "off"
-  }
-
-  set {
-    name  = "operator.env[1].name"
-    value = "OPERATOR_STS_ENABLED"
-  }
-
-  set {
-    name  = "operator.env[1].value"
-    value = "on"
-  }
+  values = [
+    templatefile(
+      "${path.module}/minio-operator-values.tftpl",
+      {
+      }
+    ),
+  ]
 }
 
 resource "random_password" "minio_tenant_root_password" {

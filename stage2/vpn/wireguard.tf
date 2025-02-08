@@ -69,10 +69,11 @@ resource "kubernetes_deployment_v1" "wireguard" {
           resources {
             requests = {
               cpu    = "10m"
-              memory = "256Mi"
+              memory = "37Mi"
             }
 
             limits = {
+              cpu    = "100m"
               memory = "256Mi"
             }
           }
