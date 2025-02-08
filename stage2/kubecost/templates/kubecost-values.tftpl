@@ -178,11 +178,11 @@ kubecostFrontend:
   #   readOnlyRootFilesystem: true
   resources:
     requests:
-      cpu: "10m"
-      memory: "55Mi"
-    # limits:
-    #   cpu: "100m"
-    #   memory: "256Mi"
+      cpu: "17m"
+      memory: "194Mi"
+    limits:
+      cpu: "200m"
+      memory: "300Mi"
   deploymentStrategy: {}
   #   rollingUpdate:
   #     maxSurge: 1
@@ -508,8 +508,8 @@ forecasting:
   # Resource specification block for the forecasting container.
   resources:
     requests:
-      cpu: 200m
-      memory: 300Mi
+      cpu: 10m
+      memory: 227Mi
     limits:
       cpu: 1500m
       memory: 1Gi
