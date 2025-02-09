@@ -58,7 +58,7 @@ RUN set -eux; \
   g++=13.2.1_git20240309-r0 \
   gcc=13.2.1_git20240309-r0 \
   libffi-dev=3.4.6-r0	\
-  python3-dev=3.12.8-r1 \
+  python3-dev=3.12.9-r0 \
   py3-pip=24.0-r2 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
