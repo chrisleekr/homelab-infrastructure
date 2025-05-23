@@ -25,10 +25,10 @@ RUN set -eux; \
   \
   apk add --no-cache \
   ca-certificates=20241121-r1 \
-  curl=8.12.0-r0 \
+  curl=8.12.1-r0 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
-  bind-tools=9.18.33-r0 \
+  bind-tools=9.18.37-r0 \
   git=2.45.3-r0 \
   && \
   \
@@ -53,12 +53,12 @@ RUN set -eux; \
   \
   # Install Ansible
   apk add --no-cache \
-  openssh=9.7_p1-r4 \
+  openssh=9.7_p1-r5 \
   sshpass=1.10-r0 \
-  g++=13.2.1_git20240309-r0 \
-  gcc=13.2.1_git20240309-r0 \
+  g++=13.2.1_git20240309-r1 \
+  gcc=13.2.1_git20240309-r1 \
   libffi-dev=3.4.6-r0	\
-  python3-dev=3.12.9-r0 \
+  python3-dev=3.12.10-r1 \
   py3-pip=24.0-r2 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \

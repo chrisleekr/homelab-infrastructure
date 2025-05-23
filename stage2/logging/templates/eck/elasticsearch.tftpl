@@ -17,6 +17,8 @@ spec:
     - name: default
       count: 1
       config:
+        node.roles:
+          ["master", "data_hot", "data_warm", "data_content", "ingest"]
         node.store.allow_mmap: false
         xpack.monitoring.collection.enabled: true
         logger.level: info
@@ -43,12 +45,12 @@ spec:
                   memory: ${resource_limit_memory} # 4Gi
                   cpu: ${resource_limit_cpu} # 2
       volumeClaimTemplates:
-       - metadata:
-          name: elasticsearch-data
-         spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: ${storage_size}
-          storageClassName: ${storage_class_name}
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: ${storage_size}
+            storageClassName: ${storage_class_name}
