@@ -10,7 +10,6 @@ resource "kubernetes_namespace" "minio_tenant" {
   }
 }
 
-
 resource "kubernetes_secret" "frontend_basic_auth" {
   metadata {
     name      = "frontend-basic-auth"
@@ -28,6 +27,24 @@ resource "kubernetes_secret" "frontend_basic_auth" {
   }
 }
 
+
+resource "kubernetes_config_map" "minio_custom_headers" {
+  depends_on = [
+    kubernetes_namespace.minio_tenant
+  ]
+
+  metadata {
+    name      = "minio-custom-headers"
+    namespace = "nginx"
+  }
+
+  data = {
+    "X-Real-IP"         = "$remote_addr"
+    "X-Forwarded-For"   = "$proxy_add_x_forwarded_for"
+    "X-Forwarded-Proto" = "$scheme"
+  }
+}
+
 resource "helm_release" "minio_operator" {
   depends_on = [
     kubernetes_namespace.minio_operator,
@@ -37,7 +54,7 @@ resource "helm_release" "minio_operator" {
   name       = "minio-operator"
   repository = "https://operator.min.io"
   chart      = "operator"
-  version    = "5.0.15"
+  version    = "7.1.1"
   namespace  = kubernetes_namespace.minio_operator.metadata[0].name
   timeout    = 300
   wait       = true
@@ -123,13 +140,14 @@ resource "helm_release" "minio_tenant" {
     kubernetes_secret.minio_tenant_env,
     kubernetes_secret.minio_tenant_user,
     kubernetes_secret.frontend_basic_auth,
+    kubernetes_config_map.minio_custom_headers
     # kubectl_manifest.minio_tenant_certmanager_cert
   ]
 
   name       = "minio-tenant"
   repository = "https://operator.min.io"
   chart      = "tenant"
-  version    = "5.0.15"
+  version    = "7.1.1"
   namespace  = kubernetes_namespace.minio_tenant.metadata[0].name
   timeout    = 300
   wait       = true

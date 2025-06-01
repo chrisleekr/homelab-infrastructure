@@ -4,16 +4,17 @@ metadata:
   name: kibana
   namespace: ${namespace}
 spec:
-  version: 8.15.3
+  version: 8.18.2
   count: 1
   elasticsearchRef:
     name: elasticsearch
   secureSettings:
-  - secretName: kibana-secret-settings
+    - secretName: kibana-secret-settings
   config:
     server:
       publicBaseUrl: "${kibana_domain}"
     xpack.reporting.roles.enabled: false
+    monitoring.ui.ccs.enabled: false
   http:
     tls:
       selfSignedCertificate:
@@ -22,9 +23,9 @@ spec:
   podTemplate:
     spec:
       containers:
-      - name: kibana
-        resources:
-          requests:
-            memory: ${resource_request_memory}
-          limits:
-            memory: ${resource_limit_memory}
+        - name: kibana
+          resources:
+            requests:
+              memory: ${resource_request_memory}
+            limits:
+              memory: ${resource_limit_memory}

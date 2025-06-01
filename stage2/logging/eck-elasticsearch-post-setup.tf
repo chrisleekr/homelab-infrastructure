@@ -9,7 +9,6 @@ data "kubernetes_resource" "elasticsearch" {
   }
 }
 
-
 # Create ConfigMap for the setup script and templates
 resource "kubernetes_config_map" "elasticsearch_setup_script" {
   metadata {
@@ -60,20 +59,15 @@ resource "kubernetes_job" "elasticsearch_post_setup" {
             value = "http://elasticsearch-es-http.${kubernetes_namespace.logging.metadata[0].name}.svc:9200"
           }
 
-          # Mount the script as a volume
           volume_mount {
             name       = "setup-script"
             mount_path = "/scripts"
           }
 
-          // Run forever
-          # command = ["/bin/sh", "-c", "while true; do sleep 3600; done"]
-
           command = ["/bin/sh"]
           args    = ["/scripts/elasticsearch-post-setup.sh"]
         }
 
-        # Define the volume containing the script
         volume {
           name = "setup-script"
           config_map {

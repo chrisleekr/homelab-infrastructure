@@ -5,7 +5,7 @@ metadata:
   namespace: ${namespace}
 spec:
   type: metricbeat
-  version: 8.15.3
+  version: 8.18.2
   elasticsearchRef:
     name: elasticsearch
   config:
@@ -49,17 +49,17 @@ spec:
         securityContext:
           runAsUser: 0
         containers:
-        - name: metricbeat
-          resources:
-            requests:
-              memory: 100Mi
-              cpu: 100m
-            limits:
-              memory: 200Mi
-              cpu: 200m
-          volumeMounts:
-            - name: metricbeat-data
-              mountPath: /usr/share/metricbeat/data
+          - name: metricbeat
+            resources:
+              requests:
+                memory: 100Mi
+                cpu: 100m
+              limits:
+                memory: 200Mi
+                cpu: 200m
+            volumeMounts:
+              - name: metricbeat-data
+                mountPath: /usr/share/metricbeat/data
         volumes:
           - name: metricbeat-data
             emptyDir: {}

@@ -48,7 +48,7 @@ resource "helm_release" "elastalert2" {
   name       = "elastalert2"
   repository = "https://jertel.github.io/elastalert2/"
   chart      = "elastalert2"
-  version    = "2.20.0"
+  version    = "2.24.0"
   namespace  = kubernetes_namespace.monitoring_namespace.metadata[0].name
   timeout    = 360
   wait       = true
