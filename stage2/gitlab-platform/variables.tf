@@ -62,13 +62,19 @@ variable "gitlab_time_zone" {
 variable "gitlab_minio_host" {
   description = "The hostname of the minio object storage"
   type        = string
-  default     = "minio.chrislee.local"
+  default     = "minio.chrislee.kr"
 }
 
 variable "gitlab_minio_endpoint" {
   description = "The endpoint of the minio object storage"
   type        = string
-  default     = "http://minio.chrislee.local"
+  default     = "https://minio.chrislee.kr"
+}
+
+variable "gitlab_minio_use_https" {
+  description = "Whether to use HTTPS for the minio object storage - True or False"
+  type        = string
+  default     = "True"
 }
 
 variable "gitlab_minio_access_key" {

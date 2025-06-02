@@ -682,7 +682,7 @@ postgresql:
       adminPasswordKey: postgresql-postgres-password
       userPasswordKey: '{{ include "gitlab.psql.password.key" $ }}'
   image:
-    tag: 14.8.0
+    tag: 16.6.0
   primary:
     initdb:
       scriptsConfigMap: '{{ include "gitlab.psql.initdbscripts" $}}'
