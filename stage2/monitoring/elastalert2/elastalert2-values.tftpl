@@ -42,12 +42,7 @@ realertIntervalMins: ""
 writebackIndex: elastalert
 
 image:
-  # docker image
-  repository: jertel/elastalert2
-  # docker image tag
-  # tag: 2.20.0
   pullPolicy: IfNotPresent
-  pullSecret: ""
 
 resources:
   requests:
@@ -99,7 +94,6 @@ extraContainers:
           sleep 60
         done
 
-
 ## Specify optional additional initContainers to run prior to the Elastalert2 container.
 extraInitContainers: []
 
@@ -112,8 +106,6 @@ extraConfigOptions:
 
 # To load ElastAlert 2 config via secret, uncomment the line below
 secretConfigName: ${secret_config_name}
-
-
 
 # To load ElastAlert's rules via secret, uncomment the line below
 #secretRulesName: elastalert-rules-secret
@@ -250,7 +242,8 @@ tolerations: []
 #   username: ""
 #   password: ""
 
-extraVolumes: []
+extraVolumes:
+  []
   # - name: smtp-auth
   #   secret:
   #     secretName: elastalert-smtp-auth
@@ -259,12 +252,12 @@ extraVolumes: []
   #         path: smtp_auth.yaml
   #         mode: 0400
 
-extraVolumeMounts: []
+extraVolumeMounts:
+  []
   # - name: smtp-auth
   #   mountPath: /opt/elastalert/config-smtp/smtp_auth.yaml
   #   subPath: smtp_auth.yaml
   #   readOnly: true
-
 
 ## @section Metrics parameters
 
@@ -364,39 +357,39 @@ metrics:
     ## @param metrics.prometheusRule.rules Prometheus Rules for ElastAlert 2.
     ## These are just examples rules, please adapt them to your needs.
     rules: |-
-        groups:
-          - name: elastalert
-            rules:
-              - alert: elastalert Pod down
-                annotations:
-                  description: Prometheus is unable to scrape metrics service. Check pod logs for details
-                  summary: elastalert POD is down
-                expr: up{service="{{ template "common.names.servicename" . }}",container="elastalert"} == 0
-                for: 5m
-                labels:
-                  severity: critical
-                  production: 'True'
-              - alert: elastalert file descriptors use
-                annotations:
-                  description: Elastalert pod nearly exhausting file descriptors
-                  summary: too many file descriptors used
-                expr: |-
-                    process_open_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
-                    /
-                    process_max_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
-                    > 0.9
-                for: 3m
-                labels:
-                  severity: critical
-                  production: 'True'
-              - alert: elastalert scrapes failing
-                annotations:
-                  description: Elastalert is not scraping for a rule {{ "{{" }} $labels.rule_name  {{ "}}" }}
-                  summary: scrapes for rule stalled {{ "{{" }} $labels.rule_name {{ "}}" }}
-                expr: |-
-                    rate(elastalert_scrapes_total{service="{{ template "common.names.servicename" . }}",container="elastalert"}[1m]) == 0
-                for: 5m
-                labels:
-                  severity: critical
-                  production: 'True'
+      groups:
+        - name: elastalert
+          rules:
+            - alert: elastalert Pod down
+              annotations:
+                description: Prometheus is unable to scrape metrics service. Check pod logs for details
+                summary: elastalert POD is down
+              expr: up{service="{{ template "common.names.servicename" . }}",container="elastalert"} == 0
+              for: 5m
+              labels:
+                severity: critical
+                production: 'True'
+            - alert: elastalert file descriptors use
+              annotations:
+                description: Elastalert pod nearly exhausting file descriptors
+                summary: too many file descriptors used
+              expr: |-
+                  process_open_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+                  /
+                  process_max_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+                  > 0.9
+              for: 3m
+              labels:
+                severity: critical
+                production: 'True'
+            - alert: elastalert scrapes failing
+              annotations:
+                description: Elastalert is not scraping for a rule {{ "{{" }} $labels.rule_name  {{ "}}" }}
+                summary: scrapes for rule stalled {{ "{{" }} $labels.rule_name {{ "}}" }}
+              expr: |-
+                  rate(elastalert_scrapes_total{service="{{ template "common.names.servicename" . }}",container="elastalert"}[1m]) == 0
+              for: 5m
+              labels:
+                severity: critical
+                production: 'True'
     # rules: []

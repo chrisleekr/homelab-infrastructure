@@ -61,13 +61,12 @@ operator:
   #
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.15
     pullPolicy: IfNotPresent
   ###
   #
   # An array of Kubernetes secrets to use for pulling images from a private ``image.repository``.
   # Only one array element is supported at this time.
-  imagePullSecrets: [ ]
+  imagePullSecrets: []
   ###
   #
   # The name of a custom `Container Runtime <https://kubernetes.io/docs/concepts/containers/runtime-class/>`__ to use for the Operator pods.
@@ -76,7 +75,7 @@ operator:
   # An array of `initContainers <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`__ to start up before the Operator pods.
   # Exercise care as ``initContainer`` failures prevent Operator pods from starting.
   # Pass an empty array to start the Operator normally.
-  initContainers: [ ]
+  initContainers: []
   ###
   # The number of Operator pods to deploy.
   # Higher values increase availability in the event of worker node failures.
@@ -110,7 +109,7 @@ operator:
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator can mount to pods.
   #
   # The volumes must exist *and* be accessible to the Operator pods.
-  volumes: [ ]
+  volumes: []
   ###
   # An array of volume mount points associated to each Operator container.
   #
@@ -123,14 +122,14 @@ operator:
   #      mountPath: /path/to/mount
   #
   # The ``name`` field must correspond to an entry in the ``volumes`` array.
-  volumeMounts: [ ]
+  volumeMounts: []
   ###
   # Any `Node Selectors <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>`__ to apply to Operator pods.
   #
   # The Kubernetes scheduler uses these selectors to determine which worker nodes onto which it can deploy Operator pods.
   #
   # If no worker nodes match the specified selectors, the Operator deployment will fail.
-  nodeSelector: { }
+  nodeSelector: {}
   ###
   #
   # The `Pod Priority <https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/>`__ to assign to Operator pods.
@@ -155,13 +154,13 @@ operator:
   # An array of `Toleration labels <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>`__ to associate to Operator pods.
   #
   # These settings determine the distribution of pods across worker nodes.
-  tolerations: [ ]
+  tolerations: []
   ###
   #
   # An array of `Topology Spread Constraints <https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/>`__ to associate to Operator pods.
   #
   # These settings determine the distribution of pods across worker nodes.
-  topologySpreadConstraints: [ ]
+  topologySpreadConstraints: []
   ###
   #
   # The `Requests or Limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/>`__ for resources to associate to Operator pods.
@@ -209,16 +208,16 @@ console:
   # The specified values should match that of ``operator.image`` to ensure predictable operations.
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.15
+    # tag: v5.0.15
     pullPolicy: IfNotPresent
   ###
   # An array of environment variables to pass to the Operator Console deployment.
   # Pass an empty array to start Operator Console with defaults.
-  env: [ ]
+  env: []
   ###
   #
   # An array of Kubernetes secrets to use for pulling images from a private ``image.repository``.
-  imagePullSecrets: [ ]
+  imagePullSecrets: []
   ###
   #
   # The name of a custom `Container Runtime <https://kubernetes.io/docs/concepts/containers/runtime-class/>`__ to use for the Operator Console pods.
@@ -227,7 +226,7 @@ console:
   # An array of `initContainers <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`__ to start up before the Operator Console pods.
   # Exercise care as ``initContainer`` failures prevent Console pods from starting.
   # Pass an empty array to start the Console normally.
-  initContainers: [ ]
+  initContainers: []
   ###
   # The number of Operator Console pods to deploy.
   # Higher values increase availability in the event of worker node failures.
@@ -241,7 +240,7 @@ console:
   # The Kubernetes scheduler uses these selectors to determine which worker nodes onto which it can deploy Console pods.
   #
   # If no worker nodes match the specified selectors, the Console deployment will fail.
-  nodeSelector: { }
+  nodeSelector: {}
   ###
   #
   # The `affinity <https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/>`__ or anti-affinity settings to apply to Operator Console pods.
@@ -262,13 +261,13 @@ console:
   # An array of `Toleration labels <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>`__ to associate to Operator Console pods.
   #
   # These settings determine the distribution of pods across worker nodes.
-  tolerations: [ ]
+  tolerations: []
   ###
   #
   # An array of `Topology Spread Constraints <https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/>`__ to associate to Operator Console pods.
   #
   # These settings determine the distribution of pods across worker nodes.
-  topologySpreadConstraints: [ ]
+  topologySpreadConstraints: []
   ###
   #
   # The `Requests or Limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/>`__ for resources to associate to Operator Console pods.
@@ -314,9 +313,9 @@ console:
   ingress:
     enabled: false
     ingressClassName: ""
-    labels: { }
-    annotations: { }
-    tls: [ ]
+    labels: {}
+    annotations: {}
+    tls: []
     host: console.local
     path: /
     pathType: Prefix

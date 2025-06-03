@@ -101,6 +101,22 @@ resource "random_password" "encrypted_settings_key_base" {
   special = false
 }
 
+# Active Record Encryption keys for GitLab 17.x+
+resource "random_password" "active_record_encryption_primary_key" {
+  length  = 64
+  special = false
+}
+
+resource "random_password" "active_record_encryption_deterministic_key" {
+  length  = 64
+  special = false
+}
+
+resource "random_password" "active_record_encryption_key_derivation_salt" {
+  length  = 64
+  special = false
+}
+
 resource "tls_private_key" "openid_connect_signing_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
@@ -112,6 +128,10 @@ resource "kubernetes_secret" "rails_secret" {
     random_password.rails_secret_key_base,
     random_password.rails_otp_key_base,
     random_password.rails_db_key_base,
+    random_password.encrypted_settings_key_base,
+    random_password.active_record_encryption_primary_key,
+    random_password.active_record_encryption_deterministic_key,
+    random_password.active_record_encryption_key_derivation_salt,
   ]
 
   metadata {
@@ -123,11 +143,14 @@ resource "kubernetes_secret" "rails_secret" {
     "secrets.yml" = templatefile(
       "${path.module}/templates/rails-secrets.tftpl",
       {
-        production_secret_key_base             = random_password.rails_secret_key_base.result,
-        production_otp_key_base                = random_password.rails_otp_key_base.result,
-        production_db_key_base                 = random_password.rails_db_key_base.result,
-        production_encrypted_settings_key_base = random_password.encrypted_settings_key_base.result,
-        production_openid_connect_signing_key  = indent(4, tls_private_key.openid_connect_signing_key.private_key_pem_pkcs8),
+        production_secret_key_base                              = random_password.rails_secret_key_base.result,
+        production_otp_key_base                                 = random_password.rails_otp_key_base.result,
+        production_db_key_base                                  = random_password.rails_db_key_base.result,
+        production_encrypted_settings_key_base                  = random_password.encrypted_settings_key_base.result,
+        production_active_record_encryption_primary_key         = random_password.active_record_encryption_primary_key.result,
+        production_active_record_encryption_deterministic_key   = random_password.active_record_encryption_deterministic_key.result,
+        production_active_record_encryption_key_derivation_salt = random_password.active_record_encryption_key_derivation_salt.result,
+        production_openid_connect_signing_key                   = indent(4, tls_private_key.openid_connect_signing_key.private_key_pem_pkcs8),
       }
     )
   }
@@ -402,6 +425,7 @@ resource "kubernetes_secret" "gitlab_toolbox_s3cmd" {
       "${path.module}/templates/toolbox-s3cmd.tftpl",
       {
         minio_host       = var.gitlab_minio_host
+        minio_use_https  = var.gitlab_minio_use_https
         minio_access_key = var.gitlab_minio_access_key
         minio_secret_key = var.gitlab_minio_secret_key
       }

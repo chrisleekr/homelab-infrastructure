@@ -248,6 +248,12 @@ variable "gitlab_minio_endpoint" {
   default     = "https://minio.chrislee.local"
 }
 
+variable "gitlab_minio_use_https" {
+  description = "Whether to use HTTPS for the minio object storage - True or False"
+  type        = string
+  default     = "True"
+}
+
 variable "prometheus_alertmanager_domain" {
   description = "The domain name for the alertmanager"
   type        = string

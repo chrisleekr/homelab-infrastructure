@@ -71,6 +71,12 @@ variable "gitlab_minio_endpoint" {
   default     = "http://minio.chrislee.local"
 }
 
+variable "gitlab_minio_use_https" {
+  description = "Whether to use HTTPS for the minio object storage - True or False"
+  type        = string
+  default     = "False"
+}
+
 variable "gitlab_minio_access_key" {
   description = "The access key of the minio object storage"
   type        = string

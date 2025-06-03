@@ -2,9 +2,9 @@
 
 locals {
   longhorn_crds = [
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.3/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml",
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.3/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml",
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-6.3/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml"
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml",
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml",
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml"
   ]
 }
 

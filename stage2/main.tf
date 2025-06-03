@@ -75,10 +75,9 @@ module "gitlab_platform" {
 
   gitlab_certmanager_issuer_email = var.gitlab_certmanager_issuer_email
 
-  # Cannot use internal host as it's not accessible from outside the cluster
-  gitlab_minio_host     = var.gitlab_minio_host
-  gitlab_minio_endpoint = var.gitlab_minio_endpoint
-
+  gitlab_minio_host       = var.gitlab_minio_host
+  gitlab_minio_endpoint   = var.gitlab_minio_endpoint
+  gitlab_minio_use_https  = var.gitlab_minio_use_https
   gitlab_minio_access_key = var.minio_tenant_user_access_key
   gitlab_minio_secret_key = module.minio_object_storage.minio_tenant_user_secret_key
 

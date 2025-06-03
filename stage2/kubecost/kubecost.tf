@@ -30,7 +30,7 @@ resource "helm_release" "kubecost" {
   repository = "https://kubecost.github.io/cost-analyzer/"
   chart      = "cost-analyzer"
   namespace  = kubernetes_namespace.kubecost.metadata[0].name
-  version    = "2.4.1"
+  version    = "2.7.2"
   wait       = true
   timeout    = 300
 

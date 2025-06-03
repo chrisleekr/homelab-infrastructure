@@ -4,12 +4,12 @@ tenant:
 
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2024-05-01T01-11-10Z
     pullPolicy: IfNotPresent
   imagePullSecret: { }
   scheduler: { }
-  configuration:
+  configSecret:
     name: ${tenant_configuration_name}
+    existingSecret: true
   pools:
     - servers: ${tenant_pools_servers}
       name: pool-0
@@ -98,11 +98,8 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
       nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
       nginx.ingress.kubernetes.io/proxy-buffering: "off"
-      # https://github.com/distribution/distribution/issues/970#issuecomment-499228700
-      nginx.ingress.kubernetes.io/configuration-snippet: |
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+      # Use MinIO-specific custom headers
+      nginx.ingress.kubernetes.io/proxy-set-headers: "nginx/minio-custom-headers"
     %{ if tenant_ingress_enable_tls }
     tls:
       - hosts: ["${tenant_ingress_api_host}"]
