@@ -115,7 +115,7 @@ resource "kubernetes_deployment_v1" "tailscale" {
         }
 
         container {
-          image = "tailscale/tailscale:v1.76.1"
+          image = "tailscale/tailscale:v1.84.0"
           name  = "tailscale"
 
           env {
