@@ -66,7 +66,7 @@ resource "helm_release" "prometheus_operator" {
         alertmanager_domain             = var.prometheus_alertmanager_domain
         grafana_domain                  = var.prometheus_grafana_domain
         grafana_admin_password          = random_password.grafana_admin_password.result
-        grafana_storage_class           = var.prometehus_grafana_storage_class
+        grafana_storage_class           = var.prometheus_grafana_storage_class
 
         ingress_class_name = var.prometheus_ingress_class_name
         ingress_enable_tls = var.prometheus_ingress_enable_tls

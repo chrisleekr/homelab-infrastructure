@@ -16,7 +16,7 @@ variable "prometheus_grafana_domain" {
   default     = "grafana.chrislee.local"
 }
 
-variable "prometehus_grafana_storage_class" {
+variable "prometheus_grafana_storage_class" {
   description = "The storage class for the grafana"
   type        = string
   default     = "longhorn"

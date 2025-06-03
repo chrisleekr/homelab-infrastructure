@@ -122,7 +122,7 @@ module "monitoring" {
   prometheus_ingress_enable_tls    = var.ingress_enable_tls
 
   prometheus_prometheus_domain     = var.prometheus_prometheus_domain
-  prometehus_grafana_storage_class = var.prometheus_persistence_storage_class_name
+  prometheus_grafana_storage_class = var.prometheus_persistence_storage_class_name
   prometheus_persistence_size      = var.prometheus_persistence_size
 
   prometheus_alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
