@@ -436,3 +436,33 @@ resource "kubernetes_secret" "gitlab_toolbox_s3cmd" {
     ignore_changes = [metadata[0].labels]
   }
 }
+
+# Auth0 OAuth provider configuration secret
+resource "kubernetes_secret" "gitlab_auth0_provider" {
+  depends_on = [
+    kubernetes_namespace.gitlab,
+  ]
+
+  metadata {
+    name      = "gitlab-auth0-provider"
+    namespace = kubernetes_namespace.gitlab.metadata[0].name
+  }
+
+  data = {
+    provider = yamlencode({
+      name  = "auth0"
+      label = "Sign in with Auth0"
+      icon  = ""
+      args = {
+        client_id     = var.gitlab_auth0_client_id
+        client_secret = var.gitlab_auth0_client_secret
+        domain        = var.gitlab_auth0_domain
+        scope         = "openid profile email"
+      }
+    })
+  }
+
+  lifecycle {
+    ignore_changes = [metadata[0].labels]
+  }
+}

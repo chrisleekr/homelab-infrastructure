@@ -110,6 +110,10 @@ module "gitlab_platform" {
   gitlab_gitlay_persistence_size             = var.gitlab_gitlay_persistence_size
 
   gitlab_runner_authentication_token = var.gitlab_runner_authentication_token
+
+  gitlab_auth0_client_id     = var.auth_auth0_client_id
+  gitlab_auth0_client_secret = var.auth_auth0_client_secret
+  gitlab_auth0_domain        = var.auth_auth0_domain
 }
 
 
@@ -132,6 +136,7 @@ module "logging" {
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
   auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
 }
+
 module "monitoring" {
   depends_on = [module.cert_manager_letsencrypt, module.logging]
   source     = "./monitoring"

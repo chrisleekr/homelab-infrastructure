@@ -132,3 +132,22 @@ variable "gitlab_runner_authentication_token" {
   default     = ""
   sensitive   = true
 }
+
+variable "gitlab_auth0_client_id" {
+  description = "The Auth0 client ID for GitLab authentication"
+  type        = string
+  default     = ""
+}
+
+variable "gitlab_auth0_client_secret" {
+  description = "The Auth0 client secret for GitLab authentication"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "gitlab_auth0_domain" {
+  description = "The Auth0 domain for GitLab authentication"
+  type        = string
+  default     = "chrislee.auth0.com"
+}
