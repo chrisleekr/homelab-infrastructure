@@ -1,0 +1,94 @@
+# https://github.com/oauth2-proxy/manifests/blob/main/helm/oauth2-proxy/values.yaml
+
+# Oauth client configuration specifics
+config:
+  existingSecret: oauth2-proxy-cookie-secret
+
+  # Auth0 OIDC configuration
+  configFile: |-
+    # Auth0 Provider Configuration
+    provider = "oidc"
+    provider_display_name = "Auth0"
+    oidc_issuer_url = "https://${auth0_domain}/"
+    redirect_url = "https://${oauth2_proxy_host}/oauth2/callback"
+
+    code_challenge_method = "S256"
+
+    # Security Configuration
+    email_domains = ["*"]
+    cookie_secure = true
+    cookie_httponly = true
+    cookie_samesite = "lax"
+    cookie_domains = ${oauth2_proxy_cookie_domains}
+
+    # Networking Configuration
+    reverse_proxy = true
+    real_client_ip_header = "X-Real-IP"
+
+    # Features Configuration
+    skip_provider_button = true
+    pass_access_token = true
+    pass_authorization_header = true
+    set_authorization_header = true
+    set_xauthrequest = true
+
+    # Domain Whitelist
+    whitelist_domains = ${oauth2_proxy_whitelist_domains}
+
+    # Upstream Configuration
+    upstreams = ["file:///dev/null"]
+
+    # Logging
+    silence_ping_logging = true
+    request_logging = true
+
+ingress:
+  enabled: true
+  className: ${ingress_class_name}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  labels: {}
+  hosts:
+  - ${oauth2_proxy_host}
+  path: /
+  %{ if ingress_enable_tls }
+  tls:
+    - secretName: oauth2-proxy-tls
+      hosts:
+        - ${oauth2_proxy_host}
+  %{ endif }
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 300Mi
+  requests:
+    cpu: 100m
+    memory: 300Mi
+
+
+metrics:
+  # Enable Prometheus metrics endpoint
+  enabled: true
+  # Serve Prometheus metrics on this port
+  port: 44180
+  service:
+    appProtocol: http
+  serviceMonitor:
+    # Enable Prometheus Operator ServiceMonitor
+    enabled: true
+    # Define the namespace where to deploy the ServiceMonitor resource
+    namespace: "${prometheus_namespace}"  # monitoring
+    # Prometheus Instance definition
+    prometheusInstance: default
+    # Prometheus scrape interval
+    interval: 60s
+    # Prometheus scrape timeout
+    scrapeTimeout: 30s
+
+hostAliases:
+- ip: ${host_alias_ip}
+  hostnames:
+  %{ for hostname in split(",", host_alias_hostnames) ~}
+  - "${hostname}"
+  %{ endfor ~}

@@ -2195,8 +2195,9 @@ server:
     ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
 
     # -- Defines which ingress controller will implement the resource
     ingressClassName: "${argocd_ingress_class_name}"

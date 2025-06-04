@@ -121,10 +121,10 @@ resource "kubernetes_ingress_v1" "kibana_ingress" {
     name      = "kibana-ingress"
     namespace = kubernetes_namespace.logging.metadata[0].name
     annotations = {
-      "cert-manager.io/cluster-issuer"          = "letsencrypt-prod"
-      "nginx.ingress.kubernetes.io/auth-type"   = "basic"
-      "nginx.ingress.kubernetes.io/auth-secret" = kubernetes_secret.frontend_basic_auth.metadata[0].name
-      "nginx.ingress.kubernetes.io/auth-realm"  = "Authentication Required"
+      "cert-manager.io/cluster-issuer"                    = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/auth-url"              = "https://${var.auth_oauth2_proxy_host}/oauth2/auth"
+      "nginx.ingress.kubernetes.io/auth-signin"           = "https://${var.auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
+      "nginx.ingress.kubernetes.io/auth-response-headers" = "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
     }
   }
 

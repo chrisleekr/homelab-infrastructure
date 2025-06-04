@@ -52,3 +52,9 @@ variable "argocd_config_repositories" {
   }))
   default = []
 }
+
+variable "auth_oauth2_proxy_host" {
+  description = "The host for the oauth2 proxy"
+  type        = string
+  default     = "auth.chrislee.local"
+}

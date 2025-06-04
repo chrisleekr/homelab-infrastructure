@@ -16,7 +16,7 @@ variable "prometheus_grafana_domain" {
   default     = "grafana.chrislee.local"
 }
 
-variable "prometehus_grafana_storage_class" {
+variable "prometheus_grafana_storage_class" {
   description = "The storage class for the grafana"
   type        = string
   default     = "longhorn"
@@ -108,4 +108,10 @@ variable "elastalert2_elasticsearch_password" {
   description = "The password for the elastalert2"
   type        = string
   sensitive   = true
+}
+
+variable "auth_oauth2_proxy_host" {
+  description = "The host for the oauth2 proxy"
+  type        = string
+  default     = "auth.chrislee.local"
 }

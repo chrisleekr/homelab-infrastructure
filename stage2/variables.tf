@@ -340,7 +340,7 @@ variable "elasticsearch_resource_request_cpu" {
 variable "elasticsearch_resource_limit_memory" {
   description = "Memory limit for Elasticsearch"
   type        = string
-  default     = "3Gi"
+  default     = "2Gi"
 }
 
 variable "elasticsearch_resource_limit_cpu" {
@@ -480,4 +480,46 @@ variable "argocd_config_repositories_json_encoded" {
   description = "The repositories for the argocd - json encoded"
   type        = string
   default     = "[]"
+}
+
+variable "auth_ingress_class_name" {
+  description = "Ingress class name for the oauth2 proxy"
+  type        = string
+  default     = "nginx"
+}
+
+variable "auth_oauth2_proxy_host" {
+  description = "The host for the oauth2 proxy"
+  type        = string
+  default     = "auth.chrislee.local"
+}
+
+variable "auth_oauth2_proxy_cookie_domains" {
+  description = "The domains for the oauth2 proxy cookie"
+  type        = string
+  default     = "[\".chrislee.local\"]"
+}
+
+variable "auth_oauth2_proxy_whitelist_domains" {
+  description = "The whitelist domains for the oauth2 proxy"
+  type        = string
+  default     = "[\"*.chrislee.local\"]"
+}
+
+variable "auth_auth0_domain" {
+  description = "The domain name for the auth0"
+  type        = string
+  default     = "chrislee.auth0.com"
+}
+
+variable "auth_auth0_client_id" {
+  description = "The client id for the auth0"
+  type        = string
+  default     = ""
+}
+
+variable "auth_auth0_client_secret" {
+  description = "The client secret for the auth0"
+  type        = string
+  sensitive   = true
 }

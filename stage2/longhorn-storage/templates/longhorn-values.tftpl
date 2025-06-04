@@ -1,0 +1,58 @@
+# https://github.com/longhorn/longhorn/blob/master/chart/values.yaml
+
+persistence:
+  defaultClassReplicaCount: 1
+  reclaimPolicy: Retain
+
+preUpgradeChecker:
+  jobEnabled: true
+  upgradeVersionCheck: true
+
+csi:
+  kubeletRootDir: ~
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+defaultSettings:
+  defaultDataPath: ${longhorn_default_settings_default_data_path}
+  defaultReplicaCount: 1
+  backupCompressionMethod: "gzip"
+  snapshotMaxCount: 3
+
+ingress:
+  enabled: true
+  ingressClassName: ${longhorn_ingress_class_name}
+  host: ${longhorn_ingress_host}
+  tls: ${longhorn_ingress_enable_tls}
+  secureBackends: true
+  tlsSecret: longhorn-tls
+  path: /
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
+
+metrics:
+  serviceMonitor:
+    # -- Setting that allows the creation of a Prometheus ServiceMonitor resource for Longhorn Manager components.
+    enabled: true
+    # -- Additional labels for the Prometheus ServiceMonitor resource.
+    additionalLabels:
+      release: kube-prometheus-stack
+    # -- Annotations for the Prometheus ServiceMonitor resource.
+    annotations: {}
+    # -- Interval at which Prometheus scrapes the metrics from the target.
+    interval: "30s"
+    # -- Timeout after which Prometheus considers the scrape to be failed.
+    scrapeTimeout: "10s"
+    # -- Configures the relabeling rules to apply the target's metadata labels. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    relabelings: []
+    # -- Configures the relabeling rules to apply to the samples before ingestion. See the [Prometheus Operator
+    # documentation](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Endpoint) for
+    # formatting details.
+    metricRelabelings: []

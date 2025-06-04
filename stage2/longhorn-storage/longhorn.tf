@@ -35,8 +35,9 @@ resource "helm_release" "longhorn" {
 
   values = [
     templatefile(
-      "${path.module}/longhorn-values.tftpl",
+      "${path.module}/templates/longhorn-values.tftpl",
       {
+        auth_oauth2_proxy_host                      = var.auth_oauth2_proxy_host
         frontend_basic_auth_secret_name             = kubernetes_secret.frontend_basic_auth.metadata[0].name
         longhorn_default_settings_default_data_path = var.longhorn_default_settings_default_data_path
         longhorn_ingress_class_name                 = var.longhorn_ingress_class_name

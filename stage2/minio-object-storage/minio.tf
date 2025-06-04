@@ -167,6 +167,7 @@ resource "helm_release" "minio_tenant" {
         tenant_ingress_api_host         = var.minio_tenant_ingress_api_host
         tenant_ingress_console_host     = var.minio_tenant_ingress_console_host
         tenant_ingress_enable_tls       = var.minio_tenant_ingress_enable_tls
+        auth_oauth2_proxy_host          = var.auth_oauth2_proxy_host
       }
     ),
   ]
