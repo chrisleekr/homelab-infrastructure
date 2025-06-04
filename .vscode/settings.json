@@ -42,6 +42,7 @@
     "minitunnel",
     "multipathd",
     "nerdctl",
+    "omniauth",
     "pipefail",
     "posix",
     "precommit",

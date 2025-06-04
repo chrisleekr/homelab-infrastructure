@@ -198,6 +198,19 @@ global:
       connection:
         secret: ${object_store_connection_secret}
         key: connection
+
+    ## OmniAuth settings for Auth0
+    omniauth:
+      enabled: true
+      allowSingleSignOn: ['auth0']
+      blockAutoCreatedUsers: false
+      autoLinkUser: ['auth0']
+      syncProfileFromProvider: ['auth0']
+      syncProfileAttributes: ['name', 'email']
+      providers:
+        - secret: ${auth0_provider_secret}
+          key: provider
+
     lfs:
       enabled: true
       bucket: git-lfs

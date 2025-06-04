@@ -85,6 +85,9 @@ resource "helm_release" "gitlab" {
 
         redis_master_persistence_size = var.gitlab_redis_master_persistence_size
         gitlay_persistence_size       = var.gitlab_gitlay_persistence_size
+
+        # Auth0 configuration
+        auth0_provider_secret = kubernetes_secret.gitlab_auth0_provider.metadata[0].name
       }
     ),
   ]
