@@ -34,8 +34,10 @@ resource "null_resource" "patch_coredns_configmap" {
   provisioner "local-exec" {
     command = <<EOT
       kubectl get configmap coredns -n kube-system -o yaml > /tmp/coredns-configmap.yaml
-      sed -i '/loadbalance/a \ \ \ \ \ \ \ \ import /etc/coredns/custom/*.override' /tmp/coredns-configmap.yaml
-      sed -i '/^    }$/a \ \ \ \ import /etc/coredns/custom/*.server'  /tmp/coredns-configmap.yaml
+      # Only add the override import if it doesn't already exist
+      grep -q "import /etc/coredns/custom/\*.override" /tmp/coredns-configmap.yaml || sed -i '/loadbalance/a \ \ \ \ \ \ \ \ import /etc/coredns/custom/*.override' /tmp/coredns-configmap.yaml
+      # Only add the server import if it doesn't already exist
+      grep -q "import /etc/coredns/custom/\*.server" /tmp/coredns-configmap.yaml || sed -i '/^    }$/a \ \ \ \ import /etc/coredns/custom/*.server'  /tmp/coredns-configmap.yaml
       kubectl apply -f /tmp/coredns-configmap.yaml
     EOT
   }
@@ -53,7 +55,21 @@ resource "null_resource" "patch_coredns_deployment" {
 
   provisioner "local-exec" {
     command = <<EOT
-      kubectl patch deployment coredns -n kube-system --type json -p '[{"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "coredns-custom", "configMap": {"name": "coredns-custom", "optional": true}}}, {"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "coredns-custom", "mountPath": "/etc/coredns/custom", "readOnly": true}}]'
+      # Check if the volume already exists
+      if ! kubectl get deployment coredns -n kube-system -o jsonpath='{.spec.template.spec.volumes[*].name}' | grep -q "coredns-custom"; then
+        echo "Adding coredns-custom volume..."
+        kubectl patch deployment coredns -n kube-system --type json -p '[{"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "coredns-custom", "configMap": {"name": "coredns-custom", "optional": true}}}]'
+      else
+        echo "coredns-custom volume already exists"
+      fi
+
+      # Check if the volumeMount already exists
+      if ! kubectl get deployment coredns -n kube-system -o jsonpath='{.spec.template.spec.containers[0].volumeMounts[*].name}' | grep -q "coredns-custom"; then
+        echo "Adding coredns-custom volumeMount..."
+        kubectl patch deployment coredns -n kube-system --type json -p '[{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "coredns-custom", "mountPath": "/etc/coredns/custom", "readOnly": true}}]'
+      else
+        echo "coredns-custom volumeMount already exists"
+      fi
     EOT
   }
 }

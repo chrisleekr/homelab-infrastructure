@@ -109,3 +109,9 @@ variable "elastalert2_elasticsearch_password" {
   type        = string
   sensitive   = true
 }
+
+variable "auth_oauth2_proxy_host" {
+  description = "The host for the oauth2 proxy"
+  type        = string
+  default     = "auth.chrislee.local"
+}

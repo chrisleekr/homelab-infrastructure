@@ -17,6 +17,24 @@ module "nginx" {
   wireguard_port = var.wireguard_port
 }
 
+module "auth" {
+  depends_on = [module.nginx, module.monitoring, module.cert_manager_letsencrypt]
+  source     = "./auth"
+
+  prometheus_namespace                = module.monitoring.monitoring_namespace
+  auth_ingress_class_name             = var.auth_ingress_class_name
+  auth_ingress_enable_tls             = var.ingress_enable_tls
+  auth_oauth2_proxy_host              = var.auth_oauth2_proxy_host
+  auth_oauth2_proxy_cookie_domains    = var.auth_oauth2_proxy_cookie_domains
+  auth_oauth2_proxy_whitelist_domains = var.auth_oauth2_proxy_whitelist_domains
+  auth_auth0_domain                   = var.auth_auth0_domain
+  auth_auth0_client_id                = var.auth_auth0_client_id
+  auth_auth0_client_secret            = var.auth_auth0_client_secret
+  auth_host_alias_ip                  = var.cert_manager_host_alias_ip
+  auth_host_alias_hostnames           = var.cert_manager_host_alias_hostnames
+}
+
+
 module "cert_manager_letsencrypt" {
   depends_on = [module.nginx]
   source     = "./cert-manager-letsencrypt"
@@ -37,6 +55,7 @@ module "longhorn_storage" {
   longhorn_ingress_class_name                 = var.longhorn_ingress_class_name
   longhorn_ingress_host                       = var.longhorn_ingress_host
   longhorn_ingress_enable_tls                 = var.ingress_enable_tls
+  auth_oauth2_proxy_host                      = var.auth_oauth2_proxy_host
 }
 
 module "minio_object_storage" {
@@ -54,6 +73,7 @@ module "minio_object_storage" {
   minio_tenant_ingress_api_host         = var.minio_tenant_ingress_api_host
   minio_tenant_ingress_console_host     = var.minio_tenant_ingress_console_host
   minio_tenant_ingress_enable_tls       = var.ingress_enable_tls
+  auth_oauth2_proxy_host                = var.auth_oauth2_proxy_host
 }
 
 module "gitlab_platform" {
@@ -110,6 +130,7 @@ module "logging" {
   kibana_ingress_enable_tls        = var.ingress_enable_tls
   kibana_domain                    = var.kibana_domain
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
+  auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
 }
 module "monitoring" {
   depends_on = [module.cert_manager_letsencrypt, module.logging]
@@ -137,6 +158,8 @@ module "monitoring" {
   elastalert2_elasticsearch_port     = module.logging.elasticsearch_port
   elastalert2_elasticsearch_username = module.logging.elasticsearch_username
   elastalert2_elasticsearch_password = module.logging.elasticsearch_password
+
+  auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
 }
 
 
@@ -149,6 +172,7 @@ module "kubecost" {
   kubecost_ingress_host            = var.kubecost_ingress_host
   kubecost_ingress_enable_tls      = var.ingress_enable_tls
   kubecost_ingress_class_name      = var.kubecost_ingress_class_name
+  auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
 }
 
 module "vpn" {
@@ -179,4 +203,6 @@ module "argocd" {
   argocd_ingress_class_name     = var.argocd_ingress_class_name
   argocd_ssh_known_hosts_base64 = var.argocd_ssh_known_hosts_base64
   argocd_config_repositories    = jsondecode(var.argocd_config_repositories_json_encoded)
+
+  auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
 }

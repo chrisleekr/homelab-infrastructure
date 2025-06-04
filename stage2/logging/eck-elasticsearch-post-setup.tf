@@ -23,7 +23,6 @@ resource "kubernetes_config_map" "elasticsearch_setup_script" {
 }
 
 resource "kubernetes_job" "elasticsearch_post_setup" {
-  # Add data source dependency
   depends_on = [
     kubernetes_config_map.elasticsearch_setup_script,
     data.kubernetes_resource.elasticsearch,
@@ -36,6 +35,7 @@ resource "kubernetes_job" "elasticsearch_post_setup" {
   }
 
   spec {
+
     template {
       metadata {
         # Add elasticsearch version to force job recreation when elasticsearch changes

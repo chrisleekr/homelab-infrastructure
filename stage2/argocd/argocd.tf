@@ -22,6 +22,7 @@ resource "helm_release" "argo_cd" {
       argocd_ingress_class_name        = var.argocd_ingress_class_name
       argocd_ssh_known_hosts_base64    = var.argocd_ssh_known_hosts_base64
       argocd_config_repositories       = var.argocd_config_repositories
+      auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
     })
   ]
 }

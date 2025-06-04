@@ -25,3 +25,9 @@ variable "longhorn_ingress_enable_tls" {
   type        = bool
   default     = true
 }
+
+variable "auth_oauth2_proxy_host" {
+  description = "The host for the oauth2 proxy"
+  type        = string
+  default     = "auth.chrislee.local"
+}

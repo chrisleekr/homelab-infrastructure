@@ -38,7 +38,8 @@ resource "helm_release" "kubecost" {
     templatefile(
       "${path.module}/templates/kubecost-values.tftpl",
       {
-        kubecost_token = var.kubecost_token
+        auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
+        kubecost_token         = var.kubecost_token
 
         ingress_enable_tls = var.kubecost_ingress_enable_tls
         ingress_class_name = var.kubecost_ingress_class_name

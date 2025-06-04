@@ -40,8 +40,6 @@ resource "kubectl_manifest" "prometheus_rules" {
   )
 }
 
-
-
 resource "helm_release" "prometheus_operator" {
   depends_on = [
     kubernetes_namespace.monitoring_namespace,
@@ -82,6 +80,8 @@ resource "helm_release" "prometheus_operator" {
         minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
         minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
         minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
+
+        auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
       }
     )
   ]
