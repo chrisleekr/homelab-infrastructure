@@ -482,6 +482,19 @@ variable "argocd_config_repositories_json_encoded" {
   default     = "[]"
 }
 
+
+variable "argocd_rbac_policy_default" {
+  description = "The default RBAC policy for ArgoCD"
+  type        = string
+  default     = "role:readonly"
+}
+
+variable "argocd_rbac_policy_csv" {
+  description = "The RBAC policy for ArgoCD"
+  type        = string
+  default     = ""
+}
+
 variable "auth_ingress_class_name" {
   description = "Ingress class name for the oauth2 proxy"
   type        = string
