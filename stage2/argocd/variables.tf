@@ -58,3 +58,33 @@ variable "auth_oauth2_proxy_host" {
   type        = string
   default     = "auth.chrislee.local"
 }
+
+variable "argocd_auth0_domain" {
+  description = "The Auth0 domain for ArgoCD OIDC"
+  type        = string
+  default     = "chrislee.auth0.com"
+}
+
+variable "argocd_auth0_client_id" {
+  description = "The Auth0 client ID for ArgoCD OIDC"
+  type        = string
+  default     = ""
+}
+
+variable "argocd_auth0_client_secret" {
+  description = "The Auth0 client secret for ArgoCD OIDC"
+  type        = string
+  sensitive   = true
+}
+
+variable "argocd_rbac_policy_default" {
+  description = "The default RBAC policy for ArgoCD"
+  type        = string
+  default     = "role:readonly"
+}
+
+variable "argocd_rbac_policy_csv" {
+  description = "The RBAC policy for ArgoCD"
+  type        = string
+  default     = ""
+}

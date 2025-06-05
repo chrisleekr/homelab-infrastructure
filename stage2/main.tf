@@ -208,6 +208,12 @@ module "argocd" {
   argocd_ingress_class_name     = var.argocd_ingress_class_name
   argocd_ssh_known_hosts_base64 = var.argocd_ssh_known_hosts_base64
   argocd_config_repositories    = jsondecode(var.argocd_config_repositories_json_encoded)
+  argocd_rbac_policy_default    = var.argocd_rbac_policy_default
+  argocd_rbac_policy_csv        = var.argocd_rbac_policy_csv
 
   auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
+
+  argocd_auth0_domain        = var.auth_auth0_domain
+  argocd_auth0_client_id     = var.auth_auth0_client_id
+  argocd_auth0_client_secret = var.auth_auth0_client_secret
 }

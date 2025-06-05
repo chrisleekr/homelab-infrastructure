@@ -3,7 +3,9 @@
 
 resource "helm_release" "argo_cd" {
   depends_on = [
-    kubernetes_namespace.argocd
+    kubernetes_namespace.argocd,
+    kubernetes_secret.argocd_auth0_oidc_secret,
+    kubernetes_config_map.argocd_rbac_cm
   ]
 
   name       = "argocd"
@@ -23,6 +25,9 @@ resource "helm_release" "argo_cd" {
       argocd_ssh_known_hosts_base64    = var.argocd_ssh_known_hosts_base64
       argocd_config_repositories       = var.argocd_config_repositories
       auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
+      argocd_auth0_domain              = var.argocd_auth0_domain
+      argocd_auth0_client_id           = var.argocd_auth0_client_id
+      argocd_auth0_client_secret       = var.argocd_auth0_client_secret
     })
   ]
 }

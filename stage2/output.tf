@@ -9,7 +9,7 @@ output "minio_tenant_user_secret_key" {
   sensitive = true
 }
 
-output "gitlab_initial_root_passwrd" {
+output "gitlab_initial_root_password" {
   value     = length(module.gitlab_platform) > 0 ? module.gitlab_platform[0].gitlab_initial_root_password : null
   sensitive = true
 }

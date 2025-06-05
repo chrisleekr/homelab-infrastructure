@@ -176,7 +176,7 @@ configs:
 
     # -- Enable logs RBAC enforcement
     ## Ref: https://argo-cd.readthedocs.io/en/latest/operator-manual/upgrading/2.3-2.4/#enable-logs-rbac-enforcement
-    server.rbac.log.enforce.enable: false
+    server.rbac.log.enforce.enable: true
 
     # -- Enable exec feature in Argo UI
     ## Ref: https://argo-cd.readthedocs.io/en/latest/operator-manual/rbac/#exec-resource
@@ -194,7 +194,25 @@ configs:
 
     # -- Enable Status Badge
     ## Ref: https://argo-cd.readthedocs.io/en/stable/user-guide/status-badge/
-    statusbadge.enabled: false
+    statusbadge.enabled: true
+
+    # ArgoCD URL
+    url: https://${argocd_domain}
+
+    # Direct OIDC configuration for Auth0
+    # References:
+    #   https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/
+    #   https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/auth0/
+    #   https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#alternative
+    oidc.config: |
+      name: auth0
+      issuer: https://${argocd_auth0_domain}/
+
+      clientID: ${argocd_auth0_client_id}
+      clientSecret: $argocd-auth0-secret:client_secret
+
+      # Optional set of OIDC scopes to request. If omitted, defaults to: ["openid", "profile", "email", "groups"]
+      requestedScopes: ["openid", "profile", "email", "https://${auth_oauth2_proxy_host}/groups"]
 
     resource.exclusions: |
       - apiGroups:
@@ -300,11 +318,12 @@ configs:
 
   # Argo CD RBAC policy configuration
   ## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/rbac.md
+  # Created in argocd-configmap.tf
   rbac:
     # -- Create the argocd-rbac-cm configmap with ([Argo CD RBAC policy]) definitions.
     # If false, it is expected the configmap will be created by something else.
     # Argo CD will not work if there is no configmap created with the name above.
-    create: true
+    create: false
 
     # -- Annotations to be added to argocd-rbac-cm configmap
     annotations: {}
@@ -327,6 +346,8 @@ configs:
     #   p, role:org-admin, logs, get, *, allow
     #   p, role:org-admin, exec, create, */*, allow
     #   g, your-github-org:your-team, role:org-admin
+
+
 
     # -- OIDC scopes to examine during rbac enforcement (in addition to `sub` scope).
     # The scope value can be a string, or a list of strings.
@@ -928,7 +949,7 @@ controller:
 ## Dex
 dex:
   # -- Enable dex
-  enabled: true
+  enabled: false
   # -- Dex name
   name: dex-server
 
@@ -2195,9 +2216,6 @@ server:
     ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
 
     # -- Defines which ingress controller will implement the resource
     ingressClassName: "${argocd_ingress_class_name}"
