@@ -708,6 +708,10 @@ postgresql:
     persistence:
       enabled: true
       size: ${postgresql_primary_persistence_size}
+    extendedConfiguration: |
+      autovacuum = on
+      autovacuum_analyze_scale_factor = 0.05
+      autovacuum_analyze_threshold = 10
   metrics:
     enabled: true
     service:
@@ -874,7 +878,7 @@ gitlab:
         memory: 500Mi
         cpu: 0
       limits:
-        memory: 2Gi
+        memory: 3Gi
         cpu: 1
     metrics:
       serviceMonitor:

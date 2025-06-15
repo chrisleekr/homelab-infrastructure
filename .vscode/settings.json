@@ -12,6 +12,7 @@
     "alertmanager",
     "argocd",
     "autodiscover",
+    "autovacuum",
     "blockinfile",
     "certmanager",
     "chrislee",
