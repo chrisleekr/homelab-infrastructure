@@ -54,6 +54,7 @@
     "sshpass",
     "templatefile",
     "tflint",
+    "tftpl",
     "traefik",
     "trivy"
   ],
