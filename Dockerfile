@@ -24,12 +24,12 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN set -eux; \
   \
   apk add --no-cache \
-  ca-certificates=20241121-r1 \
+  ca-certificates=20250619-r0 \
   curl=8.12.1-r0 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
-  bind-tools=9.18.37-r0 \
-  git=2.45.3-r0 \
+  bind-tools=9.18.39-r0 \
+  git=2.45.4-r0 \
   && \
   \
   # Install kubectl - https://dl.k8s.io/release/v1.30.2/bin/linux/arm64/kubectl
