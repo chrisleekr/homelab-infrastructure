@@ -24,8 +24,10 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
-        exclude: '^[^/]+$'
+        exclude: "^[^/]+$"
       - id: terraform_trivy
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.trivyignore.yaml
       - id: terraform_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
