@@ -91,6 +91,13 @@ The docker image contains the following tools:
     /srv/stage1# ansible all -i "inventories/inventory.yml" -m ping
     ```
 
+    - If you want to validate the Ansible playbook, you can run the following command:
+
+      ```bash
+      /srv/stage1# ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --check
+      BECOME password: <ubuntu root password>
+      ```
+
 2. Prepare the VM template by running the following command:
 
     ```bash
