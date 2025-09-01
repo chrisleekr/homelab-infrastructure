@@ -1,6 +1,6 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
 # {{ ansible_managed }}
-{% for p in snapd_block_packages %}
+{% for p in host_setup_snapd_block_packages %}
 Package: {{ p }}
 Pin: release *
 Pin-Priority: -1

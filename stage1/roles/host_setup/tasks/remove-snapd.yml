@@ -3,9 +3,9 @@
 
 - name: Merge snapd configuration between defaults and custom
   ansible.builtin.set_fact:
-    snapd_services: "{{ host_setup_snapd_defaults_services | union(host_setup_snapd_defaults_services) | unique }}"
-    snapd_files: "{{ host_setup_snapd_defaults_files | union(host_setup_snapd_files) | unique }}"
-    snapd_block_packages: "{{ host_setup_snapd_defaults_block_packages | union(host_setup_snapd_block_packages) | unique | sort }}"
+    host_setup_snapd_services: "{{ host_setup_snapd_defaults_services | union(host_setup_snapd_services) | unique }}"
+    host_setup_snapd_files: "{{ host_setup_snapd_defaults_files | union(host_setup_snapd_files) | unique }}"
+    host_setup_snapd_block_packages: "{{ host_setup_snapd_defaults_block_packages | union(host_setup_snapd_block_packages) | unique | sort }}"
 
 - name: Remove snap packages
   when:
@@ -13,25 +13,24 @@
   block:
     - name: Check installed snaps
       ansible.builtin.command: "snap list"
-      register: snap_list_output
+      register: host_setup_snap_list_output
       changed_when: false
       failed_when: false
 
     - name: Snap packages
       ansible.builtin.set_fact:
-        snap_list: "{{ snap_list_output.stdout_lines[1:] }}"
+        host_setup_snap_list: "{{ host_setup_snap_list_output.stdout_lines[1:] }}"
       when:
-        - snap_list_output.rc == 0
+        - host_setup_snap_list_output.rc == 0
 
     - name: Uninstall snaps
       ansible.builtin.include_tasks: "uninstall-snaps.yml"
       when:
-        - snap_list_output.rc == 0
-        - snap_list | length > 0
+        - host_setup_snap_list_output.rc == 0
+        - host_setup_snap_list | length > 0
       loop_control:
         loop_var: snaps_to_remove
-      loop:
-        "{{ snap_list }}"
+      loop: "{{ host_setup_snap_list }}"
 
 - name: Shutdown services, sockets and timers
   ansible.builtin.service:
@@ -39,8 +38,7 @@
     state: "{{ host_setup_snapd_state }}"
     enabled: "{{ host_setup_snapd_enabled }}"
   failed_when: false
-  loop:
-    "{{ host_setup_snapd_defaults_services }}"
+  loop: "{{ host_setup_snapd_defaults_services }}"
   loop_control:
     label: "{{ item }}"
 
@@ -50,7 +48,7 @@
   block:
     - name: Remove snapd packages
       ansible.builtin.package:
-        name: "{{ snapd_block_packages }}"
+        name: "{{ host_setup_snapd_block_packages }}"
         state: absent
         purge: true
 
@@ -68,7 +66,7 @@
             - clean apt cache
             - update package cache
           when:
-            - snapd_block_later_installation
+            - host_setup_snapd_block_later_installation
 
     - name: Remove snapd-related directories
       ansible.builtin.file:

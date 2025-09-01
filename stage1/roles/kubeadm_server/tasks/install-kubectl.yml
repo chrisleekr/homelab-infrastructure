@@ -2,10 +2,10 @@
 - name: Check if kubectl exists
   ansible.builtin.stat:
     path: /usr/local/sbin/kubectl
-  register: kubectl_file
+  register: kubeadm_server_kubectl_file
 
 - name: Install kubectl
-  when: not kubectl_file.stat.exists
+  when: not kubeadm_server_kubectl_file.stat.exists
   block:
     - name: Download kubectl
       ansible.builtin.get_url:

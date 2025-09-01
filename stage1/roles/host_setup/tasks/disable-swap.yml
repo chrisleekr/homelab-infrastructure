@@ -1,8 +1,8 @@
 ---
 - name: Disable swap
   ansible.builtin.command: swapoff -a
-  register: swapoff
-  changed_when: swapoff.rc == 0
+  register: host_setup_swapoff
+  changed_when: host_setup_swapoff.rc == 0
 
 - name: Remove swap entry from /etc/fstab
   ansible.builtin.replace:

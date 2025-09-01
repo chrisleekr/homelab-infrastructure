@@ -2,10 +2,10 @@
 - name: Check if crictl exists
   ansible.builtin.stat:
     path: /usr/local/bin/crictl
-  register: crictl_stat
+  register: kubeadm_server_crictl_stat
 
 - name: Download and extract crictl
-  when: not crictl_stat.stat.exists
+  when: not kubeadm_server_crictl_stat.stat.exists
   block:
     - name: Download crictl
       vars:

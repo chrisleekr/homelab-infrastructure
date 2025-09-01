@@ -1,25 +1,24 @@
 ---
 # https://medium.com/@areesmoon/setting-up-minikube-and-accessing-minikube-dashboard-09b42fa25fb6
 
-
 # Reference: https://stackoverflow.com/a/77917988
 - name: Remove Temp Files
   ansible.builtin.command: "rm -rf /tmp/juju-*"
-  register: remove_temp_files
-  changed_when: remove_temp_files.rc == 0
+  register: minikube_server_remove_temp_files
+  changed_when: minikube_server_remove_temp_files.rc == 0
 
 # Reference: https://github.com/climacs-net/my-cool-service/blob/c1dd14e23aa54c1cdfaf0e85f9540a8631a1b1d8/ansible/playbook.yml#L83C1-L84C48
 - name: Fix permissions for Minikube
   ansible.posix.sysctl:
     name: fs.protected_regular
-    value: '0'
+    value: "0"
     state: present
     reload: true
 
 - name: Make sysctl setting permanent
   ansible.builtin.lineinfile:
     path: /etc/sysctl.d/99-custom.conf
-    line: 'fs.protected_regular = 0'
+    line: "fs.protected_regular = 0"
     create: true
     mode: "0600"
   notify: "reload sysctl"
@@ -31,7 +30,7 @@
     owner: root
     group: root
     mode: "u=rw,go=r"
-  register: minikube_service
+  register: minikube_server_minikube_service
 
 - name: Create minitunnel.service file
   ansible.builtin.template:
@@ -40,10 +39,10 @@
     owner: root
     group: root
     mode: "u=rw,go=r"
-  register: minitunnel_service
+  register: minikube_server_minitunnel_service
 
 - name: Notify handlers
-  when: minikube_service.changed or minitunnel_service.changed
+  when: minikube_server_minikube_service.changed or minikube_server_minitunnel_service.changed
   ansible.builtin.debug:
     msg: "Reloading systemd daemon and enable services"
   changed_when: true
@@ -57,13 +56,13 @@
   ansible.builtin.systemd_service:
     name: minikube
     state: started
-  register: minikube_status
+  register: minikube_server_minikube_status
   failed_when: false
   changed_when: false
 
 # Notify to start minikube if it's not running
 - name: Notify to start minikube if not running
-  when: minikube_status.status is not defined or minikube_status.status.ActiveState != 'active'
+  when: minikube_server_minikube_status.status is not defined or minikube_server_minikube_status.status.ActiveState != 'active'
   ansible.builtin.debug:
     msg: "Minikube service is not running, notifying to start it."
   notify: "start minikube"
@@ -73,13 +72,13 @@
   ansible.builtin.systemd_service:
     name: minitunnel
     state: started
-  register: minitunnel_status
+  register: minikube_server_minitunnel_status
   failed_when: false
   changed_when: false
 
 # Notify to start minitunnel if it's not running
 - name: Notify to start minitunnel if not running
-  when: minitunnel_status.status is not defined or minitunnel_status.status.ActiveState != 'active'
+  when: minikube_server_minitunnel_status.status is not defined or minikube_server_minitunnel_status.status.ActiveState != 'active'
   ansible.builtin.debug:
     msg: "Minitunnel service is not running, notifying to start it."
   notify: "start minitunnel"
@@ -88,31 +87,31 @@
 - name: Check if /usr/local/bin/kubectl exists
   ansible.builtin.stat:
     path: /usr/local/bin/kubectl
-  register: kubectl_stat
+  register: minikube_server_kubectl_stat
 
 - name: Set kubectl alias
   ansible.builtin.shell:
     cmd: "ln -s $(which minikube) /usr/local/bin/kubectl"
-  register: kubectl_alias
-  changed_when: kubectl_alias.rc == 0
-  when: not kubectl_stat.stat.exists
+  register: minikube_server_kubectl_alias
+  changed_when: minikube_server_kubectl_alias.rc == 0
+  when: not minikube_server_kubectl_stat.stat.exists
 
 # One more time
 # Reference: https://stackoverflow.com/a/77917988
 - name: Remove Temp Files
   ansible.builtin.command: "rm -rf /tmp/juju-*"
-  register: remove_temp_files
-  changed_when: remove_temp_files.rc == 0
+  register: minikube_server_remove_temp_files_again
+  changed_when: minikube_server_remove_temp_files_again.rc == 0
 
 # Reference: https://github.com/climacs-net/my-cool-service/blob/c1dd14e23aa54c1cdfaf0e85f9540a8631a1b1d8/ansible/playbook.yml#L83C1-L84C48
 - name: Fix permissions for Minikube
   ansible.posix.sysctl:
     name: fs.protected_regular
-    value: '0'
+    value: "0"
     state: present
     reload: true
 
 - name: Run kubectl cluster-info
   ansible.builtin.command: "kubectl cluster-info"
-  register: kubectl_cluster_info
-  changed_when: kubectl_cluster_info.rc == 0
+  register: minikube_server_kubectl_cluster_info
+  changed_when: minikube_server_kubectl_cluster_info.rc == 0

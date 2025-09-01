@@ -4,13 +4,13 @@
     kind: ConfigMap
     namespace: kube-system
     name: kube-proxy
-  register: kube_proxy_configmap
+  register: localhost_post_setup_kube_proxy_configmap
 
 - name: Update kube-proxy configmap
   kubernetes.core.k8s:
     state: present
     # yamllint disable-line rule:line-length
-    definition: "{{ kube_proxy_configmap.resources[0] | combine({'data': {'config.conf': kube_proxy_configmap.resources[0].data['config.conf'] | regex_replace('strictARP: false', 'strictARP: true')}}) }}"
+    definition: "{{ localhost_post_setup_kube_proxy_configmap.resources[0] | combine({'data': {'config.conf': localhost_post_setup_kube_proxy_configmap.resources[0].data['config.conf'] | regex_replace('strictARP: false', 'strictARP: true')}}) }}"
 
 - name: Install or upgrade MetalLB using Helm
   kubernetes.core.helm:
@@ -28,8 +28,8 @@
     namespace: metallb-system
     label_selectors:
       - app.kubernetes.io/name=metallb
-  register: metallb_pods
-  until: metallb_pods.resources | selectattr('status.phase', '==', 'Running') | length == metallb_pods.resources | length
+  register: localhost_post_setup_metallb_pods
+  until: localhost_post_setup_metallb_pods.resources | selectattr('status.phase', '==', 'Running') | length == localhost_post_setup_metallb_pods.resources | length
   retries: 10
   delay: 30
 

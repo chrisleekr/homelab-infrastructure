@@ -2,10 +2,10 @@
 - name: Check if kubeadm is already initialised
   ansible.builtin.stat:
     path: /etc/kubernetes/admin.conf
-  register: kubernetes_admin_check
+  register: kubeadm_server_kubernetes_admin_check
 
 - name: Initialise kubeadm
-  when: not kubernetes_admin_check.stat.exists
+  when: not kubeadm_server_kubernetes_admin_check.stat.exists
   block:
     - name: Create kubeadm-config.yaml file from template
       ansible.builtin.template:
@@ -15,8 +15,8 @@
 
     - name: Initialise kubeadm
       ansible.builtin.command: "kubeadm init --config {{ ansible_env.HOME }}/kubeadm-config.yaml --upload-certs"
-      register: kubeadm_init
-      changed_when: kubeadm_init.rc != 0
+      register: kubeadm_server_kubeadm_init
+      changed_when: kubeadm_server_kubeadm_init.rc != 0
 
 - name: Include copy-kubeconfig role
   ansible.builtin.include_tasks: copy-kubeconfig.yml
@@ -27,15 +27,15 @@
       set -o pipefail && \
       kubectl get nodes --no-headers | wc -l
     executable: /bin/bash
-  register: node_count_check
-  changed_when: node_count_check.rc != 0
+  register: kubeadm_server_node_count_check
+  changed_when: kubeadm_server_node_count_check.rc != 0
 
-- name: Print node_count_check
+- name: Print kubeadm_server_node_count_check
   ansible.builtin.debug:
-    var: node_count_check
+    var: kubeadm_server_node_count_check
 
 - name: Generate kubeadm join command on primary node
-  when: node_count_check.stdout | int < node_count | int
+  when: kubeadm_server_node_count_check.stdout | int < node_count | int
   ansible.builtin.shell:
     cmd: |
       set -o pipefail && \
@@ -43,8 +43,8 @@
       --control-plane --apiserver-bind-port=6443 \
       --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace)
     executable: /bin/bash
-  register: kubeadm_join_command
-  changed_when: kubeadm_join_command.rc != 0
+  register: kubeadm_server_kubeadm_join_command
+  changed_when: kubeadm_server_kubeadm_join_command.rc != 0
 
 - name: Check if kubeadm-config has controlPlaneEndpoint configured
   ansible.builtin.shell:
@@ -53,12 +53,12 @@
       kubectl -n kube-system get configmap kubeadm-config -o jsonpath='{.data.ClusterConfiguration}' \
       | grep -q 'controlPlaneEndpoint: {{ ansible_host }}:6443'
     executable: /bin/bash
-  register: check_control_plane_endpoint
+  register: kubeadm_server_check_control_plane_endpoint
   changed_when: false
   ignore_errors: true
 
 - name: Update kubeadm-config and kube-proxy configmap
-  when: check_control_plane_endpoint.rc != 0
+  when: kubeadm_server_check_control_plane_endpoint.rc != 0
   block:
     - name: Update kubeadm-config configmap to bind control plane endpoint to host IP
       ansible.builtin.shell: |

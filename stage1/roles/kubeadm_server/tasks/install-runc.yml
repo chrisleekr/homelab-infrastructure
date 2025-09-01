@@ -2,10 +2,10 @@
 - name: Check if runc exists
   ansible.builtin.stat:
     path: /usr/local/sbin/runc
-  register: runc_file
+  register: kubeadm_server_runc_file
 
 - name: Install runc
-  when: not runc_file.stat.exists
+  when: not kubeadm_server_runc_file.stat.exists
   block:
     - name: Download runc
       ansible.builtin.get_url:

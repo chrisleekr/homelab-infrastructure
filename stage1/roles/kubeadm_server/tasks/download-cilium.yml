@@ -2,10 +2,10 @@
 - name: Check if cilium is already installed
   ansible.builtin.stat:
     path: "/usr/local/bin/cilium"
-  register: cilium_check
+  register: kubeadm_server_cilium_check
 
 - name: Install cilium
-  when: not cilium_check.stat.exists
+  when: not kubeadm_server_cilium_check.stat.exists
   block:
     - name: Download Cilium CLI
       ansible.builtin.get_url:

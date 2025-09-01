@@ -1,0 +1,5 @@
+misconfiguration:
+  - id: AVD-DS-0002
+    statement: The image needs root privileges to run. https://avd.aquasec.com/misconfig/ds002
+  - id: AVD-DS-0026
+    statement: The image is not running in the cloud, so do not require HEALTHCHECK. https://avd.aquasec.com/misconfig/ds026

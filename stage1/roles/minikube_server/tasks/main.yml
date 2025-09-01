@@ -1,13 +1,13 @@
 ---
 - name: Install Minikube
   ansible.builtin.include_tasks: install-minikube.yml
-  register: minikube_installed
+  register: minikube_server_minikube_installed
 
 - name: Setup Minikube services
   ansible.builtin.include_tasks: setup-minikube-services.yml
-  register: minikube_services
-  when: minikube_installed is defined
+  register: minikube_server_minikube_services
+  when: minikube_server_minikube_installed is defined
 
 - name: Generate kubeconfig
   ansible.builtin.include_tasks: generate-kubeconfig.yml
-  when: minikube_services is defined
+  when: minikube_server_minikube_services is defined

@@ -1,21 +1,21 @@
 ---
 - name: Get k3s installed version
   ansible.builtin.command: k3s --version
-  register: k3s_version_output
+  register: k3s_server_k3s_version_output
   changed_when: false
   ignore_errors: true
 
 - name: Set k3s installed version
-  when: k3s_version_output.rc == 0
+  when: k3s_server_k3s_version_output.rc == 0
   ansible.builtin.set_fact:
-    installed_k3s_version: "{{ k3s_version_output.stdout_lines[0].split(' ')[2] }}"
+    k3s_server_installed_k3s_version: "{{ k3s_server_k3s_version_output.stdout_lines[0].split(' ')[2] }}"
 
 # If airgapped, all K3s artifacts are already on the node.
 # We should be downloading and installing the newer version only if we are in one of the following cases :
 #   - we couldn't get k3s installed version in the first task of this role
 #   - the installed version of K3s on the nodes is older than the requested version in ansible vars
 - name: Download artifact only if needed
-  when: k3s_version_output.rc != 0 or installed_k3s_version is version(k3s_version, '<') and airgap_dir is undefined
+  when: k3s_server_k3s_version_output.rc != 0 or k3s_server_installed_k3s_version is version(k3s_version, '<') and airgap_dir is undefined
   block:
     - name: Download K3s install script
       ansible.builtin.get_url:
@@ -96,7 +96,7 @@
 
     - name: Check whether kubectl is installed on control node
       ansible.builtin.command: "kubectl"
-      register: kubectl_installed
+      register: k3s_server_kubectl_installed
       ignore_errors: true
       delegate_to: 127.0.0.1
       become: false
@@ -116,9 +116,9 @@
             KUBECONFIG={{ kubeconfig }} kubectl config set-cluster default --server=https://{{ api_endpoint }}:{{ api_port }}
           delegate_to: 127.0.0.1
           become: false
-          register: csa_result
+          register: k3s_server_csa_result
           changed_when:
-            - csa_result.rc == 0
+            - k3s_server_csa_result.rc == 0
 
         - name: Setup kubeconfig context on control node - {{ cluster_context }}
           when: kubeconfig != "~/.kube/config"
@@ -138,9 +138,9 @@
             mv ${TFILE} {{ kubeconfig }}
           delegate_to: 127.0.0.1
           become: false
-          register: mv_result
+          register: k3s_server_mv_result
           changed_when:
-            - mv_result.rc == 0
+            - k3s_server_mv_result.rc == 0
 
 - name: Start other server if any and verify status
   when:
@@ -168,8 +168,8 @@
       ansible.builtin.command:
         cmd: >
           k3s kubectl get nodes -l "node-role.kubernetes.io/control-plane=true" -o=jsonpath="{.items[*].metadata.name}"
-      register: nodes
-      until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups[server_group] | length)
+      register: k3s_server_nodes
+      until: k3s_server_nodes.rc == 0 and (k3s_server_nodes.stdout.split() | length) == (groups[server_group] | length)
       retries: 20
       delay: 10
       changed_when: false
