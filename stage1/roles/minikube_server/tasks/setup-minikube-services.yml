@@ -100,8 +100,8 @@
 # Reference: https://stackoverflow.com/a/77917988
 - name: Remove Temp Files
   ansible.builtin.command: "rm -rf /tmp/juju-*"
-  register: minikube_server_remove_temp_files
-  changed_when: minikube_server_remove_temp_files.rc == 0
+  register: minikube_server_remove_temp_files_again
+  changed_when: minikube_server_remove_temp_files_again.rc == 0
 
 # Reference: https://github.com/climacs-net/my-cool-service/blob/c1dd14e23aa54c1cdfaf0e85f9540a8631a1b1d8/ansible/playbook.yml#L83C1-L84C48
 - name: Fix permissions for Minikube
