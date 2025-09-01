@@ -3,7 +3,7 @@
 
 - name: Merge snapd configuration between defaults and custom
   ansible.builtin.set_fact:
-    host_setup_snapd_services: "{{ host_setup_snapd_defaults_services | union(host_setup_snapd_defaults_services) | unique }}"
+    host_setup_snapd_services: "{{ host_setup_snapd_defaults_services | union(host_setup_snapd_services) | unique }}"
     host_setup_snapd_files: "{{ host_setup_snapd_defaults_files | union(host_setup_snapd_files) | unique }}"
     host_setup_snapd_block_packages: "{{ host_setup_snapd_defaults_block_packages | union(host_setup_snapd_block_packages) | unique | sort }}"
 
