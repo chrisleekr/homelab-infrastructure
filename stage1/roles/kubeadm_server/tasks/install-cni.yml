@@ -2,10 +2,10 @@
 - name: Check if CNI exists
   ansible.builtin.stat:
     path: /opt/cni/bin/macvlan
-  register: cni_file
+  register: kubeadm_server_cni_file
 
 - name: Install CNI
-  when: not cni_file.stat.exists
+  when: not kubeadm_server_cni_file.stat.exists
   block:
     - name: Download CNI plugins
       vars:

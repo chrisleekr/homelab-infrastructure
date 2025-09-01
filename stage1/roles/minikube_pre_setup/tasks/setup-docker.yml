@@ -1,5 +1,4 @@
 ---
-
 ###
 # Uninstall commands
 # $ apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -37,8 +36,8 @@
         $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     executable: /bin/bash
-  register: docker_apt_source
-  changed_when: docker_apt_source.rc != 0
+  register: minikube_pre_setup_docker_apt_source
+  changed_when: minikube_pre_setup_docker_apt_source.rc != 0
 
 - name: Run the equivalent of "apt-get update" as a separate step
   ansible.builtin.apt:
@@ -72,10 +71,10 @@
 - name: Check if docker data path exists
   ansible.builtin.stat:
     path: "{{ docker_default_data_path }}"
-  register: docker_dir
+  register: minikube_pre_setup_docker_dir
 
 - name: Move Docker data to new data path for the first time
-  when: not docker_dir.stat.exists
+  when: not minikube_pre_setup_docker_dir.stat.exists
   block:
     - name: Stop Docker socket
       ansible.builtin.systemd_service:
@@ -85,8 +84,8 @@
     # This is only way to sync data between two directories without copying over entire `backingFsBlockDev` block file.
     - name: Sync Docker data to /mnt/docker # noqa: command-instead-of-module
       ansible.builtin.command: rsync -aqxP /var/lib/docker/ {{ docker_default_data_path }}/
-      register: rsync_output
-      changed_when: rsync_output.rc == 0
+      register: minikube_pre_setup_rsync_output
+      changed_when: minikube_pre_setup_rsync_output.rc == 0
 
     - name: Remove /var/lib/docker
       ansible.builtin.file:
@@ -112,5 +111,5 @@
 
     - name: Run docker info
       ansible.builtin.command: docker info
-      register: docker_info
+      register: minikube_pre_setup_docker_info
       changed_when: false

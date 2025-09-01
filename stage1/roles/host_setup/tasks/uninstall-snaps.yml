@@ -3,14 +3,14 @@
     name: "{{ item | split | first }}"
     state: absent
   failed_when: false
-  when: snap_list is defined and snap_list | length > 0
-  loop: "{{ snap_list }}"
+  when: host_setup_snap_list is defined and host_setup_snap_list | length > 0
+  loop: "{{ host_setup_snap_list }}"
 
 - name: Check installed snaps
   ansible.builtin.command: "snap list"
-  register: snap_packages
+  register: host_setup_snap_packages
   changed_when: false
 
 - name: Snap packages
   ansible.builtin.set_fact:
-    snap_list: "{{ snap_packages.stdout_lines[1:] }}"
+    host_setup_snap_list: "{{ host_setup_snap_packages.stdout_lines[1:] }}"

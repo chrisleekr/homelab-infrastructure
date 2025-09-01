@@ -8,7 +8,7 @@
 
 - name: Define list of packages
   ansible.builtin.set_fact:
-    packages:
+    kubeadm_pre_setup_packages:
       - net-tools
       - socat
       - conntrack
@@ -23,21 +23,21 @@
 
 - name: Check if packages are installed (Errors will be ignored.)
   ansible.builtin.shell: dpkg-query -s {{ item }} | grep 'install ok installed'
-  register: dpkg_check_item
-  changed_when: dpkg_check_item.rc != 0
+  register: kubeadm_pre_setup_dpkg_check_item
+  changed_when: kubeadm_pre_setup_dpkg_check_item.rc != 0
   ignore_errors: true
-  loop: "{{ packages }}"
+  loop: "{{ kubeadm_pre_setup_packages }}"
 
-- name: Set dpkg_check fact from results of package check loop
+- name: Set kubeadm_pre_setup_dpkg_check fact from results of package check loop
   ansible.builtin.set_fact:
-    dpkg_check: "{{ dict(packages | zip(dpkg_check_item.results)) }}"
+    kubeadm_pre_setup_dpkg_check: "{{ dict(kubeadm_pre_setup_packages | zip(kubeadm_pre_setup_dpkg_check_item.results)) }}"
 
 - name: Install required packages
   ansible.builtin.apt:
     name: "{{ item }}"
     state: present
-  when: "item not in dpkg_check or (dpkg_check[item].rc != 0)"
-  loop: "{{ packages }}"
+  when: "item not in kubeadm_pre_setup_dpkg_check or (kubeadm_pre_setup_dpkg_check[item].rc != 0)"
+  loop: "{{ kubeadm_pre_setup_packages }}"
 
 - name: Load kernel modules and make sure it is loaded after reboots
   community.general.modprobe:

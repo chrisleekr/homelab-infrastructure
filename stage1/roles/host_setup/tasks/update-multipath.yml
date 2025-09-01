@@ -4,14 +4,14 @@
 - name: Check if /etc/multipath.conf exists
   ansible.builtin.stat:
     path: /etc/multipath.conf
-  register: multipath_conf
+  register: host_setup_multipath_conf
 
 - name: Create /etc/multipath.conf if it does not exist # noqa ignore-errors
   ansible.builtin.file:
     path: /etc/multipath.conf
     state: touch
     mode: "0644"
-  when: not multipath_conf.stat.exists
+  when: not host_setup_multipath_conf.stat.exists
 
 - name: Append blacklist devnode to /etc/multipath.conf
   ansible.builtin.blockinfile:
@@ -22,5 +22,5 @@
       }
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
     create: true
-    mode: '0644'
+    mode: "0644"
   notify: "restart multipathd"

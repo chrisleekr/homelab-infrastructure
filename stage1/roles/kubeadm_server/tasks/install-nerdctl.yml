@@ -2,10 +2,10 @@
 - name: Check if nerdctl exists
   ansible.builtin.stat:
     path: /usr/local/bin/nerdctl
-  register: nerdctl_stat
+  register: kubeadm_server_nerdctl_stat
 
 - name: Download and extract nerdctl
-  when: not nerdctl_stat.stat.exists
+  when: not kubeadm_server_nerdctl_stat.stat.exists
   block:
     - name: Download nerdctl
       vars:
