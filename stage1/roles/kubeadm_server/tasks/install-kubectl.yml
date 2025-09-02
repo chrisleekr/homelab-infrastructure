@@ -4,11 +4,46 @@
     path: /usr/local/sbin/kubectl
   register: kubeadm_server_kubectl_file
 
-- name: Install kubectl
-  when: not kubeadm_server_kubectl_file.stat.exists
+- name: Get kubectl installed version
+  ansible.builtin.command: /usr/local/sbin/kubectl version --client --output=json
+  register: kubectl_version_output
+  changed_when: false
+  ignore_errors: true
+
+- name: Set kubectl installed version
+  when: kubectl_version_output.rc == 0
+  ansible.builtin.set_fact:
+    kubectl_installed_version: "{{ (kubectl_version_output.stdout | from_json).clientVersion.gitVersion | regex_replace('^v(.*)$', '\\1') }}"
+
+- name: Display kubectl version information
+  ansible.builtin.debug:
+    msg: |
+      Current kubectl version: {{ kubectl_installed_version | default('Not installed') }}
+      Target kubectl version: {{ kubectl_version }}
+      Upgrade needed: {{ (kubectl_installed_version is defined and kubectl_installed_version is version(kubectl_version, '<')) | default(true) }}
+
+- name: Install or upgrade kubectl
+  when: >
+    not kubeadm_server_kubectl_file.stat.exists or
+    (kubectl_version_output.rc != 0) or
+    (kubectl_installed_version is defined and kubectl_installed_version is version(kubectl_version, '<'))
   block:
     - name: Download kubectl
       ansible.builtin.get_url:
         url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/{{ host_machine_architecture }}/kubectl"
         dest: /usr/local/sbin/kubectl
         mode: "0755"
+        force: true
+
+    - name: Verify kubectl version after download
+      ansible.builtin.command: /usr/local/sbin/kubectl version --client --output=json
+      register: kubectl_post_download_version
+      changed_when: false
+
+    - name: Display kubectl post download version
+      ansible.builtin.debug:
+        msg: "{{ kubectl_post_download_version.stdout }}"
+
+    - name: Display downloaded kubectl version
+      ansible.builtin.debug:
+        msg: "Downloaded kubectl version: {{ (kubectl_post_download_version.stdout | from_json).clientVersion.gitVersion }}"
