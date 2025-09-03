@@ -13,14 +13,16 @@
 
 - name: Get runc installed version
   ansible.builtin.command: /usr/local/sbin/runc --version
-  register: runc_version_output
+  register: kubeadm_server_runc_version_output
   changed_when: false
   ignore_errors: true
 
 - name: Set runc installed version
-  when: runc_version_output.rc == 0
+  when:
+    - kubeadm_server_runc_version_output.rc == 0
+    - kubeadm_server_runc_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    runc_installed_version: "{{ runc_version_output.stdout_lines[0] | regex_replace('^runc version\\s+([0-9.]+).*$', '\\1') }}"
+    runc_installed_version: "{{ kubeadm_server_runc_version_output.stdout_lines[0] | regex_replace('^runc version\\s+([0-9.]+).*$', '\\1') }}"
 
 - name: Debug runc installed version
   ansible.builtin.debug:
@@ -36,7 +38,7 @@
 - name: Install or upgrade runc
   when: >
     not kubeadm_server_runc_file.stat.exists or
-    (runc_version_output.rc != 0) or
+    (kubeadm_server_runc_version_output.rc != 0) or
     (runc_installed_version is defined and runc_installed_version is version(runc_version, '<'))
   block:
     - name: Download runc
