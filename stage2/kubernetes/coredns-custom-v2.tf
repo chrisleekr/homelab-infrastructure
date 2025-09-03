@@ -1,6 +1,7 @@
 # My internet provider does not support hairpin NAT, so I need to use the custom coredns config to avoid it.
 # @coredns-custom.tf is not working anymore as `import` statement is deprecated.
 
+# This is default coredns configmap.
 # $ kubectl get configmap -nkube-system coredns -oyaml
 # apiVersion: v1
 # data:
@@ -29,6 +30,61 @@
 #         loadbalance
 #     }
 # kind: ConfigMap
+#
+# This is updated coredns configmap by this module.
+# apiVersion: v1
+# data:
+#   Corefile: |
+#     .:53 {
+#         errors
+#         health {
+#            lameduck 5s
+#         }
+#         ready
+#         kubernetes cluster.local in-addr.arpa ip6.arpa {
+#            pods insecure
+#            fallthrough in-addr.arpa ip6.arpa
+#            ttl 30
+#         }
+#         prometheus :9153
+#         forward . /etc/resolv.conf {
+#            max_concurrent 1000
+#                             except minio.chrislee.local gitlab.chrislee.local registry.chrislee.local
+#         }
+#         cache 30 {
+#            disable success cluster.local
+#            disable denial cluster.local
+#         }
+#         loop
+#         reload
+#         loadbalance
+#     }
+#     # START: custom DNS
+#     minio.chrislee.local:53 {
+#         errors
+#         hosts {
+#             192.168.1.202 minio.chrislee.local
+#             fallthrough
+#         }
+#         cache 30
+#     }
+#     gitlab.chrislee.local:53 {
+#         errors
+#         hosts {
+#             192.168.1.202 gitlab.chrislee.local
+#             fallthrough
+#         }
+#         cache 30
+#     }
+#     registry.chrislee.local:53 {
+#         errors
+#         hosts {
+#             192.168.1.202 registry.chrislee.local
+#             fallthrough
+#         }
+#         cache 30
+#     }
+#     # END: custom DNS
 
 
 # Get the existing CoreDNS ConfigMap
