@@ -30,8 +30,8 @@ cluster:
     crictl_version: "1.34.0" # https://github.com/kubernetes-sigs/cri-tools/releases
     containerd_version: "2.1.4" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.1.3" # https://github.com/containerd/nerdctl/releases
-    kubeadm_version: "1.33.0" # https://kubernetes.io/releases/
-    kubectl_version: "1.33.0" # https://kubernetes.io/releases/
+    kubeadm_version: "1.33.4" # https://kubernetes.io/releases/
+    kubectl_version: "1.33.4" # https://kubernetes.io/releases/
     kubelet_service_version: "0.18.0" # https://github.com/kubernetes/release/releases
     cilium_cli_version: "0.18.6" # https://github.com/cilium/cilium-cli/releases
     node_count: "1"
