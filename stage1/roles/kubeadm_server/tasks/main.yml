@@ -29,6 +29,9 @@
 - name: Install cilium
   ansible.builtin.include_tasks: install-cilium.yml
 
+- name: Upgrade cilium
+  ansible.builtin.include_tasks: upgrade-cilium.yml
+
 - name: Download kubeconfig
   ansible.builtin.include_tasks: download-kubeconfig.yml
 

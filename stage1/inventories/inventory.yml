@@ -33,7 +33,10 @@ cluster:
     kubeadm_version: "1.33.4" # https://kubernetes.io/releases/
     kubectl_version: "1.33.4" # https://kubernetes.io/releases/
     kubelet_service_version: "0.18.0" # https://github.com/kubernetes/release/releases
-    cilium_cli_version: "0.18.6" # https://github.com/cilium/cilium-cli/releases
+    # https://github.com/cilium/cilium-cli/releases
+    # $ /usr/local/bin/cilium version
+    # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
+    cilium_cli_version: "0.18.6"
     node_count: "1"
 
     # Upgrade instructions

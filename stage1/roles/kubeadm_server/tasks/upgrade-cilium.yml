@@ -1,0 +1,17 @@
+---
+# Reference: https://docs.cilium.io/en/stable/operations/upgrade/#version-specific-notes
+
+- name: Upgrade Cilium
+  when: >
+    kubeadm_server_cilium_installed_version is defined and
+    kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<')
+  block:
+    - name: Upgrade Cilium
+      ansible.builtin.command: cilium upgrade --wait
+      register: kubeadm_server_cilium_upgrade_output
+      changed_when: kubeadm_server_cilium_upgrade_output.rc != 0
+
+    - name: Wait for Cilium status to be ready
+      ansible.builtin.command: cilium status --wait
+      register: kubeadm_server_cilium_status
+      changed_when: kubeadm_server_cilium_status.rc != 0
