@@ -1,6 +1,41 @@
 ---
+# /usr/local/bin/containerd --version
+# containerd github.com/containerd/containerd v1.7.21 472731909fa34bd7bc9c087e4c27943f9835f111
+
+- name: Get containerd installed version
+  ansible.builtin.command: /usr/local/bin/containerd --version
+  register: kubeadm_server_containerd_version_output
+  changed_when: false
+  ignore_errors: true
+
+# - name: Debug containerd installed version
+#   ansible.builtin.debug:
+#     msg: |
+#       Containerd version output: {{ kubeadm_server_containerd_version_output.stdout }}
+#       Containerd version output lines: {{ kubeadm_server_containerd_version_output.stdout_lines }}
+#       Containerd version output stderr lines: {{ kubeadm_server_containerd_version_output.stderr_lines }}
+#       Containerd version output stderr: {{ kubeadm_server_containerd_version_output.stderr }}
+#       Containerd version output rc: {{ kubeadm_server_containerd_version_output.rc }}
+
+- name: Set containerd installed version
+  when:
+    - kubeadm_server_containerd_version_output.rc == 0
+    - kubeadm_server_containerd_version_output.stdout_lines | length > 0
+  ansible.builtin.set_fact:
+    containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd github.com/containerd/containerd v([0-9.]+).*$', '\\1') }}"
+
+- name: Display containerd version information
+  ansible.builtin.debug:
+    msg: |
+      Current containerd version: {{ containerd_installed_version | default('Not installed') }}
+      Target containerd version: {{ containerd_version }}
+      Upgrade needed: {{ (containerd_installed_version is defined and containerd_installed_version is version(containerd_version, '<')) | default(true) }}
+
 - name: Install containerd
-  when: "'containerd.service' not in ansible_facts.services or ansible_facts.services['containerd.service'].state != 'running'"
+  when: >
+    'containerd.service' not in ansible_facts.services or ansible_facts.services['containerd.service'].state != 'running' or
+    (kubeadm_server_containerd_version_output.rc != 0) or
+    (containerd_installed_version is defined and containerd_installed_version is version(containerd_version, '<'))
   block:
     - name: Download containerd tarball
       vars:
@@ -10,6 +45,7 @@
         url: "{{ base_url }}/v{{ containerd_version }}/{{ path }}"
         dest: "/tmp/{{ path }}"
         mode: "0644"
+        force: true
 
     - name: Extract containerd tarball to /usr/local
       ansible.builtin.unarchive:
