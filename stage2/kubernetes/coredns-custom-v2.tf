@@ -105,7 +105,7 @@ locals {
 
   # Step 1: Remove any existing custom configuration between markers
   # This will replace markers with empty string
-  without_custom_config = (can(regex("${local.start_marker}", local.existing_corefile)) ?
+  without_custom_config = (can(regex(local.start_marker, local.existing_corefile)) ?
     replace(
       local.existing_corefile,
       "/(?s)${local.start_marker}.*?${local.end_marker}/",

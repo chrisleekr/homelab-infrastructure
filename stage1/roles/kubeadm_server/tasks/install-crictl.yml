@@ -26,20 +26,20 @@
     - kubeadm_server_crictl_version_output.rc == 0
     - kubeadm_server_crictl_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    crictl_installed_version: "{{ kubeadm_server_crictl_version_output.stdout_lines[0] | regex_replace('^crictl version v([0-9.]+).*$', '\\1') }}"
+    kubeadm_server_crictl_installed_version: "{{ kubeadm_server_crictl_version_output.stdout_lines[0] | regex_replace('^crictl version v([0-9.]+).*$', '\\1') }}"
 
 - name: Display crictl version information
   ansible.builtin.debug:
     msg: |
-      Current crictl version: {{ crictl_installed_version | default('Not installed') }}
+      Current crictl version: {{ kubeadm_server_crictl_installed_version | default('Not installed') }}
       Target crictl version: {{ crictl_version }}
-      Upgrade needed: {{ (crictl_installed_version is defined and crictl_installed_version is version(crictl_version, '<')) | default(true) }}
+      Upgrade needed: {{ (kubeadm_server_crictl_installed_version is defined and kubeadm_server_crictl_installed_version is version(crictl_version, '<')) | default(true) }}
 
 - name: Install or upgrade crictl
   when: >
     not kubeadm_server_crictl_stat.stat.exists or
     (kubeadm_server_crictl_version_output.rc != 0) or
-    (crictl_installed_version is defined and crictl_installed_version is version(crictl_version, '<'))
+    (kubeadm_server_crictl_installed_version is defined and kubeadm_server_crictl_installed_version is version(crictl_version, '<'))
   block:
     - name: Download crictl
       vars:
@@ -59,13 +59,13 @@
 
     - name: Verify crictl version after download
       ansible.builtin.command: /usr/local/bin/crictl --version
-      register: crictl_post_download_version
+      register: kubeadm_server_crictl_post_download_version
       changed_when: false
 
     - name: Display crictl post download version
       ansible.builtin.debug:
-        msg: "{{ crictl_post_download_version.stdout }}"
+        msg: "{{ kubeadm_server_crictl_post_download_version.stdout }}"
 
     - name: Display downloaded crictl version
       ansible.builtin.debug:
-        msg: "Downloaded crictl version: {{ (crictl_post_download_version.stdout | regex_replace('^crictl version v([0-9.]+).*$', '\\1')) }}"
+        msg: "Downloaded crictl version: {{ (kubeadm_server_crictl_post_download_version.stdout | regex_replace('^crictl version v([0-9.]+).*$', '\\1')) }}"

@@ -22,24 +22,24 @@
     - kubeadm_server_runc_version_output.rc == 0
     - kubeadm_server_runc_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    runc_installed_version: "{{ kubeadm_server_runc_version_output.stdout_lines[0] | regex_replace('^runc version\\s+([0-9.]+).*$', '\\1') }}"
+    kubeadm_server_runc_installed_version: "{{ kubeadm_server_runc_version_output.stdout_lines[0] | regex_replace('^runc version\\s+([0-9.]+).*$', '\\1') }}"
 
 - name: Debug runc installed version
   ansible.builtin.debug:
-    msg: "Runc installed version: {{ runc_installed_version }}"
+    msg: "Runc installed version: {{ kubeadm_server_runc_installed_version }}"
 
 - name: Display runc version information
   ansible.builtin.debug:
     msg: |
-      Current runc version: {{ runc_installed_version | default('Not installed') }}
+      Current runc version: {{ kubeadm_server_runc_installed_version | default('Not installed') }}
       Target runc version: {{ runc_version }}
-      Upgrade needed: {{ (runc_installed_version is defined and runc_installed_version is version(runc_version, '<')) | default(true) }}
+      Upgrade needed: {{ (kubeadm_server_runc_installed_version is defined and kubeadm_server_runc_installed_version is version(runc_version, '<')) | default(true) }}
 
 - name: Install or upgrade runc
   when: >
     not kubeadm_server_runc_file.stat.exists or
     (kubeadm_server_runc_version_output.rc != 0) or
-    (runc_installed_version is defined and runc_installed_version is version(runc_version, '<'))
+    (kubeadm_server_runc_installed_version is defined and kubeadm_server_runc_installed_version is version(runc_version, '<'))
   block:
     - name: Download runc
       ansible.builtin.get_url:
@@ -50,13 +50,13 @@
 
     - name: Verify runc version after download
       ansible.builtin.command: /usr/local/sbin/runc --version
-      register: runc_post_download_version
+      register: kubeadm_server_runc_post_download_version
       changed_when: false
 
     - name: Display runc post download version
       ansible.builtin.debug:
-        msg: "{{ runc_post_download_version.stdout }}"
+        msg: "{{ kubeadm_server_runc_post_download_version.stdout }}"
 
     - name: Display downloaded runc version
       ansible.builtin.debug:
-        msg: "Downloaded runc version: {{ (runc_post_download_version.stdout | regex_replace('^runc version (.*)$', '\\1')) }}"
+        msg: "Downloaded runc version: {{ (kubeadm_server_runc_post_download_version.stdout | regex_replace('^runc version (.*)$', '\\1')) }}"
