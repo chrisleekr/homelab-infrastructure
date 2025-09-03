@@ -22,7 +22,11 @@
     - kubeadm_server_containerd_version_output.rc == 0
     - kubeadm_server_containerd_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd github.com/containerd/containerd v([0-9.]+).*$', '\\1') }}"
+    containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd github.com/containerd/containerd/v[0-9]+ v([0-9.]+).*$', '\\1') }}"
+
+- name: Debug containerd installed version
+  ansible.builtin.debug:
+    msg: "Containerd installed version: {{ containerd_installed_version }}"
 
 - name: Display containerd version information
   ansible.builtin.debug:
