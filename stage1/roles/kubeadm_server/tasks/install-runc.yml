@@ -22,7 +22,7 @@
     - kubeadm_server_runc_version_output.rc == 0
     - kubeadm_server_runc_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    kubeadm_server_runc_installed_version: "{{ kubeadm_server_runc_version_output.stdout_lines[0] | regex_replace('^runc version\\s+([0-9.]+).*$', '\\1') }}"
+    kubeadm_server_runc_installed_version: "{{ kubeadm_server_runc_version_output.stdout_lines[0] | regex_replace('^runc version ([0-9.]+).*$', '\\1') }}"
 
 - name: Debug runc installed version
   ansible.builtin.debug:
