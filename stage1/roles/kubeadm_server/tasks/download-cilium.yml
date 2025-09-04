@@ -4,17 +4,70 @@
     path: "/usr/local/bin/cilium"
   register: kubeadm_server_cilium_check
 
-- name: Install cilium
-  when: not kubeadm_server_cilium_check.stat.exists
+# $ /usr/local/bin/cilium version
+# cilium-cli: v0.16.17 compiled with go1.23.1 on linux/amd64
+# cilium image (default):
+# cilium image (stable): v1.18.1
+# cilium image (running): 1.16.0
+
+- name: Get cilium installed version
+  ansible.builtin.command: /usr/local/bin/cilium version
+  register: kubeadm_server_cilium_version_output
+  changed_when: false
+  ignore_errors: true
+
+- name: Debug cilium installed version
+  ansible.builtin.debug:
+    msg: |
+      Cilium version output: {{ kubeadm_server_cilium_version_output.stdout }}
+      Cilium version output lines: {{ kubeadm_server_cilium_version_output.stdout_lines }}
+      Cilium version output stderr lines: {{ kubeadm_server_cilium_version_output.stderr_lines }}
+      Cilium version output stderr: {{ kubeadm_server_cilium_version_output.stderr }}
+      Cilium version output rc: {{ kubeadm_server_cilium_version_output.rc }}
+
+- name: Set cilium installed version (running)
+  when:
+    - kubeadm_server_cilium_version_output.rc == 0
+    - kubeadm_server_cilium_version_output.stdout_lines | length > 0
+  ansible.builtin.set_fact:
+    # cilium-cli: v0.16.24 compiled with go1.23.4 on linux/amd64
+    kubeadm_server_cilium_installed_version: "{{ kubeadm_server_cilium_version_output.stdout_lines[0] | regex_replace('^cilium-cli: v([0-9.]+).*$', '\\1') }}"
+
+- name: Debug cilium installed version
+  ansible.builtin.debug:
+    msg: "Cilium installed version: {{ kubeadm_server_cilium_installed_version }}"
+
+- name: Display cilium version information
+  ansible.builtin.debug:
+    msg: |
+      Current Cilium version: {{ kubeadm_server_cilium_installed_version | default('Not installed') }}
+      Target Cilium version: {{ cilium_cli_version }}
+      Upgrade needed: {{ (kubeadm_server_cilium_installed_version is defined and kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<')) | default(true) }}
+
+- name: Install or redownload cilium
+  when: >
+    not kubeadm_server_cilium_check.stat.exists or
+    (kubeadm_server_cilium_version_output.rc != 0) or
+    (kubeadm_server_cilium_installed_version is defined and kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<'))
   block:
     - name: Download Cilium CLI
       ansible.builtin.get_url:
         url: "https://github.com/cilium/cilium-cli/releases/download/v{{ cilium_cli_version }}/cilium-linux-{{ host_machine_architecture }}.tar.gz"
         dest: /tmp/cilium-linux-{{ host_machine_architecture }}.tar.gz
         mode: "0644"
+        force: true
 
     - name: Extract Cilium CLI
       ansible.builtin.unarchive:
         src: /tmp/cilium-linux-{{ host_machine_architecture }}.tar.gz
         dest: /usr/local/bin/
         remote_src: true
+
+    - name: Verify cilium version after download
+      ansible.builtin.command: /usr/local/bin/cilium version
+      register: kubeadm_server_cilium_post_download_version
+      changed_when: false
+
+    - name: Display cilium post download version
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_server_cilium_post_download_version.stdout }}"

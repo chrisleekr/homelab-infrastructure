@@ -22,6 +22,7 @@ resource "kubernetes_config_map" "elasticsearch_setup_script" {
   }
 }
 
+# Create ConfigMap for the setup script and templates
 resource "kubernetes_job" "elasticsearch_post_setup" {
   depends_on = [
     kubernetes_config_map.elasticsearch_setup_script,

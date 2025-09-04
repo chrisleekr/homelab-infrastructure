@@ -4,8 +4,39 @@
     path: /opt/cni/bin/macvlan
   register: kubeadm_server_cni_file
 
-- name: Install CNI
-  when: not kubeadm_server_cni_file.stat.exists
+# $ /opt/cni/bin/macvlan --version
+# CNI macvlan plugin v1.5.1
+# CNI protocol versions supported: 0.1.0, 0.2.0, 0.3.0, 0.3.1, 0.4.0, 1.0.0
+
+- name: Get CNI installed version
+  ansible.builtin.command: /opt/cni/bin/macvlan --version
+  register: kubeadm_server_cni_version_output
+  changed_when: false
+  ignore_errors: true
+
+- name: Set CNI installed version
+  when:
+    - kubeadm_server_cni_version_output.rc == 0
+    - kubeadm_server_cni_version_output.stderr_lines | length > 0
+  ansible.builtin.set_fact:
+    kubeadm_server_cni_installed_version: "{{ kubeadm_server_cni_version_output.stderr_lines[0] | regex_replace('^CNI macvlan plugin v([0-9.]+).*$', '\\1') }}"
+
+- name: Debug CNI installed version
+  ansible.builtin.debug:
+    msg: "CNI installed version: {{ kubeadm_server_cni_installed_version }}"
+
+- name: Display CNI version information
+  ansible.builtin.debug:
+    msg: |
+      Current CNI version: {{ kubeadm_server_cni_installed_version | default('Not installed') }}
+      Target CNI version: {{ cni_version }}
+      Upgrade needed: {{ (kubeadm_server_cni_installed_version is defined and kubeadm_server_cni_installed_version is version(cni_version, '<')) | default(true) }}
+
+- name: Install or upgrade CNI
+  when: >
+    not kubeadm_server_cni_file.stat.exists or
+    (kubeadm_server_cni_version_output.rc != 0) or
+    (kubeadm_server_cni_installed_version is defined and kubeadm_server_cni_installed_version is version(cni_version, '<'))
   block:
     - name: Download CNI plugins
       vars:
@@ -15,6 +46,7 @@
         url: "{{ base_url }}/v{{ cni_version }}/{{ path }}"
         dest: "/tmp/{{ path }}"
         mode: "0644"
+        force: true
 
     - name: Ensure CNI bin directory exists
       ansible.builtin.file:
@@ -27,3 +59,16 @@
         src: "/tmp/cni-plugins-linux-{{ host_machine_architecture }}-v{{ cni_version }}.tgz"
         dest: /opt/cni/bin/
         remote_src: true
+
+    - name: Verify CNI version after download
+      ansible.builtin.command: /opt/cni/bin/macvlan --version
+      register: kubeadm_server_cni_post_download_version
+      changed_when: false
+
+    - name: Display CNI post download version
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_server_cni_post_download_version.stdout }}"
+
+    - name: Display downloaded CNI version
+      ansible.builtin.debug:
+        msg: "Downloaded CNI version: {{ (kubeadm_server_cni_post_download_version.stdout | regex_replace('^CNI macvlan plugin v([0-9.]+).*$', '\\1')) }}"

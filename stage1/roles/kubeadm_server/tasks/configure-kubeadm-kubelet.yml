@@ -4,17 +4,48 @@
     path: /etc/systemd/system/kubelet.service
   register: kubeadm_server_kubelet_stat
 
-- name: Download and extract kubelet
-  when: not kubeadm_server_kubelet_stat.stat.exists
+- name: Get kubeadm installed version
+  ansible.builtin.command: kubeadm version --output=short
+  register: kubeadm_server_version_output
+  changed_when: false
+  ignore_errors: true
+
+- name: Set kubeadm installed version
+  when: kubeadm_server_version_output.rc == 0
+  ansible.builtin.set_fact:
+    kubeadm_server_installed_version: "{{ kubeadm_server_version_output.stdout | regex_replace('^v(.*)$', '\\1') }}"
+
+- name: Display version information
+  ansible.builtin.debug:
+    msg: |
+      Current kubeadm version: {{ kubeadm_server_installed_version | default('Not installed') }}
+      Target kubeadm version: {{ kubeadm_version }}
+      Upgrade needed: {{ (kubeadm_server_installed_version is defined and kubeadm_server_installed_version is version(kubeadm_version, '<')) | default(true) }}
+
+- name: Download kubeadm and kubelet
+  when: >
+    not kubeadm_server_kubelet_stat.stat.exists or
+    (kubeadm_server_version_output.rc != 0) or
+    (kubeadm_server_installed_version is defined and kubeadm_server_installed_version is version(kubeadm_version, '<'))
   block:
     - name: Download kubeadm and kubelet
       ansible.builtin.get_url:
         url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ host_machine_architecture }}/{{ item }}"
         dest: /usr/local/bin/{{ item }}
         mode: "0755"
+        force: true
       with_items:
         - kubeadm
         - kubelet
+
+    - name: Verify kubeadm binary version after download
+      ansible.builtin.command: /usr/local/bin/kubeadm version --output=short
+      register: kubeadm_server_kubeadm_post_download_version
+      changed_when: false
+
+    - name: Display downloaded kubeadm version
+      ansible.builtin.debug:
+        msg: "Downloaded kubeadm version: {{ kubeadm_server_kubeadm_post_download_version.stdout }}"
 
     - name: Download kubelet.service file
       vars:
@@ -66,8 +97,70 @@
         remote_src: true
         mode: "0644"
 
+    - name: Reload systemd daemon after binary update
+      ansible.builtin.systemd:
+        daemon_reload: true
+
     - name: Enable and start kubelet service
       ansible.builtin.systemd:
         name: kubelet
         enabled: true
         state: started
+
+- name: Check if kubeadm cluster is initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_server_kubeadm_cluster_initialized
+
+- name: Perform kubeadm cluster upgrade
+  when: >
+    kubeadm_server_kubeadm_cluster_initialized.stat.exists and
+    kubeadm_server_installed_version is defined and
+    kubeadm_server_installed_version is version(kubeadm_version, '<')
+  block:
+    - name: Run kubeadm upgrade plan
+      ansible.builtin.command: kubeadm upgrade plan
+      register: kubeadm_server_kubeadm_upgrade_plan_output
+      become: true
+      changed_when: false
+
+    - name: Display kubeadm upgrade plan output
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_server_kubeadm_upgrade_plan_output.stdout }}"
+
+    - name: Set upgrade command using inventory version
+      ansible.builtin.set_fact:
+        kubeadm_server_kubeadm_upgrade_command: "kubeadm upgrade apply v{{ kubeadm_version }} --yes"
+
+    - name: Display planned upgrade command
+      ansible.builtin.debug:
+        msg: |
+          Executing automated cluster upgrade: {{ kubeadm_server_kubeadm_upgrade_command }}
+
+    - name: Execute kubeadm cluster upgrade
+      ansible.builtin.command: "{{ kubeadm_server_kubeadm_upgrade_command }}"
+      register: kubeadm_server_kubeadm_upgrade_apply_output
+      become: true
+      changed_when: false
+      when: kubeadm_server_kubeadm_upgrade_command is defined and kubeadm_server_kubeadm_upgrade_command | length > 0
+
+    - name: Display upgrade output
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_server_kubeadm_upgrade_apply_output.stdout }}"
+
+    - name: Verify cluster upgrade success
+      ansible.builtin.assert:
+        that:
+          - kubeadm_server_kubeadm_upgrade_apply_output.stdout is search('\\[upgrade\\] SUCCESS!')
+          - kubeadm_server_kubeadm_upgrade_apply_output.stdout is search('was upgraded to')
+        success_msg: "Cluster upgrade completed successfully!"
+        fail_msg: "Cluster upgrade verification failed. Please check the output manually."
+
+- name: Restart kubelet service after upgrade
+  when: >
+    kubeadm_server_installed_version is defined and
+    kubeadm_server_installed_version is version(kubeadm_version, '<')
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted
+  become: true

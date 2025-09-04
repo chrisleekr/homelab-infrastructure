@@ -4,8 +4,42 @@
     path: /usr/local/bin/crictl
   register: kubeadm_server_crictl_stat
 
-- name: Download and extract crictl
-  when: not kubeadm_server_crictl_stat.stat.exists
+# $ /usr/local/bin/crictl --version
+# crictl version v1.31.1
+
+- name: Get crictl installed version
+  ansible.builtin.command: /usr/local/bin/crictl --version
+  register: kubeadm_server_crictl_version_output
+  changed_when: false
+  ignore_errors: true
+
+- name: Debug crictl installed version
+  ansible.builtin.debug:
+    msg: |
+      Crictl version output: {{ kubeadm_server_crictl_version_output.stdout }}
+      Crictl version output lines: {{ kubeadm_server_crictl_version_output.stdout_lines }}
+      Crictl version output stderr lines: {{ kubeadm_server_crictl_version_output.stderr_lines }}
+      Crictl version output stderr: {{ kubeadm_server_crictl_version_output.stderr }}
+
+- name: Set crictl installed version
+  when:
+    - kubeadm_server_crictl_version_output.rc == 0
+    - kubeadm_server_crictl_version_output.stdout_lines | length > 0
+  ansible.builtin.set_fact:
+    kubeadm_server_crictl_installed_version: "{{ kubeadm_server_crictl_version_output.stdout_lines[0] | regex_replace('^crictl version v([0-9.]+).*$', '\\1') }}"
+
+- name: Display crictl version information
+  ansible.builtin.debug:
+    msg: |
+      Current crictl version: {{ kubeadm_server_crictl_installed_version | default('Not installed') }}
+      Target crictl version: {{ crictl_version }}
+      Upgrade needed: {{ (kubeadm_server_crictl_installed_version is defined and kubeadm_server_crictl_installed_version is version(crictl_version, '<')) | default(true) }}
+
+- name: Install or upgrade crictl
+  when: >
+    not kubeadm_server_crictl_stat.stat.exists or
+    (kubeadm_server_crictl_version_output.rc != 0) or
+    (kubeadm_server_crictl_installed_version is defined and kubeadm_server_crictl_installed_version is version(crictl_version, '<'))
   block:
     - name: Download crictl
       vars:
@@ -15,9 +49,23 @@
         url: "{{ base_url }}/v{{ crictl_version }}/{{ path }}"
         dest: /tmp/crictl.tar.gz
         mode: "0644"
+        force: true
 
     - name: Extract crictl
       ansible.builtin.unarchive:
         src: /tmp/crictl.tar.gz
         dest: /usr/local/bin/
         remote_src: true
+
+    - name: Verify crictl version after download
+      ansible.builtin.command: /usr/local/bin/crictl --version
+      register: kubeadm_server_crictl_post_download_version
+      changed_when: false
+
+    - name: Display crictl post download version
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_server_crictl_post_download_version.stdout }}"
+
+    - name: Display downloaded crictl version
+      ansible.builtin.debug:
+        msg: "Downloaded crictl version: {{ (kubeadm_server_crictl_post_download_version.stdout | regex_replace('^crictl version v([0-9.]+).*$', '\\1')) }}"
