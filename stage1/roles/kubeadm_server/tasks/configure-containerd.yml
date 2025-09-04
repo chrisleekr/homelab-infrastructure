@@ -1,6 +1,6 @@
 ---
 # /usr/local/bin/containerd --version
-# containerd github.com/containerd/containerd v1.7.21 472731909fa34bd7bc9c087e4c27943f9835f111
+# containerd github.com/containerd/containerd/v2 v2.1.4 75cb2b7193e4e490e9fbdc236c0e811ccaba3376
 
 - name: Get containerd installed version
   ansible.builtin.command: /usr/local/bin/containerd --version
@@ -22,7 +22,7 @@
     - kubeadm_server_containerd_version_output.rc == 0
     - kubeadm_server_containerd_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    kubeadm_server_containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd github.com/containerd/containerd/v[0-9]+ v([0-9.]+).*$', '\\1') }}"
+    kubeadm_server_containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd .* v([0-9.]+).*$', '\\1') }}"
 
 - name: Debug containerd installed version
   ansible.builtin.debug:
