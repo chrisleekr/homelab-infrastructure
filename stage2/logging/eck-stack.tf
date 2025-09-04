@@ -222,7 +222,7 @@ resource "kubernetes_manifest" "filebeat_cluster_role_binding" {
 resource "kubectl_manifest" "filebeat" {
   depends_on = [
     kubectl_manifest.elasticsearch,
-    kubectl_manifest.elasticsearch_post_setup,
+    kubernetes_job.elasticsearch_post_setup,
     kubernetes_manifest.filebeat_cluster_role,
     kubernetes_manifest.filebeat_service_account,
     kubernetes_manifest.filebeat_cluster_role_binding,
