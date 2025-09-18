@@ -78,7 +78,7 @@ The docker image contains the following tools:
 3. Run `repo:setup` to make sure you have all the necessary tools.
 
       ```bash
-      npm run repo:setup
+      task repo:setup
       ```
 
 ### Stage 1: Provision Kubernetes Cluster
@@ -86,7 +86,7 @@ The docker image contains the following tools:
 1. Verify access by running the following commands:
 
     ```bash
-    $ npm run docker:exec
+    $ task docker:exec
     /srv# cd stage1
     /srv/stage1# ansible all -i "inventories/inventory.yml" -m ping
     ```
@@ -112,7 +112,7 @@ The docker image contains the following tools:
 1. Initialize Terraform by running the following commands:
 
     ```bash
-    $ npm run docker:exec
+    $ task docker:exec
     /srv# cd stage2
     /srv/stage2# terraform workspace select <workspace name>
     /srv/stage2# terraform init
@@ -130,7 +130,7 @@ The docker image contains the following tools:
 ### Running `pre-commit` for all files
 
 ```bash
-npm run pre-commit
+task precommit:run
 ```
 
 ### If you need to add an ssh passphrase, then use ssh-add

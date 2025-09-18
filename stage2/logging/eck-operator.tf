@@ -17,7 +17,7 @@ resource "helm_release" "eck_operator" {
 # Wait until eck-operator is ready
 resource "null_resource" "eck_operator_ready" {
   triggers = {
-    eck_operator_ready = helm_release.eck_operator.metadata[0].name
+    eck_operator_ready = helm_release.eck_operator.metadata.name
   }
 
   provisioner "local-exec" {

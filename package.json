@@ -14,11 +14,7 @@
     "url": "https://github.com/chrisleekr/homelab-infrastructure.git"
   },
   "scripts": {
-    "repo:setup": "./scripts/repo-setup.sh",
-    "precommit:run": "pre-commit run --all-files",
-    "docker:build": "./scripts/docker-build.sh",
-    "docker:run": "./scripts/docker-run.sh",
-    "docker:exec": "npm run docker:run && docker exec -it \"homelab-infrastructure\" /bin/bash"
+    "use": "taskfile"
   },
   "author": "Chris Lee <git@chrislee.kr>",
   "license": "MIT",

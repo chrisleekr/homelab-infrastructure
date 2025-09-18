@@ -1,4 +1,6 @@
 resource "kubernetes_secret" "elastalert2_credentials" {
+  count = var.elastalert2_elasticsearch_enabled ? 1 : 0
+
   depends_on = [kubernetes_namespace.monitoring_namespace]
 
   metadata {
@@ -18,6 +20,8 @@ resource "kubernetes_secret" "elastalert2_credentials" {
 }
 
 resource "kubernetes_secret" "elastalert2_config" {
+  count = var.elastalert2_elasticsearch_enabled ? 1 : 0
+
   depends_on = [kubernetes_namespace.monitoring_namespace]
 
   metadata {
@@ -39,10 +43,12 @@ resource "kubernetes_secret" "elastalert2_config" {
 }
 
 resource "helm_release" "elastalert2" {
+  count = var.elastalert2_elasticsearch_enabled ? 1 : 0
+
   depends_on = [
     kubernetes_namespace.monitoring_namespace,
-    kubernetes_secret.elastalert2_credentials,
-    kubernetes_secret.elastalert2_config
+    kubernetes_secret.elastalert2_credentials[0],
+    kubernetes_secret.elastalert2_config[0]
   ]
 
   name       = "elastalert2"
@@ -54,20 +60,22 @@ resource "helm_release" "elastalert2" {
   wait       = true
 
   # Trigger release update if secret changes
-  set {
-    name  = "secretChecksum"
-    value = md5(jsonencode(kubernetes_secret.elastalert2_config.data)) # Use a hash of the secret data
-  }
+  set = [
+    {
+      name  = "secretChecksum"
+      value = md5(jsonencode(kubernetes_secret.elastalert2_config[0].data)) # Use a hash of the secret data
+    }
+  ]
 
   values = [
     templatefile("${path.module}/elastalert2/elastalert2-values.tftpl", {
       prometheus_namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
 
-      secret_config_name = kubernetes_secret.elastalert2_config.metadata[0].name
+      secret_config_name = kubernetes_secret.elastalert2_config[0].metadata[0].name
 
       elasticsearch_host               = var.elastalert2_elasticsearch_host
       elasticsearch_port               = var.elastalert2_elasticsearch_port
-      elasticsearch_credentials_secret = kubernetes_secret.elastalert2_credentials.metadata[0].name
+      elasticsearch_credentials_secret = kubernetes_secret.elastalert2_credentials[0].metadata[0].name
     })
   ]
 }

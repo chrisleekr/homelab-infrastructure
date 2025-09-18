@@ -89,6 +89,12 @@ variable "prometheus_minio_job_resource_bearer_token" {
 
 # ElastAlert2
 
+variable "elastalert2_elasticsearch_enabled" {
+  description = "Enable the elastalert2"
+  type        = bool
+  default     = true
+}
+
 variable "elastalert2_elasticsearch_host" {
   description = "The host for the elastalert2"
   type        = string

@@ -23,6 +23,14 @@ resource "kubernetes_config_map" "elasticsearch_setup_script" {
 }
 
 # Create ConfigMap for the setup script and templates
+# ╷
+# │ Error: Provider produced null object
+# │
+# │ Provider "provider[\"registry.terraform.io/hashicorp/kubernetes\"]" produced a null value for
+# │ module.logging[0].data.kubernetes_resource.elasticsearch.
+# │
+# │ This is a bug in the provider, which should be reported in the provider's own issue tracker.
+# $ terraform apply -target=data.kubernetes_resource.elasticsearch
 resource "kubernetes_job" "elasticsearch_post_setup" {
   depends_on = [
     kubernetes_config_map.elasticsearch_setup_script,
@@ -82,6 +90,13 @@ resource "kubernetes_job" "elasticsearch_post_setup" {
     }
 
     backoff_limit = 1
+  }
+
+  # Add lifecycle rule to ignore selector changes
+  lifecycle {
+    ignore_changes = [
+      spec[0].selector
+    ]
   }
 
   timeouts {

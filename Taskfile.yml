@@ -1,0 +1,62 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  repo:setup:mac:
+    cmds:
+      - ./scripts/repo-setup.sh
+
+  repo:setup:
+    cmds:
+      - pre-commit autoupdate
+      - ansible-galaxy install -r stage1/requirements.yml
+      - pip install --no-cache-dir -r stage1/requirements-pip.txt
+
+  precommit:run:
+    cmds:
+      - pre-commit run --all-files
+
+  docker:build:
+    cmds:
+      - ./scripts/docker-build.sh
+
+  docker:run:
+    cmds:
+      - ./scripts/docker-run.sh
+
+  docker:exec:
+    cmds:
+      - task: docker:run
+      - docker exec -it "homelab-infrastructure" /bin/bash
+
+  stage1:ansible:ping:
+    desc: Verify access to the cluster
+    dir: stage1
+    cmds:
+      - ansible all -i "inventories/inventory.yml" -m ping
+
+  stage1:ansible:playbook:
+    desc: Deploy complete server setup and Kubernetes cluster
+    dir: stage1
+    cmds:
+      - ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml
+
+  stage2:terraform:init:
+    desc: Initialize Terraform
+    dir: stage2
+    cmds:
+      - terraform workspace select k8s
+      - terraform init
+
+  stage2:terraform:plan:
+    desc: Plan the Terraform deployment
+    dir: stage2
+    cmds:
+      - terraform plan
+
+  stage2:terraform:apply:
+    desc: Apply the Terraform deployment
+    dir: stage2
+    cmds:
+      - terraform apply

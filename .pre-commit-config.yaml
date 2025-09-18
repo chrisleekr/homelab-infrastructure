@@ -9,15 +9,15 @@ default_stages:
 
 repos:
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.8.2
+    rev: v25.9.0
     hooks:
       - id: ansible-lint
         args:
           - --project-dir=./stage1
           - --exclude=container/
         # Uncomment if you need the full Ansible community bundle instead of ansible-core:
-        # additional_dependencies:
-        #   - ansible
+        additional_dependencies:
+          - ansible
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.100.0

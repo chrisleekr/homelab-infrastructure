@@ -325,6 +325,12 @@ variable "prometheus_minio_job_resource_bearer_token" {
   sensitive   = true
 }
 
+variable "enable_logging_module" {
+  description = "Enable the logging module"
+  type        = bool
+  default     = true
+}
+
 variable "elasticsearch_resource_request_memory" {
   description = "Memory request for Elasticsearch"
   type        = string
