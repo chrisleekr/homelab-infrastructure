@@ -22,5 +22,5 @@ docker run -it --rm -d \
 echo "*******"
 echo "You can now access to the container by executing the following command:"
 echo " $ docker exec -it \"homelab-infrastructure\" /bin/bash"
-echo "If you ran 'npm run docker:exec', you should see the container bash at /srv."
+echo "If you ran 'task docker:exec', you should see the container bash at /srv."
 echo "*******"

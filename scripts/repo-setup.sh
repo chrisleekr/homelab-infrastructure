@@ -1,4 +1,6 @@
 #!/bin/bash
+# This is for local development setup only.
+# Do not run in the container.
 
 # Fail on any error.
 set -Eeuo pipefail

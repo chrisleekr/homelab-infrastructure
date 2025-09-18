@@ -25,7 +25,7 @@ output "grafana_admin_password" {
 }
 
 output "elasticsearch_password" {
-  value     = module.logging.elasticsearch_password
+  value     = try(module.logging[0].elasticsearch_password, "")
   sensitive = true
 }
 

@@ -118,6 +118,7 @@ module "gitlab_platform" {
 
 
 module "logging" {
+  count      = var.enable_logging_module ? 1 : 0
   depends_on = [module.cert_manager_letsencrypt]
   source     = "./logging"
 
@@ -159,10 +160,12 @@ module "monitoring" {
   prometheus_minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
 
-  elastalert2_elasticsearch_host     = module.logging.elasticsearch_host
-  elastalert2_elasticsearch_port     = module.logging.elasticsearch_port
-  elastalert2_elasticsearch_username = module.logging.elasticsearch_username
-  elastalert2_elasticsearch_password = module.logging.elasticsearch_password
+  # Depends on the logging module, configure elastalert2
+  elastalert2_elasticsearch_enabled  = var.enable_logging_module
+  elastalert2_elasticsearch_host     = try(module.logging[0].elasticsearch_host, "")
+  elastalert2_elasticsearch_port     = try(module.logging[0].elasticsearch_port, 9200)
+  elastalert2_elasticsearch_username = try(module.logging[0].elasticsearch_username, "")
+  elastalert2_elasticsearch_password = try(module.logging[0].elasticsearch_password, "")
 
   auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
 }
@@ -197,7 +200,7 @@ module "vpn" {
 }
 
 module "argocd" {
-  depends_on = [module.gitlab_platform]
+  depends_on = [module.gitlab_platform, module.logging[0]]
   source     = "./argocd"
 
   prometheus_namespace             = module.monitoring.monitoring_namespace

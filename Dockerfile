@@ -7,7 +7,9 @@ ARG BUILDARCH
 
 ARG KUBECTL_VERSION=1.34.0
 ARG HELM_VERSION=3.18.6
-ARG TERRAFORM_VERSION=1.13.0
+ARG TERRAFORM_VERSION=1.13.1
+ARG TASKFILE_VERSION=3.44.1
+ARG TRIVY_VERSION=0.66.0
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -30,6 +32,12 @@ RUN set -eux; \
   jq=1.7.1-r0 \
   bind-tools=9.18.39-r0 \
   git=2.45.4-r0 \
+  graphviz=9.0.0-r2 \
+  python3=3.12.11-r0 \
+  py3-pip=24.0-r2 \
+  pre-commit=3.7.1-r0 \
+  shellcheck=0.10.0-r1 \
+  bash-completion=2.12.0-r0 \
   && \
   \
   # Install kubectl - https://dl.k8s.io/release/v1.30.2/bin/linux/arm64/kubectl
@@ -62,12 +70,21 @@ RUN set -eux; \
   py3-pip=24.0-r2 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
-  source .venv/bin/activate && \
+  . .venv/bin/activate && \
   # Install Python packages
   pip install --no-cache-dir -r /tmp/requirements-pip.txt && \
   ansible --version && \
   # Run Ansible Galaxy to install required collections
   ansible-galaxy install -r /tmp/requirements.yml && \
+  \
+  # Install Taskfile
+  sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin v${TASKFILE_VERSION} && \
+  \
+  # Install trivy - https://github.com/aquasecurity/trivy/releases
+  curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v${TRIVY_VERSION} && \
+  \
+  # Install tflint
+  curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash && \
   \
   # Install kubent - https://github.com/doitintl/kube-no-trouble
   sh -c "$(curl -sSL https://git.io/install-kubent)" && \
