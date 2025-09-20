@@ -325,7 +325,7 @@ variable "prometheus_minio_job_resource_bearer_token" {
   sensitive   = true
 }
 
-variable "enable_logging_module" {
+variable "logging_module_enable" {
   description = "Enable the logging module"
   type        = bool
   default     = true
@@ -539,6 +539,31 @@ variable "auth_auth0_client_id" {
 
 variable "auth_auth0_client_secret" {
   description = "The client secret for the auth0"
+  type        = string
+  sensitive   = true
+}
+
+
+variable "datadog_enable" {
+  description = "Enable the datadog"
+  type        = bool
+  default     = false
+}
+
+variable "datadog_cluster_name" {
+  description = "The name of the cluster"
+  type        = string
+}
+
+
+variable "datadog_api_key" {
+  description = "The api key for the datadog"
+  type        = string
+  sensitive   = true
+}
+
+variable "datadog_app_key" {
+  description = "The app key for the datadog"
   type        = string
   sensitive   = true
 }

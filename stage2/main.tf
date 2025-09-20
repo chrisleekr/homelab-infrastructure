@@ -118,7 +118,7 @@ module "gitlab_platform" {
 
 
 module "logging" {
-  count      = var.enable_logging_module ? 1 : 0
+  count      = var.logging_module_enable ? 1 : 0
   depends_on = [module.cert_manager_letsencrypt]
   source     = "./logging"
 
@@ -161,7 +161,7 @@ module "monitoring" {
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
 
   # Depends on the logging module, configure elastalert2
-  elastalert2_elasticsearch_enabled  = var.enable_logging_module
+  elastalert2_elasticsearch_enabled  = var.logging_module_enable
   elastalert2_elasticsearch_host     = try(module.logging[0].elasticsearch_host, "")
   elastalert2_elasticsearch_port     = try(module.logging[0].elasticsearch_port, 9200)
   elastalert2_elasticsearch_username = try(module.logging[0].elasticsearch_username, "")
@@ -219,4 +219,15 @@ module "argocd" {
   argocd_auth0_domain        = var.auth_auth0_domain
   argocd_auth0_client_id     = var.auth_auth0_client_id
   argocd_auth0_client_secret = var.auth_auth0_client_secret
+}
+
+
+module "datadog" {
+  count      = var.datadog_enable ? 1 : 0
+  depends_on = [module.cert_manager_letsencrypt]
+  source     = "./datadog"
+
+  datadog_cluster_name = var.datadog_cluster_name
+  datadog_app_key      = var.datadog_app_key
+  datadog_api_key      = var.datadog_api_key
 }

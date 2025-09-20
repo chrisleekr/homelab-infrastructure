@@ -1,0 +1,24 @@
+# https://github.com/DataDog/helm-charts/blob/master/test/integ/manifests/default.yaml#L2
+apiVersion: datadoghq.com/v2alpha1
+kind: DatadogAgent
+metadata:
+  name: datadog-agent
+  namespace: ${namespace}
+spec:
+  global:
+    credentials:
+      apiSecret:
+        secretName: ${datadog_api_key_secret}
+        keyName: api-key
+      appSecret:
+        secretName: ${datadog_app_key_secret}
+        keyName: app-key
+    clusterName: ${datadog_cluster_name}
+    kubelet:
+      tlsVerify: false
+  features:
+    clusterChecks:
+      enabled: true
+      useClusterChecksRunners: true
+    liveContainerCollection:
+      enabled: true
