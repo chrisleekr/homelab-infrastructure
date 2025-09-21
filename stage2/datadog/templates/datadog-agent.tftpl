@@ -21,8 +21,48 @@ spec:
     clusterChecks:
       enabled: true
       useClusterChecksRunners: true
+
     liveContainerCollection:
       enabled: true
+
     # https://docs.datadoghq.com/infrastructure/process/?tab=datadogoperator
     liveProcessCollection:
+      enabled: true
+
+    npm:
+      enabled: true
+
+    # Enables Misconfigurations
+    cspm:
+      enabled: true
+      hostBenchmarks:
+        enabled: true
+
+    # Enables Software Bill of Materials (SBOM) collection
+    sbom:
+      enabled: true
+
+      # Enables Container Vulnerability Management
+      containerImage:
+        enabled: true
+
+      # Enables Host Vulnerability Management
+      host:
+        enabled: true
+
+    # https://github.com/DataDog/helm-charts/blob/9ce81d13f7f87b9ac0417f45cd444a22147aa4a2/crds/datadoghq.com_datadogagents.yaml#L861
+    logCollection:
+      enabled: true
+      containerCollectAll: true
+
+    # https://docs.datadoghq.com/cloudprem/ingest_logs/datadog_agent/#send-kubernetes-logs-with-the-datadog-operator
+    prometheusScrape:
+      enabled: true
+      enableServiceEndpoints: true
+
+    oomKill:
+      enabled: true
+
+    # https://docs.datadoghq.com/integrations/helm/?tab=operatorv150#configuration
+    helmCheck:
       enabled: true
