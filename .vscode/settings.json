@@ -9,6 +9,7 @@
     "**/node_modules": true
   },
   "cSpell.words": [
+    "alekc",
     "alertmanager",
     "Archlinux",
     "argocd",
@@ -24,6 +25,7 @@
     "Corefile",
     "crds",
     "crictl",
+    "datadoghq",
     "dotenv",
     "elastalert",
     "Filebeat",
@@ -69,6 +71,7 @@
     "templatefile",
     "tflint",
     "tftpl",
+    "tolerations",
     "traefik",
     "trivy",
     "venv"
