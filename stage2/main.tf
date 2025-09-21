@@ -228,6 +228,7 @@ module "datadog" {
   source     = "./datadog"
 
   datadog_cluster_name = var.datadog_cluster_name
+  datadog_site         = var.datadog_site
   datadog_app_key      = var.datadog_app_key
   datadog_api_key      = var.datadog_api_key
 }

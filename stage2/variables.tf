@@ -550,11 +550,15 @@ variable "datadog_enable" {
   default     = false
 }
 
+variable "datadog_site" {
+  description = "The site for the datadog"
+  type        = string
+}
+
 variable "datadog_cluster_name" {
   description = "The name of the cluster"
   type        = string
 }
-
 
 variable "datadog_api_key" {
   description = "The api key for the datadog"

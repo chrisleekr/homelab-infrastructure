@@ -9,6 +9,11 @@ variable "datadog_api_key" {
   sensitive   = true
 }
 
+variable "datadog_site" {
+  description = "The site for the datadog"
+  type        = string
+}
+
 variable "datadog_app_key" {
   description = "The app key for the datadog"
   type        = string

@@ -15,6 +15,7 @@ resource "helm_release" "datadog_operator" {
       "${path.module}/templates/datadog-operator-values.tftpl",
       {
         datadog_cluster_name   = var.datadog_cluster_name
+        datadog_site           = var.datadog_site
         datadog_api_key_secret = kubernetes_secret.datadog_api_key.metadata[0].name
         datadog_app_key_secret = kubernetes_secret.datadog_app_key.metadata[0].name
       }

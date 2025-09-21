@@ -27,7 +27,7 @@ clusterName: ${datadog_cluster_name}
 ## Set to 'us5.datadoghq.com' to send data to the US5 site.
 ## Set to 'ddog-gov.com' to send data to the US1-FED site.
 ## Set to 'ap1.datadoghq.com' to send data to the AP1 site.
-# site: # datadoghq.com
+site: ${datadog_site}
 
 # dd_url -- The host of the Datadog intake server to send Agent data to, only set this option if you need the Agent to send data to a custom URL
 
@@ -147,13 +147,13 @@ datadogCRDs:
     # datadogCRDs.crds.datadogMonitors -- Set to true to deploy the DatadogMonitors CRD
     datadogMonitors: true
     # datadogCRDs.crds.datadogSLOs -- Set to true to deploy the DatadogSLO CRD
-    datadogSLOs: false
+    datadogSLOs: true
     # datadogCRDs.crds.datadogDashboards -- Set to true to deploy the DatadogDashboard CRD
-    datadogDashboards: false
+    datadogDashboards: true
     # datadogCRDs.crds.datadogGenericResources -- Set to true to deploy the DatadogGenericResource CRD
-    datadogGenericResources: false
+    datadogGenericResources: true
     # datadogCRDs.crds.datadogAgentProfiles -- Set to true to deploy the DatadogAgentProfile CRD
-    datadogAgentProfiles: false
+    datadogAgentProfiles: true
 
 # podAnnotations -- Allows setting additional annotations for Datadog Operator PODs
 podAnnotations: {}
@@ -251,7 +251,7 @@ livenessProbe:
 clusterRole:
   # allowReadAllResources is required to allow the operator to view all custom resources.
   # If collecting CRDs in the Kubernetes Explorer this is required
-  allowReadAllResources: false
+  allowReadAllResources: true
 
   # allowCreatePodsExec is required for `remote_copy` mode of the CWS Instrumentation feature.
   allowCreatePodsExec: false
