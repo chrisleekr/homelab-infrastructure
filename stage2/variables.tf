@@ -454,8 +454,8 @@ variable "wireguard_timezone" {
 
 variable "wireguard_port" {
   description = "The port for the wireguard"
-  type        = number
-  default     = 51820
+  type        = string
+  default     = "51820"
 }
 
 variable "wireguard_peers" {

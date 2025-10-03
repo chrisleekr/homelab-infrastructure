@@ -1,0 +1,38 @@
+name: Lint & Validate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    # needs: build
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Install hadolint
+        run: |
+          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64 -o hadolint
+          chmod +x hadolint
+          mv hadolint /usr/local/bin/
+
+      - name: Install TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          cache: true
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.1

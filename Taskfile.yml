@@ -13,7 +13,7 @@ tasks:
       - ansible-galaxy install -r stage1/requirements.yml
       - pip install --no-cache-dir -r stage1/requirements-pip.txt
 
-  precommit:run:
+  precommit:
     cmds:
       - pre-commit run --all-files
 
