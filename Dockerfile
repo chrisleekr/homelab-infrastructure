@@ -26,8 +26,8 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN set -eux; \
   \
   apk add --no-cache \
-  ca-certificates=20250619-r0 \
-  curl=8.12.1-r0 \
+  ca-certificates=20250911-r0 \
+  curl=8.14.1-r2 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
   bind-tools=9.18.39-r0 \

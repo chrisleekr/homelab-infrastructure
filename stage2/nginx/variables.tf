@@ -18,6 +18,6 @@ variable "nginx_client_body_buffer_size" {
 
 variable "wireguard_port" {
   description = "The port for the wireguard"
-  type        = number
-  default     = 51820
+  type        = string
+  default     = "51820"
 }
