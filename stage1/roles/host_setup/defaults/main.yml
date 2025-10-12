@@ -30,7 +30,9 @@ host_setup_fail2ban_socket: /var/run/fail2ban/fail2ban.sock
 host_setup_fail2ban_pidfile: /var/run/fail2ban/fail2ban.pid
 host_setup_fail2ban_ignoreips:
   - 127.0.0.1/8
-  - 192.168.1.1/8
+  - 192.168.0.0/16
+  - 10.0.0.0/8
+  - 172.16.0.0/12
 host_setup_fail2ban_bantime: 600
 host_setup_fail2ban_bantime_factor: 24
 host_setup_fail2ban_bantime_maxtime: 5w
