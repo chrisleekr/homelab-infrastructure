@@ -355,6 +355,15 @@ global:
 
 ## https://docs.gitlab.com/charts/charts/globals#configure-registry-settings
 ## https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/charts/registry/values.yaml
+## https://docs.gitlab.com/administration/packages/container_registry_metadata_database/
+## https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/doc/charts/registry/metadata_database.md#enable-for-and-import-existing-registries
+## -- Create a new database for the registry metadata
+##  CREATE DATABASE registry;
+## -- Create a dedicated user for the registry
+## CREATE USER registry WITH PASSWORD '<password>';
+## -- Make the registry user the owner of the database (PostgreSQL 15+ required for migrations)
+## ALTER DATABASE registry OWNER TO registry;
+
 registry:
   # Settings utilized by other services referencing registry:
   enabled: true
@@ -362,8 +371,8 @@ registry:
     readonly:
       enabled: false  # must remain set to true while the migration is executed
   database:
-    configure: false
-    enabled: false # Enable metadata database. This is an experimental feature and must not be used in production environments.
+    configure: true
+    enabled: true # Enable metadata database. This is an experimental feature and must not be used in production environments.
     name: registry  # must match the database name you created above
     user: registry  # must match the database username you created above
     password:
@@ -709,6 +718,9 @@ postgresql:
       enabled: true
       size: ${postgresql_primary_persistence_size}
     extendedConfiguration: |
+      # Connection settings
+      max_connections = 300
+
       # Autovacuum settings
       autovacuum = on
       autovacuum_max_workers = 6
