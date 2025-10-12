@@ -33,7 +33,7 @@ RUN set -eux; \
   bind-tools=9.18.39-r0 \
   git=2.45.4-r0 \
   graphviz=9.0.0-r2 \
-  python3=3.12.11-r0 \
+  python3=3.12.12-r0 \
   py3-pip=24.0-r2 \
   pre-commit=3.7.1-r0 \
   shellcheck=0.10.0-r1 \
@@ -66,7 +66,7 @@ RUN set -eux; \
   g++=13.2.1_git20240309-r1 \
   gcc=13.2.1_git20240309-r1 \
   libffi-dev=3.4.6-r0	\
-  python3-dev=3.12.11-r0 \
+  python3-dev=3.12.12-r0 \
   py3-pip=24.0-r2 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \

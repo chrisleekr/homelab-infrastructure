@@ -8,6 +8,17 @@
   community.general.ufw:
     logging: "on"
 
+# Ordering matters. “When a rule matches, no further rules get evaluated”.
+- name: Allow all access from RFC1918 networks to this host
+  community.general.ufw:
+    rule: allow
+    src: "{{ item }}"
+  loop:
+    - 10.0.0.0/8
+    - 127.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
 - name: Allow all access to tcp port 22
   community.general.ufw:
     rule: limit
@@ -38,16 +49,6 @@
     port: "{{ item.port }}"
     proto: "{{ item.proto }}"
   loop: "{{ host_setup_ufw_rules }}"
-
-- name: Allow all access from RFC1918 networks to this host
-  community.general.ufw:
-    rule: allow
-    src: "{{ item }}"
-  loop:
-    - 10.0.0.0/8
-    - 127.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
 
 - name: Enable UFW
   community.general.ufw:
