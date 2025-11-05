@@ -1,0 +1,35 @@
+# https://github.com/stakater/Reloader/blob/master/deployments/kubernetes/chart/reloader/values.yaml
+
+image:
+  name: stakater/reloader
+  repository: ghcr.io/stakater/reloader
+  # tag: v1.4.9
+  # digest: sha256:1234567
+  pullPolicy: IfNotPresent
+
+reloader:
+  autoReloadAll: false
+  isArgoRollouts: false
+  isOpenshift: false
+  ignoreSecrets: false
+  ignoreConfigMaps: false
+  # Set to true to exclude Job workloads from automatic reload monitoring
+  # Useful when you don't want Jobs to be restarted when their referenced ConfigMaps/Secrets change
+  ignoreJobs: false
+  # Set to true to exclude CronJob workloads from automatic reload monitoring
+  # Useful when you don't want CronJobs to be restarted when their referenced ConfigMaps/Secrets change
+  ignoreCronJobs: false
+  reloadOnCreate: false
+  reloadOnDelete: false
+  syncAfterRestart: false
+  reloadStrategy: default # Set to default, env-vars or annotations
+  ignoreNamespaces: "" # Comma separated list of namespaces to ignore
+  namespaceSelector: "" # Comma separated list of k8s label selectors for namespaces selection
+  resourceLabelSelector: "" # Comma separated list of k8s label selectors for configmap/secret selection
+  logFormat: "" # json
+  logLevel: info # Log level to use (trace, debug, info, warning, error, fatal and panic)
+  watchGlobally: true
+  # Set to true if you have a pod security policy that enforces readOnlyRootFilesystem
+  readOnlyRootFileSystem: false
+  # Set to true to expose a prometheus counter of reloads by namespace (this metric may have high cardinality in clusters with many namespaces)
+  enableMetricsByNamespace: true

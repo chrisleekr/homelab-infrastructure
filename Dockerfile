@@ -5,7 +5,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG BUILDARCH
 
-ARG KUBECTL_VERSION=1.34.0
+ARG KUBECTL_VERSION=1.34.1
 ARG HELM_VERSION=3.18.6
 ARG TERRAFORM_VERSION=1.13.1
 ARG TASKFILE_VERSION=3.44.1
@@ -30,7 +30,7 @@ RUN set -eux; \
   curl=8.14.1-r2 \
   bash=5.2.26-r0 \
   jq=1.7.1-r0 \
-  bind-tools=9.18.39-r0 \
+  bind-tools=9.18.41-r0 \
   git=2.45.4-r0 \
   graphviz=9.0.0-r2 \
   python3=3.12.12-r0 \
