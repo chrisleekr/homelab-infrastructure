@@ -108,7 +108,7 @@ locals {
   without_custom_config = (can(regex(local.start_marker, local.existing_corefile)) ?
     replace(
       local.existing_corefile,
-      "/(?s)${local.start_marker}.*?${local.end_marker}/",
+      "/\\n*(?s)${local.start_marker}.*?${local.end_marker}/",
       ""
   ) : local.existing_corefile)
 
@@ -125,22 +125,23 @@ locals {
   # Always rebuild the forward directive to ensure it matches exactly the current domain list
   new_forward = (
     can(regex("forward \\. /etc/resolv\\.conf \\{", local.existing_forward)) ?
-    # Extract existing forward block content, remove any except clauses, add new except clause
-    replace(
-      replace(local.existing_forward, "/except [^}\\n]*\\n?/", ""),
-      "/\\}/",
-      "        except ${local.except_clause}\n    }"
+    # Has a forward block
+    (can(regex("except [^}\\n]*", local.existing_forward)) ?
+      # Replace existing except clause with new one (preserves exact spacing)
+      replace(local.existing_forward, "/except [^}\\n]*/", "except ${local.except_clause}") :
+      # No except clause exists, add it before the closing brace
+      replace(local.existing_forward, "/\\s*\\}/", "\n                             except ${local.except_clause}\n    }")
     ) :
-    # If it does not have a forward block, convert to block with except
-    "forward . /etc/resolv.conf {\n        except ${local.except_clause}\n    }"
+    # No forward block at all
+    "forward . /etc/resolv.conf {\n                             except ${local.except_clause}\n    }"
   )
+
 
   # Step 3: Replace the forward directive
   base_corefile = replace(local.without_custom_config, local.existing_forward, local.new_forward)
 
   # Step 4: Create server blocks for each domain
   custom_configs = [for domain in local.domain_list : <<EOF
-
 ${domain}:53 {
     errors
     hosts {
@@ -149,14 +150,14 @@ ${domain}:53 {
     }
     cache 30
 }
+
 EOF
   ]
 
   # Step 5: Combine all custom configs with markers
   all_custom_config = <<EOF
-
-${local.start_marker}${join("", local.custom_configs)}
-${local.end_marker}
+${local.start_marker}
+${join("", local.custom_configs)}${local.end_marker}
 EOF
 
   # Final Corefile

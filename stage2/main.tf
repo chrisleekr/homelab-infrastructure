@@ -232,3 +232,8 @@ module "datadog" {
   datadog_app_key      = var.datadog_app_key
   datadog_api_key      = var.datadog_api_key
 }
+
+module "reloader" {
+  depends_on = [module.kubernetes]
+  source     = "./stakater-reloader"
+}
