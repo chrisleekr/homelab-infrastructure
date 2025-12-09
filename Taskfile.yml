@@ -46,8 +46,8 @@ tasks:
     desc: Initialize Terraform
     dir: stage2
     cmds:
-      - terraform workspace select k8s
       - terraform init
+      - terraform workspace select k8s
 
   stage2:terraform:plan:
     desc: Plan the Terraform deployment
