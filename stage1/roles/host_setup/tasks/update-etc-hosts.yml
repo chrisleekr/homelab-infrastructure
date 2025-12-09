@@ -10,4 +10,4 @@
     line: "{{ item.ip }} {{ item.name }}"
     state: present
   loop: "{{ host_setup_etc_hosts_json | from_json }}"
-  when: host_setup_etc_hosts_json is defined and host_setup_etc_hosts_json | length > 0
+  when: host_setup_etc_hosts_json is defined and (host_setup_etc_hosts_json | from_json) | length > 0
