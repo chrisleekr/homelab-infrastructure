@@ -21,6 +21,11 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
       - name: Install hadolint
         run: |
           curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64 -o hadolint

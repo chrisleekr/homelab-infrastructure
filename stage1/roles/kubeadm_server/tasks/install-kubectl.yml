@@ -13,7 +13,7 @@
 - name: Set kubectl installed version
   when:
     - kubeadm_server_kubectl_version_output.rc == 0
-    - kubeadm_server_kubectl_version_output.stdout
+    - kubeadm_server_kubectl_version_output.stdout | from_json is defined
   ansible.builtin.set_fact:
     kubeadm_server_kubectl_installed_version: "{{ (kubeadm_server_kubectl_version_output.stdout | from_json).clientVersion.gitVersion | regex_replace('^v(.*)$', '\\1') }}"
 
