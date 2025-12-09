@@ -5,11 +5,16 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG BUILDARCH
 
-ARG KUBECTL_VERSION=1.34.1
-ARG HELM_VERSION=3.18.6
-ARG TERRAFORM_VERSION=1.13.1
-ARG TASKFILE_VERSION=3.44.1
-ARG TRIVY_VERSION=0.66.0
+# https://dl.k8s.io/release/stable.txt
+ARG KUBECTL_VERSION=1.34.2
+# https://github.com/helm/helm/releases
+ARG HELM_VERSION=3.19.2
+# https://developer.hashicorp.com/terraform/install
+ARG TERRAFORM_VERSION=1.14.1
+# https://github.com/go-task/task/releases
+ARG TASKFILE_VERSION=3.45.5
+# https://github.com/aquasecurity/trivy/releases
+ARG TRIVY_VERSION=0.68.1
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"

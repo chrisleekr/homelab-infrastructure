@@ -38,6 +38,7 @@
     "graphviz",
     "homelab",
     "hostnames",
+    "inotify",
     "insertafter",
     "interruptible",
     "Kubeadm",
