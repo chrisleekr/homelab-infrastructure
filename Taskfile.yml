@@ -55,6 +55,12 @@ tasks:
     cmds:
       - terraform plan
 
+  stage2:terraform:refresh:
+    desc: Refresh Terraform state to match real infrastructure
+    dir: stage2
+    cmds:
+      - terraform refresh
+
   stage2:terraform:apply:
     desc: Apply the Terraform deployment
     dir: stage2
