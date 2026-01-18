@@ -571,3 +571,74 @@ variable "datadog_app_key" {
   type        = string
   sensitive   = true
 }
+
+# LLM Gateway variables
+# Reference: https://docs.llmgateway.io/self-host
+
+variable "llmgateway_enable" {
+  description = "Enable LLM Gateway deployment"
+  type        = bool
+  default     = false
+}
+
+variable "llmgateway_domain" {
+  description = "Domain name for LLM Gateway ingress"
+  type        = string
+  default     = "llm.chrislee.local"
+}
+
+variable "llmgateway_ingress_class_name" {
+  description = "Ingress class name for LLM Gateway"
+  type        = string
+  default     = "nginx"
+}
+
+variable "llmgateway_storage_size" {
+  description = "Storage size for LLM Gateway PostgreSQL data persistence"
+  type        = string
+  default     = "10Gi"
+}
+
+variable "llmgateway_storage_class_name" {
+  description = "Storage class name for LLM Gateway persistent volume"
+  type        = string
+  default     = "longhorn"
+}
+
+variable "llmgateway_auth_secret" {
+  description = "AUTH_SECRET for LLM Gateway session management. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  # Validate auth_secret length when provided
+  # Fail fast at plan time rather than discovering issues post-deployment
+  validation {
+    condition     = var.llmgateway_auth_secret == "" || length(var.llmgateway_auth_secret) >= 32
+    error_message = "llmgateway_auth_secret must be at least 32 characters. Generate with: openssl rand -hex 32"
+  }
+}
+
+variable "llmgateway_image_tag" {
+  description = "Docker image tag for LLM Gateway. Use specific version from https://github.com/theopenco/llmgateway/releases"
+  type        = string
+  default     = "latest"
+}
+
+variable "llmgateway_replicas" {
+  description = "Number of LLM Gateway replicas. Note: Multiple replicas require ReadWriteMany storage or separate PVCs"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.llmgateway_replicas >= 1
+    error_message = "llmgateway_replicas must be at least 1"
+  }
+}
+
+variable "llmgateway_admin_emails" {
+  description = "Comma-separated list of email addresses that have admin access to LLM Gateway admin dashboard. Reference: https://github.com/theopenco/llmgateway/blob/main/apps/api/src/routes/user.ts"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

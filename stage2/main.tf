@@ -237,3 +237,23 @@ module "reloader" {
   depends_on = [module.kubernetes]
   source     = "./stakater-reloader"
 }
+
+# LLM Gateway - Unified API gateway for multiple LLM providers
+# Reference: https://docs.llmgateway.io/self-host
+module "llmgateway" {
+  count      = var.llmgateway_enable ? 1 : 0
+  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage]
+  source     = "./llmgateway"
+
+  llmgateway_enable             = var.llmgateway_enable
+  llmgateway_domain             = var.llmgateway_domain
+  llmgateway_ingress_class_name = var.llmgateway_ingress_class_name
+  llmgateway_ingress_enable_tls = var.ingress_enable_tls
+  llmgateway_storage_size       = var.llmgateway_storage_size
+  llmgateway_storage_class_name = var.llmgateway_storage_class_name
+  llmgateway_auth_secret        = var.llmgateway_auth_secret
+  llmgateway_image_tag          = var.llmgateway_image_tag
+  llmgateway_replicas           = var.llmgateway_replicas
+  llmgateway_admin_emails       = var.llmgateway_admin_emails
+  auth_oauth2_proxy_host        = var.auth_oauth2_proxy_host
+}

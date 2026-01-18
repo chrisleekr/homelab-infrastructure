@@ -25,6 +25,7 @@ This project aims to provision a single-node Kubernetes cluster on a Ubuntu serv
   - Tailscale (<https://tailscale.com/>)
   - Wireguard
   - ArgoCD
+  - [LLM Gateway](stage2/llmgateway/README.md) (<https://docs.llmgateway.io/>)
 
 The docker image contains the following tools:
 
