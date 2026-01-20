@@ -124,7 +124,7 @@ Set in Terraform Cloud or `.env`:
 TF_VAR_llmgateway_enable=true
 TF_VAR_llmgateway_domain="llm.chrislee.local"
 TF_VAR_llmgateway_auth_secret="$(openssl rand -hex 32)"
-TF_VAR_llmgateway_admin_emails="admin@example.com,admin2@example.com"
+TF_VAR_llmgateway_admin_emails="admin@chrislee.local,admin2@chrislee.local"
 ```
 
 > **Note**: `llmgateway_admin_emails` controls which users have access to the Admin Dashboard at `https://admin.<domain>`. Users must first create an account via the main UI, then their email is checked against this list.
