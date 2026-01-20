@@ -1,6 +1,31 @@
 # AGENTS.md: AI Collaboration Guide
 
-This document provides essential guidelines for AI models interacting with this homelab infrastructure project. Following these standards ensures consistency, maintains code quality, and helps AI agents understand the project's architecture and deployment workflows.
+This document provides essential guidelines for AI models interacting with this homelab infrastructure project.
+
+## Quick Reference for AI Agents
+
+**Key Files to Read First:**
+
+- `stage2/main.tf` - Module dependencies and orchestration
+- `stage2/variables.tf` - All Terraform input variables
+- `stage1/inventories/inventory.yml` - Kubernetes version pinning
+- `Dockerfile` - Container tool versions
+
+**Common Patterns:**
+
+| Task | Location | Pattern |
+|------|----------|---------|
+| Add Terraform module | `stage2/<module-name>/` | Create `*.tf`, `variables.tf`, `provider.tf`, `templates/` |
+| Add Helm chart | Module's main `.tf` | Use `helm_release` resource with version pinning |
+| Add Ansible role | `stage1/roles/<role>/` | Create `tasks/main.yml`, `defaults/main.yml`, `templates/` |
+| Add new variable | `stage2/variables.tf` | Include type, description, default, validation |
+| Enable optional module | `stage2/main.tf` | Use `count = var.<module>_enable ? 1 : 0` |
+
+**Before Making Changes:**
+
+1. Run `task precommit` to validate
+2. Check module dependencies in `stage2/main.tf`
+3. Verify version compatibility in `Dockerfile` and `inventory.yml`
 
 ## Project Overview
 
@@ -22,98 +47,85 @@ This document provides essential guidelines for AI models interacting with this 
 
 ```text
 homelab-infrastructure/
-├── stage1/                   # Ansible playbooks and roles
-│   ├── ansible.cfg           # Ansible configuration
-│   ├── site.yml              # Main playbook orchestration
-│   ├── inventories/          # Inventory configurations
-│   │   └── inventory.yml     # Host and variable definitions
-│   ├── roles/                # Ansible roles for infrastructure setup
-│   │   ├── host_setup/       # Server hardening (fail2ban, ufw, package management)
-│   │   ├── kubeadm_*/        # kubeadm cluster setup roles
-│   │   ├── k3s_*/            # k3s cluster setup roles
-│   │   ├── minikube_*/       # minikube cluster setup roles
-│   │   └── localhost_post_setup/ # Local post-deployment tasks
-│   └── requirements*.txt     # Python and Ansible dependencies
-├── stage2/                   # Terraform modules and configurations
-│   ├── main.tf               # Root module orchestration
-│   ├── variables.tf          # Input variables definition
-│   ├── providers.tf          # Provider configurations
-│   ├── backend.tf            # Terraform Cloud backend
-│   ├── kubernetes/           # Core Kubernetes configuration (CoreDNS, CRDs)
-│   ├── nginx/                # Ingress controller
+├── stage1/                       # Ansible playbooks and roles
+│   ├── ansible.cfg               # Ansible configuration
+│   ├── site.yml                  # Main playbook orchestration
+│   ├── inventories/
+│   │   └── inventory.yml         # Host definitions and version pinning
+│   ├── roles/
+│   │   ├── host_setup/           # Server hardening (fail2ban, ufw)
+│   │   ├── kubeadm_*/            # kubeadm cluster setup
+│   │   ├── k3s_*/                # k3s cluster setup
+│   │   ├── minikube_*/           # minikube cluster setup
+│   │   └── localhost_post_setup/ # Post-deployment tasks
+│   └── requirements*.txt         # Python/Ansible dependencies
+├── stage2/                       # Terraform modules
+│   ├── main.tf                   # Module orchestration and dependencies
+│   ├── variables.tf              # All input variables
+│   ├── providers.tf              # Provider configurations
+│   ├── backend.tf                # Terraform Cloud backend
+│   ├── kubernetes/               # CoreDNS, Prometheus CRDs
+│   ├── nginx/                    # NGINX Ingress Controller
 │   ├── cert-manager-letsencrypt/ # TLS certificate management
-│   ├── longhorn-storage/     # Distributed block storage
-│   │   ├── longhorn.tf
-│   │   ├── provider.tf
-│   │   ├── variables.tf
-│   │   └── templates/
-│   │       └── longhorn-values.tftpl
-│   ├── minio-object-storage/ # S3-compatible object storage
-│   ├── gitlab-platform/      # GitLab CI/CD platform
-│   ├── monitoring/           # Prometheus, Grafana, AlertManager stack
-│   ├── logging/              # Elasticsearch, Kibana, Filebeat (ECK)
-│   ├── auth/                 # OAuth2 proxy authentication
-│   ├── argocd/               # GitOps continuous deployment
-│   ├── kubecost/             # Kubernetes cost monitoring
-│   └── vpn/                  # Tailscale and WireGuard VPN
-├── scripts/                  # Helper scripts
-│   ├── docker-build.sh       # Build container image
-│   ├── docker-run.sh         # Run container with proper mounts
-│   └── repo-setup.sh         # Repository initialization
-├── container/                # Container customization files
-├── Dockerfile                # Multi-stage Alpine container definition
-└── package.json              # npm scripts for workflow automation
+│   ├── longhorn-storage/         # Distributed block storage
+│   ├── minio-object-storage/     # S3-compatible object storage
+│   ├── gitlab-platform/          # GitLab CI/CD (AMD64 only)
+│   ├── monitoring/               # Prometheus, Grafana, AlertManager, ElastAlert2
+│   ├── logging/                  # ECK (Elasticsearch, Kibana, Filebeat)
+│   ├── auth/                     # OAuth2 proxy (Auth0)
+│   ├── argocd/                   # GitOps continuous deployment
+│   ├── kubecost/                 # Cost monitoring
+│   ├── vpn/                      # Tailscale and WireGuard
+│   ├── datadog/                  # Datadog monitoring (optional)
+│   ├── stakater-reloader/        # Auto-restart on Secret/ConfigMap changes
+│   └── llmgateway/               # LLM Gateway - unified LLM API (optional)
+├── scripts/                      # Helper scripts
+├── container/                    # Container customization files
+├── Dockerfile                    # Alpine container with all tools
+├── Taskfile.yml                  # Task runner (primary command interface)
+├── .pre-commit-config.yaml       # Pre-commit hooks configuration
+└── .env.sample                   # Environment variable template
 ```
 
 ## Build & Commands
 
-**Container Management:**
+**Task Runner (Taskfile.yml):**
 
-- **Setup environment**: `npm run repo:setup` (install dependencies)
-- **Build container**: `npm run docker:build` (create Alpine image with tools)
-- **Run container**: `npm run docker:run` (start with volume mounts)
-- **Access container**: `npm run docker:exec` (interactive bash session)
+| Command | Description |
+|---------|-------------|
+| `task repo:setup` | Install dependencies (pre-commit, ansible-galaxy, pip) |
+| `task docker:build` | Build Alpine container image |
+| `task docker:run` | Start container with volume mounts |
+| `task docker:exec` | Interactive bash session in container |
+| `task precommit` | Run all pre-commit hooks |
+| `task stage1:ansible:ping` | Verify SSH connectivity to server |
+| `task stage1:ansible:playbook` | Deploy Stage 1 (Ansible) |
+| `task stage2:terraform:init` | Initialize Terraform |
+| `task stage2:terraform:plan` | Plan Terraform deployment |
+| `task stage2:terraform:apply` | Apply Terraform deployment |
 
-**Stage 1 (Ansible) - Kubernetes Cluster Setup:**
+**Stage 1 (Ansible) - Inside Container:**
 
 ```bash
-# Access container and navigate to stage1
-npm run docker:exec
+task docker:exec
 cd stage1
-
-# Verify connectivity to target server
-ansible all -i "inventories/inventory.yml" -m ping
-
-# Deploy complete server setup and Kubernetes cluster
 ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml
 ```
 
-**Stage 2 (Terraform) - Application Infrastructure:**
+**Stage 2 (Terraform) - Inside Container:**
 
 ```bash
-# Navigate to stage2 within container
 cd stage2
-
-# Initialize Terraform (one-time setup)
 terraform workspace select <workspace-name>
-terraform init
-
-# Deploy infrastructure
-terraform plan    # Review deployment plan
-terraform apply   # Deploy infrastructure stack
+terraform init && terraform apply
 ```
-
-**Quality Checks:**
-
-- **Pre-commit hooks**: `npm run precommit:run` (run all file checks)
-- **SSH key management**: Use `ssh-add` for passphrase-protected keys
 
 ### Development Environment
 
 - **Container Workspace**: `/srv` (project root mounted)
 - **SSH Keys**: `~/.ssh` mounted for Git and server access
 - **Kubernetes Config**: Copied to `container/root/.kube/config` after Stage 1
-- **Required Ports**: SSH (non-22), Kubernetes API (6443), application ingress (80/443)
+- **SSH Passphrase**: Use `ssh-add` before running Ansible
 
 ## Configuration Management
 
@@ -172,9 +184,42 @@ When adding new configuration options:
 
 **Version Management:**
 
-- **Tool Versions**: Explicitly pinned in Dockerfile and inventory files
-- **Kubernetes**: Version compatibility maintained across kubeadm, kubectl, CNI
-- **Helm Charts**: Version pinning in Terraform helm_release resources
+Container tools (pinned in `Dockerfile`):
+
+| Tool | Version | Source |
+|------|---------|--------|
+| kubectl | 1.34.2 | dl.k8s.io |
+| helm | 3.19.2 | helm.sh |
+| terraform | 1.14.1 | hashicorp.com |
+| taskfile | 3.45.5 | taskfile.dev |
+| trivy | 0.68.1 | aquasecurity |
+
+Kubernetes components (pinned in `stage1/inventories/inventory.yml`):
+
+| Component | Version |
+|-----------|---------|
+| kubeadm/kubectl | 1.33.4 |
+| containerd | 2.1.4 |
+| cilium-cli | 0.18.6 |
+| runc | 1.3.0 |
+| cni | 1.7.1 |
+| crictl | 1.34.0 |
+| k3s | v1.30.2+k3s1 |
+| minikube | 1.33.1 |
+
+**Helm Charts**: Version pinning in Terraform `helm_release` resources
+
+**Pre-commit Hooks** (`.pre-commit-config.yaml`):
+
+| Hook | Purpose |
+|------|---------|
+| `ansible-lint` | Validate Ansible playbooks and roles |
+| `terraform_fmt` | Format Terraform files |
+| `terraform_validate` | Validate Terraform configuration |
+| `terraform_trivy` | Security scanning for Terraform |
+| `terraform_tflint` | Lint Terraform files |
+| `detect-private-key` | Prevent committing private keys |
+| `gitleaks` | Detect secrets in code |
 
 **Security Standards:**
 
@@ -184,6 +229,46 @@ When adding new configuration options:
 - **RBAC**: Proper role-based access control for all services
 
 ## Infrastructure Components
+
+**Terraform Module Dependencies** (defined in `stage2/main.tf`):
+
+```mermaid
+flowchart TD
+    kubernetes[kubernetes]
+    nginx[nginx]
+    cert_manager[cert_manager_letsencrypt]
+    longhorn[longhorn_storage]
+    minio[minio_object_storage]
+    gitlab[gitlab_platform]
+    monitoring[monitoring]
+    logging[logging]
+    auth[auth]
+    kubecost[kubecost]
+    vpn[vpn]
+    argocd[argocd]
+    datadog[datadog]
+    reloader[reloader]
+    llmgateway[llmgateway]
+
+    kubernetes --> nginx
+    nginx --> cert_manager
+    cert_manager --> longhorn
+    cert_manager --> logging
+    cert_manager --> kubecost
+    cert_manager --> datadog
+    longhorn --> minio
+    minio --> gitlab
+    logging --> monitoring
+    cert_manager --> monitoring
+    monitoring --> auth
+    nginx --> auth
+    gitlab --> argocd
+    logging --> argocd
+    kubernetes --> vpn
+    kubernetes --> reloader
+    cert_manager --> llmgateway
+    longhorn --> llmgateway
+```
 
 **Core Kubernetes Stack:**
 
@@ -213,11 +298,16 @@ When adding new configuration options:
    - Elasticsearch stack (ECK operator, Kibana, Filebeat)
    - ElastAlert2 for log-based alerting
    - Kubecost for cost monitoring
+   - Datadog integration (optional, via `datadog_enable`)
 
 4. **Networking & Access**:
    - Tailscale mesh VPN integration
    - WireGuard VPN server with web UI
    - Custom CoreDNS configuration for local domains
+
+5. **Utilities**:
+   - Stakater Reloader - auto-restart pods on Secret/ConfigMap changes
+   - LLM Gateway - unified API for multiple LLM providers (optional, via `llmgateway_enable`). See [stage2/llmgateway/README.md](stage2/llmgateway/README.md)
 
 ## Deployment Workflows
 
@@ -233,13 +323,13 @@ When adding new configuration options:
 
    ```bash
    cp .env.sample .env    # Configure environment
-   npm run repo:setup     # Install dependencies
+   task repo:setup        # Install dependencies
    ```
 
 3. **Stage 1 Execution**:
 
    ```bash
-   npm run docker:exec
+   task docker:exec
    cd stage1
    ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml
    ```
@@ -315,19 +405,28 @@ When adding new configuration options:
 
 ## Git Workflow
 
-- **Quality Gates**: Always run `npm run precommit:run` before commits
+- **Quality Gates**: Always run `task precommit` before commits
 - **Container Testing**: Test Ansible/Terraform changes in container environment
 - **Version Control**: Never commit `.env` files or sensitive configuration
 - **Branch Strategy**: Feature branches for infrastructure changes
 - **Review Process**: Infrastructure changes require careful review due to impact
 
+## Optional Modules
+
+Modules controlled by enable flags in Terraform variables:
+
+| Module | Variable | Default |
+|--------|----------|---------|
+| GitLab | `host_machine_architecture == "amd64"` | Auto (AMD64 only) |
+| Logging (ECK) | `logging_module_enable` | `true` |
+| Datadog | `datadog_enable` | `false` |
+| Tailscale | `tailscale_enable` | `false` |
+| WireGuard | `wireguard_enable` | `false` |
+| LLM Gateway | `llmgateway_enable` | `false` |
+
 ## Architecture Notes
 
-- **Single-Node Focus**: Optimized for homelab environments, not production clusters
-- **Resource Efficiency**: Carefully tuned resource requests and limits
-- **Local Development**: Full development environment in containerized tooling
-- **GitOps Ready**: ArgoCD integration for application lifecycle management
-- **Hybrid Cloud**: Supports both local and cloud-based storage backends
-- **Extensibility**: Modular Terraform design for easy service addition/removal
-
-This infrastructure provides a production-grade homelab environment suitable for development, learning, and small-scale production workloads with enterprise-grade tooling and security practices.
+- **Single-Node Focus**: Optimized for homelab, not production clusters
+- **Extensibility**: Modular Terraform design - add modules in `stage2/<name>/`
+- **GitOps Ready**: ArgoCD for application lifecycle management
+- **Storage**: Longhorn (block) + MinIO (S3-compatible object storage)
