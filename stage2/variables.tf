@@ -1,13 +1,23 @@
 variable "kubernetes_cluster_type" {
-  description = "The type of the kubernetes cluster. i.e. kubeadm, k3s"
+  description = "The type of the kubernetes cluster. i.e. kubeadm, k3s, minikube"
   type        = string
   default     = "kubeadm"
+
+  validation {
+    condition     = contains(["kubeadm", "k3s", "minikube"], var.kubernetes_cluster_type)
+    error_message = "kubernetes_cluster_type must be one of: kubeadm, k3s, minikube"
+  }
 }
 
 variable "host_machine_architecture" {
   description = "The architecture of the host machine. i.e. amd64, arm64"
   type        = string
   default     = "amd64"
+
+  validation {
+    condition     = contains(["amd64", "arm64"], var.host_machine_architecture)
+    error_message = "host_machine_architecture must be one of: amd64, arm64"
+  }
 }
 
 variable "kubernetes_override_domains" {
@@ -122,7 +132,6 @@ variable "minio_tenant_default_buckets" {
     "gitlab-packages",
     "tmp",
     "gitlab-mr-diffs",
-    "gitlab-terraform-state",
     "gitlab-terraform-state",
     "gitlab-ci-secure-files",
     "gitlab-dependency-proxy",

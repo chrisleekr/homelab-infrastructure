@@ -1,5 +1,8 @@
 
 resource "kubernetes_persistent_volume_claim_v1" "wireguard_config" {
+  # Only create PVC when wireguard is enabled to avoid orphaned resources
+  count = var.wireguard_enable ? 1 : 0
+
   metadata {
     name      = "wireguard-config"
     namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
@@ -20,7 +23,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
   depends_on = [
     kubernetes_namespace.vpn_namespace,
-    kubernetes_persistent_volume_claim_v1.wireguard_config,
+    kubernetes_persistent_volume_claim_v1.wireguard_config[0],
   ]
 
   timeouts {
@@ -52,7 +55,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
       spec {
         init_container {
-          image = "busybox:latest"
+          image = "busybox:1.37.0"
           name  = "sysctler"
           security_context {
             privileged = true
@@ -64,7 +67,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
         container {
           name  = "wireguard"
-          image = "linuxserver/wireguard:1.0.20210914"
+          image = "linuxserver/wireguard:1.0.20250521-r0-ls92"
 
           resources {
             requests = {
@@ -145,7 +148,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
         volume {
           name = "wireguard-config"
           persistent_volume_claim {
-            claim_name = kubernetes_persistent_volume_claim_v1.wireguard_config.metadata[0].name
+            claim_name = kubernetes_persistent_volume_claim_v1.wireguard_config[0].metadata[0].name
           }
         }
 

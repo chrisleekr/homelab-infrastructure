@@ -75,7 +75,7 @@ optEnv:
 ## Specify optional additional containers to run alongside the Elastalert2 container.
 extraContainers:
   - name: heartbeat
-    image: alpine:latest
+    image: alpine:3.21.2
     imagePullPolicy: IfNotPresent
     resources:
       limits:

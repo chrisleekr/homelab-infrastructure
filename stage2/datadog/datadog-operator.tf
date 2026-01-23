@@ -6,7 +6,7 @@ resource "helm_release" "datadog_operator" {
   repository = "https://helm.datadoghq.com"
   chart      = "datadog-operator"
   namespace  = kubernetes_namespace.datadog.metadata[0].name
-  version    = "2.13.1"
+  version    = "2.14.2"
   wait       = true
   timeout    = 300
 

@@ -1,20 +1,20 @@
 # syntax=docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM alpine:3.20
+FROM --platform=$BUILDPLATFORM alpine:3.21
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG BUILDARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.34.2
+ARG KUBECTL_VERSION=1.35.0
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=3.19.2
+ARG HELM_VERSION=3.19.4
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.14.1
+ARG TERRAFORM_VERSION=1.14.3
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.45.5
+ARG TASKFILE_VERSION=3.46.4
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.68.1
+ARG TRIVY_VERSION=0.68.2
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -33,16 +33,16 @@ RUN set -eux; \
   apk add --no-cache \
   ca-certificates=20250911-r0 \
   curl=8.14.1-r2 \
-  bash=5.2.26-r0 \
+  bash=5.2.37-r0 \
   jq=1.7.1-r0 \
   bind-tools=9.18.41-r0 \
-  git=2.45.4-r0 \
-  graphviz=9.0.0-r2 \
+  git=2.47.3-r0 \
+  graphviz=12.2.0-r0 \
   python3=3.12.12-r0 \
-  py3-pip=24.0-r2 \
-  pre-commit=3.7.1-r0 \
-  shellcheck=0.10.0-r1 \
-  bash-completion=2.12.0-r0 \
+  py3-pip=24.3.1-r0 \
+  pre-commit=4.0.1-r0 \
+  shellcheck \
+  bash-completion=2.14.0-r0 \
   && \
   \
   # Install kubectl - https://dl.k8s.io/release/v1.30.2/bin/linux/arm64/kubectl
@@ -66,13 +66,13 @@ RUN set -eux; \
   \
   # Install Ansible
   apk add --no-cache \
-  openssh=9.7_p1-r5 \
+  openssh=9.9_p2-r0 \
   sshpass=1.10-r0 \
-  g++=13.2.1_git20240309-r1 \
-  gcc=13.2.1_git20240309-r1 \
-  libffi-dev=3.4.6-r0	\
+  g++=14.2.0-r4 \
+  gcc=14.2.0-r4 \
+  libffi-dev=3.4.7-r0 \
   python3-dev=3.12.12-r0 \
-  py3-pip=24.0-r2 && \
+  py3-pip=24.3.1-r0 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
   . .venv/bin/activate && \

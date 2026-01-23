@@ -440,16 +440,9 @@ certmanager-issuer:
 
 ## Installation & configuration of jetstack/cert-manager
 ## See requirements.yaml for current version
+## Note: install and rbac properties removed in GitLab chart 9.x - using external cert-manager
 certmanager:
-  installCRDs: true
-  nameOverride: certmanager
-  # Install cert-manager chart. Set to false if you already have cert-manager
-  # installed or if you are not using cert-manager.
-  install: false
-  # Other cert-manager configurations from upstream
-  # See https://github.com/jetstack/cert-manager/blob/master/deploy/charts/cert-manager/README#configuration
-  rbac:
-    create: true
+  installCRDs: false
 
 ## https://docs.gitlab.com/charts/charts/nginx/
 ## https://docs.gitlab.com/charts/architecture/decisions#nginx-ingress

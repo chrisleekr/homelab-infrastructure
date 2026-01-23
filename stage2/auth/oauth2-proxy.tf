@@ -30,7 +30,7 @@ resource "helm_release" "oauth2_proxy" {
   name       = "oauth2-proxy"
   repository = "https://oauth2-proxy.github.io/manifests"
   chart      = "oauth2-proxy"
-  version    = "7.12.17"
+  version    = "9.0.0"
   namespace  = kubernetes_namespace.auth_namespace.metadata[0].name
   timeout    = 300
   wait       = true

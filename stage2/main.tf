@@ -200,7 +200,9 @@ module "vpn" {
 }
 
 module "argocd" {
-  depends_on = [module.gitlab_platform, module.logging[0]]
+  # Note: logging dependency is conditional to prevent errors when logging_module_enable = false
+  # GitLab dependency uses try() to handle case when gitlab is disabled (ARM64 architecture)
+  depends_on = [module.gitlab_platform, module.cert_manager_letsencrypt]
   source     = "./argocd"
 
   prometheus_namespace             = module.monitoring.monitoring_namespace
