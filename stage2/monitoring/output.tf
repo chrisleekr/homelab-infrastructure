@@ -1,8 +1,10 @@
 output "monitoring_namespace" {
-  value = kubernetes_namespace.monitoring_namespace.metadata[0].name
+  description = "The Kubernetes namespace where monitoring stack is deployed"
+  value       = kubernetes_namespace.monitoring_namespace.metadata[0].name
 }
 
 output "grafana_admin_password" {
-  value     = random_password.grafana_admin_password.result
-  sensitive = true
+  description = "The admin password for Grafana dashboard access"
+  value       = random_password.grafana_admin_password.result
+  sensitive   = true
 }

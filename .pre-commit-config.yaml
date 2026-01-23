@@ -9,10 +9,10 @@ default_stages:
 
 repos:
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.12.0
+    rev: v26.1.0
     hooks:
       - id: ansible-lint
-        # Override Python 3.13 requirement - Alpine 3.20 has Python 3.12
+        # Override Python 3.13 requirement - Alpine 3.21 has Python 3.12
         language_version: python3.12
         args:
           - --project-dir=./stage1
@@ -22,7 +22,7 @@ repos:
           - ansible
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.104.0
+    rev: v1.105.0
     hooks:
       - id: terraform_fmt
       - id: terraform_validate

@@ -1,10 +1,13 @@
-# https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/objectstorage/registry.minio.yaml
-s3:
-  v4auth: true
-  regionendpoint: "${minio_endpoint}"
-  pathstyle: true
+# https://docs.gitlab.com/administration/packages/container_registry/#configure-s3-object-storage
+# https://distribution.github.io/distribution/storage-drivers/s3/
+# Migrated from deprecated s3 (v1) driver to s3_v2 driver
+# - s3_v2 uses AWS SDK v2 with improved performance and security
+# - forcepathstyle: required for MinIO (path-style URLs instead of virtual-hosted)
+# - Removed loglevel: debug (not a valid s3_v2 parameter, caused warning)
+s3_v2:
   region: us-east-1
   bucket: gitlab-registry-storage
+  regionendpoint: "${minio_endpoint}"
+  forcepathstyle: true
   accesskey: ${minio_access_key}
   secretkey: ${minio_secret_key}
-  loglevel: debug

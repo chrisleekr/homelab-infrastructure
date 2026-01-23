@@ -70,7 +70,7 @@ resource "kubernetes_deployment_v1" "llmgateway" {
         # Reference: https://www.postgresql.org/docs/current/app-initdb.html
         init_container {
           name  = "fix-permissions"
-          image = "busybox:1.36"
+          image = "busybox:1.37.0"
 
           command = [
             "sh", "-c",
@@ -169,12 +169,9 @@ resource "kubernetes_deployment_v1" "llmgateway" {
           # Admin emails for admin dashboard access
           # Comma-separated list of emails that have isAdmin=true
           # Reference: https://github.com/theopenco/llmgateway/blob/main/apps/api/src/routes/user.ts
-          dynamic "env" {
-            for_each = var.llmgateway_admin_emails != "" ? [1] : []
-            content {
-              name  = "ADMIN_EMAILS"
-              value = var.llmgateway_admin_emails
-            }
+          env {
+            name  = "ADMIN_EMAILS"
+            value = var.llmgateway_admin_emails
           }
 
           # Self-hosted mode configuration

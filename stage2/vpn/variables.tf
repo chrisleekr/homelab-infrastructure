@@ -53,7 +53,7 @@ variable "wireguard_port" {
 }
 
 variable "wireguard_peers" {
-  description = "The peers for the wireguard"
-  type        = string
+  description = "The number of peers for the wireguard"
+  type        = number
   default     = 3
 }

@@ -104,7 +104,7 @@ resource "kubernetes_deployment_v1" "tailscale" {
         service_account_name = kubernetes_service_account_v1.tailscale[0].metadata[0].name
 
         init_container {
-          image = "busybox:latest"
+          image = "busybox:1.37.0"
           name  = "sysctler"
           security_context {
             privileged = true
@@ -115,7 +115,7 @@ resource "kubernetes_deployment_v1" "tailscale" {
         }
 
         container {
-          image = "tailscale/tailscale:v1.84.0"
+          image = "tailscale/tailscale:v1.92.5"
           name  = "tailscale"
 
           env {
