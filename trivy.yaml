@@ -2,10 +2,16 @@
 # Reference: https://trivy.dev/docs/latest/references/configuration/config-file/
 
 scan:
-  # Skip directories during scanning (applies to all scanners including secrets)
-  # Reference: https://trivy.dev/docs/latest/configuration/skipping/
+  # Enable vulnerability and misconfiguration scanning, disable secret scanning
+  # Secret scanning disabled: third-party Ansible collections contain example credentials
+  # that trigger false positives (community.aws, google.cloud documentation examples)
+  scanners:
+    - vuln
+    - misconfig
+  # Skip Ansible collections directory
+  # Collections contain Jinja2 templates (*.j2) that trigger Dockerfile parse errors
+  # Path: /tmp/.venv persists because shell glob '*' doesn't match dotfiles
   skip-dirs:
-    # Skip Ansible collections - contains example/documentation secrets that trigger false positives
-    # These are third-party collections installed via ansible-galaxy, not our code
-    # Examples: community.aws example AWS keys, google.cloud example private keys
     - "/tmp/.venv/lib/python3.12/site-packages/ansible_collections"
+    # Skip pre-commit cache - contains third-party hooks with their own Dockerfiles/manifests
+    - "container/root/.cache"

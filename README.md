@@ -69,6 +69,7 @@ homelab-infrastructure/
 | `task stage2:terraform:init` | Initialize Terraform |
 | `task stage2:terraform:plan` | Plan Terraform deployment |
 | `task stage2:terraform:apply` | Apply Terraform deployment |
+| `task stage2:terraform:lock` | Regenerate provider lock for multi-platform |
 
 **Container Tools:**
 

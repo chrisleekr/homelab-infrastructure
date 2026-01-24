@@ -28,7 +28,10 @@ jobs:
 
       - name: Install hadolint
         run: |
-          curl -L https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64 -o hadolint
+          # Detect architecture for ARM64 runner compatibility
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+          curl -L "https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-${ARCH}" -o hadolint
           chmod +x hadolint
           mv hadolint /usr/local/bin/
 

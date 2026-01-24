@@ -1,5 +1,6 @@
 # Container security scanning workflow
-# Per Trivy GitHub Actions documentation: https://github.com/aquasecurity/trivy-action
+# Uses Trivy CLI via setup-trivy (trivy-action has .trivyignore bug)
+# Per Trivy docs: https://trivy.dev/latest/docs/references/configuration/cli/trivy_image/
 name: Container Security Scan
 
 permissions:
@@ -12,13 +13,8 @@ on:
       - "Dockerfile"
       - "scripts/container/**"
       - ".github/workflows/container-security.yml"
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "Dockerfile"
-      - "scripts/container/**"
+      - ".trivyignore"
+      - "stage1/requirements-pip.txt"
   workflow_dispatch:
 
 concurrency:
@@ -48,17 +44,30 @@ jobs:
           push: false
           load: true
           tags: homelab-infrastructure:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Disable cache to ensure fresh Alpine packages with security fixes
+          # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
+          no-cache: true
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.33.1
+      # Install Trivy CLI (pinned version for consistency)
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.4
         with:
-          image-ref: "homelab-infrastructure:scan"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
-          exit-code: "1"
+          version: v0.68.2
+
+      # Run Trivy scan with CLI (trivy-action has .trivyignore bug)
+      # https://github.com/aquasecurity/trivy-action/issues/436
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        run: |
+          trivy image \
+            --config trivy.yaml \
+            --ignorefile .trivyignore \
+            --severity CRITICAL,HIGH \
+            --scanners vuln,misconfig \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy-results.sarif \
+            homelab-infrastructure:scan
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4

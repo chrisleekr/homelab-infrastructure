@@ -30,6 +30,21 @@ tasks:
       - task: docker:run
       - docker exec -it "homelab-infrastructure" /bin/bash
 
+  docker:trivy:
+    desc: Build and scan container image for vulnerabilities (matches CI workflow)
+    cmds:
+      # Build image with --no-cache to match CI workflow behavior
+      # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
+      - ./scripts/docker-build.sh --no-cache
+      # Scan with Trivy matching container-security.yml workflow
+      # Per Trivy CLI docs: https://trivy.dev/docs/latest/references/configuration/cli/trivy_image/
+      - trivy image
+        --config trivy.yaml
+        --ignorefile .trivyignore
+        --severity CRITICAL,HIGH
+        --exit-code 1
+        chrisleekr/homelab-infrastructure:latest
+
   stage1:ansible:ping:
     desc: Verify access to the cluster
     dir: stage1
@@ -47,7 +62,7 @@ tasks:
     dir: stage2
     cmds:
       - terraform init
-      - terraform workspace select k8s
+      - terraform workspace select homelab-k8s
 
   stage2:terraform:plan:
     desc: Plan the Terraform deployment
@@ -66,3 +81,12 @@ tasks:
     dir: stage2
     cmds:
       - terraform apply
+
+  stage2:terraform:lock:
+    desc: Regenerate provider lock file with multi-platform hashes (linux_amd64)
+    dir: stage2
+    cmds:
+      # Per HashiCorp docs: https://developer.hashicorp.com/terraform/cli/commands/providers/lock
+      # Generates checksums for AMD64 only. Run this on docker container running amd64.
+      - terraform providers lock -platform=linux_amd64
+      - terraform init
