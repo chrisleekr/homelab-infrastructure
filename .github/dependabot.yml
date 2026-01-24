@@ -7,6 +7,18 @@ updates:
       interval: 'monthly'
       time: '09:00'
       timezone: 'Australia/Melbourne'
+  # Python dependencies for Ansible (stage1/)
+  # Per GitHub Dependabot docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+  - package-ecosystem: 'pip'
+    directory: '/stage1'
+    schedule:
+      day: 'monday'
+      interval: 'monthly'
+      time: '09:00'
+      timezone: 'Australia/Melbourne'
+    commit-message:
+      prefix: chore
+      include: scope
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
