@@ -55,7 +55,11 @@ repos:
       # Check for files with names that would conflict on a case-insensitive filesystem like MacOS HFS+ or Windows FAT.
       - id: check-case-conflict
       # Checks that non-binary executables have a proper shebang.
+      # Limited to shell scripts to avoid false positives from Docker Desktop
+      # macOS volume mount permission translation (all files appear executable).
+      # Ref: https://docs.docker.com/desktop/settings-and-maintenance/settings/#file-sharing
       - id: check-executables-have-shebangs
+        files: \.sh$
       # Attempts to load all json files to verify syntax.
       - id: check-json
       # Checks for symlinks which do not point to anything.

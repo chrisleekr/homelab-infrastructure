@@ -9,6 +9,8 @@ CVE-2025-61729
 AVD-DS-0002
 # No HEALTHCHECK needed (not cloud)
 AVD-DS-0026
+# Ansible core Jinja2 Dockerfile template - Trivy misparses {{ role_name }} as multiple COPY args
+AVD-DS-0011
 
 # Alpine transitive dependencies - waiting for base image updates
 # libpng is a dependency of graphviz, not directly pinned
