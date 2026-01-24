@@ -1,12 +1,12 @@
-resource "kubernetes_secret" "tailscale_auth_key" {
+resource "kubernetes_secret_v1" "tailscale_auth_key" {
   count = var.tailscale_enable ? 1 : 0
 
   depends_on = [
-    kubernetes_namespace.vpn_namespace
+    kubernetes_namespace_v1.vpn_namespace
   ]
   metadata {
     name      = "tailscale-auth-key"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   data = {
@@ -23,7 +23,7 @@ resource "kubernetes_role_v1" "tailscale" {
 
   metadata {
     name      = "tailscale"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   rule {
@@ -45,7 +45,7 @@ resource "kubernetes_service_account_v1" "tailscale" {
 
   metadata {
     name      = "tailscale-sa"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 }
 
@@ -54,13 +54,13 @@ resource "kubernetes_role_binding_v1" "tailscale" {
 
   metadata {
     name      = "tailscale"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   subject {
     kind      = "ServiceAccount"
     name      = "tailscale-sa"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   role_ref {
@@ -81,7 +81,7 @@ resource "kubernetes_deployment_v1" "tailscale" {
 
   metadata {
     name      = "tailscale"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   spec {
@@ -147,7 +147,7 @@ resource "kubernetes_deployment_v1" "tailscale" {
             name = "TS_AUTH_KEY"
             value_from {
               secret_key_ref {
-                name = kubernetes_secret.tailscale_auth_key[0].metadata[0].name
+                name = kubernetes_secret_v1.tailscale_auth_key[0].metadata[0].name
                 key  = "auth-key"
               }
             }

@@ -1,0 +1,11 @@
+# Trivy configuration
+# Reference: https://trivy.dev/docs/latest/references/configuration/config-file/
+
+scan:
+  # Skip directories during scanning (applies to all scanners including secrets)
+  # Reference: https://trivy.dev/docs/latest/configuration/skipping/
+  skip-dirs:
+    # Skip Ansible collections - contains example/documentation secrets that trigger false positives
+    # These are third-party collections installed via ansible-galaxy, not our code
+    # Examples: community.aws example AWS keys, google.cloud example private keys
+    - "/tmp/.venv/lib/python3.12/site-packages/ansible_collections"

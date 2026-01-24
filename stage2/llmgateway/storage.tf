@@ -7,7 +7,7 @@ resource "kubernetes_persistent_volume_claim_v1" "llmgateway_data" {
 
   metadata {
     name      = "llmgateway-data"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
   }
 
   spec {

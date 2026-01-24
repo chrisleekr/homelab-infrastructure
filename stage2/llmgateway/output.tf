@@ -2,7 +2,7 @@
 
 output "llmgateway_namespace" {
   description = "Kubernetes namespace where LLM Gateway is deployed"
-  value       = var.llmgateway_enable ? kubernetes_namespace.llmgateway[0].metadata[0].name : null
+  value       = var.llmgateway_enable ? kubernetes_namespace_v1.llmgateway[0].metadata[0].name : null
 }
 
 output "llmgateway_service_name" {

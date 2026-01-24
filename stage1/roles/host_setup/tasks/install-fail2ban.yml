@@ -1,11 +1,13 @@
 ---
 # https://github.com/nbigot/ansible-fail2ban/blob/master/tasks/main.yml
 
+# Using loop instead of with_items per Ansible best practices:
+# https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html
 - name: Install fail2ban
   ansible.builtin.package:
     name: "{{ item }}"
     state: "{{ apt_install_state | default('latest') }}"
-  with_items: "{{ host_setup_fail2ban_dependencies }}"
+  loop: "{{ host_setup_fail2ban_dependencies }}"
 
 - name: Update configuration file - /etc/fail2ban/fail2ban.local
   ansible.builtin.template:

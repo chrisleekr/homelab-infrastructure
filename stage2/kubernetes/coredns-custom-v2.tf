@@ -88,7 +88,7 @@
 
 
 # Get the existing CoreDNS ConfigMap
-data "kubernetes_config_map" "coredns_existing" {
+data "kubernetes_config_map_v1" "coredns_existing" {
   metadata {
     name      = "coredns"
     namespace = "kube-system"
@@ -96,7 +96,7 @@ data "kubernetes_config_map" "coredns_existing" {
 }
 
 locals {
-  existing_corefile = data.kubernetes_config_map.coredns_existing.data["Corefile"]
+  existing_corefile = data.kubernetes_config_map_v1.coredns_existing.data["Corefile"]
   domain_list       = split(" ", trim(var.kubernetes_override_domains, "\""))
 
   # Use markers to identify modifications
@@ -177,13 +177,13 @@ EOF
 # your Terraform state and will henceforth be managed by Terraform.
 # $ terraform state list | grep coredns
 # module.kubernetes.kubernetes_config_map.coredns[0]
-resource "kubernetes_config_map" "coredns" {
+resource "kubernetes_config_map_v1" "coredns" {
   count = var.kubernetes_cluster_type == "kubeadm" ? 1 : 0
 
   metadata {
     name      = "coredns"
     namespace = "kube-system"
-    labels    = data.kubernetes_config_map.coredns_existing.metadata[0].labels
+    labels    = data.kubernetes_config_map_v1.coredns_existing.metadata[0].labels
   }
 
   data = {

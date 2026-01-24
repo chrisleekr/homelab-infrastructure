@@ -4,14 +4,14 @@ resource "random_password" "initial_root_password" {
   special = false
 }
 
-resource "kubernetes_secret" "initial_root_password" {
+resource "kubernetes_secret_v1" "initial_root_password" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.initial_root_password
   ]
   metadata {
     name      = "initial-root-password"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -29,14 +29,14 @@ resource "random_password" "redis_password" {
   special = false
 }
 
-resource "kubernetes_secret" "redis_password" {
+resource "kubernetes_secret_v1" "redis_password" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.redis_password
   ]
   metadata {
     name      = "redis-password"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -59,15 +59,15 @@ resource "random_password" "postgresql_postgres_password" {
   special = false
 }
 
-resource "kubernetes_secret" "postgresql_password" {
+resource "kubernetes_secret_v1" "postgresql_password" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.postgresql_password,
     random_password.postgresql_postgres_password
   ]
   metadata {
     name      = "postgresql-password"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -122,9 +122,9 @@ resource "tls_private_key" "openid_connect_signing_key" {
   rsa_bits  = 2048
 }
 
-resource "kubernetes_secret" "rails_secret" {
+resource "kubernetes_secret_v1" "rails_secret" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.rails_secret_key_base,
     random_password.rails_otp_key_base,
     random_password.rails_db_key_base,
@@ -136,7 +136,7 @@ resource "kubernetes_secret" "rails_secret" {
 
   metadata {
     name      = "rails-secret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -160,13 +160,13 @@ resource "kubernetes_secret" "rails_secret" {
   }
 }
 
-resource "kubernetes_secret" "runner_registration_token_deprecated" {
+resource "kubernetes_secret_v1" "runner_registration_token_deprecated" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
   ]
   metadata {
     name      = "gitlab-gitlab-runner-secret-deprecated"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
 
     # Set labels and annotations to prevent Gitlab Chart to create it again
     labels = {
@@ -174,7 +174,7 @@ resource "kubernetes_secret" "runner_registration_token_deprecated" {
     }
 
     annotations = {
-      "meta.helm.sh/release-name"      = kubernetes_namespace.gitlab.metadata[0].name
+      "meta.helm.sh/release-name"      = kubernetes_namespace_v1.gitlab.metadata[0].name
       "meta.helm.sh/release-namespace" = "gitlab"
     }
   }
@@ -190,13 +190,13 @@ resource "kubernetes_secret" "runner_registration_token_deprecated" {
 }
 
 # This secret is currently not used. Set it up for future use if supporting by Gitlab Runner Chart.
-resource "kubernetes_secret" "runner_token" {
+resource "kubernetes_secret_v1" "runner_token" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
   ]
   metadata {
     name      = "gitlab-gitlab-runner-secret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -209,14 +209,14 @@ resource "kubernetes_secret" "runner_token" {
   }
 }
 
-resource "kubernetes_secret" "gitlab_object_store_connection" {
+resource "kubernetes_secret_v1" "gitlab_object_store_connection" {
   depends_on = [
-    kubernetes_namespace.gitlab
+    kubernetes_namespace_v1.gitlab
   ]
 
   metadata {
     name      = "gitlab-object-store-connection"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -242,12 +242,12 @@ resource "random_password" "gitlab_registry_httpsecret" {
 }
 
 
-resource "kubernetes_secret" "gitlab_registry_httpsecret" {
-  depends_on = [kubernetes_namespace.gitlab]
+resource "kubernetes_secret_v1" "gitlab_registry_httpsecret" {
+  depends_on = [kubernetes_namespace_v1.gitlab]
 
   metadata {
     name      = "gitlab-registry-httpsecret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -259,14 +259,14 @@ resource "kubernetes_secret" "gitlab_registry_httpsecret" {
   }
 }
 
-resource "kubernetes_secret" "gitlab_registry_storage_secret" {
+resource "kubernetes_secret_v1" "gitlab_registry_storage_secret" {
   depends_on = [
-    kubernetes_namespace.gitlab
+    kubernetes_namespace_v1.gitlab
   ]
 
   metadata {
     name      = "gitlab-registry-storage"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -291,14 +291,14 @@ resource "random_password" "gitlab_registry_database_password" {
   special = false
 }
 
-resource "kubernetes_secret" "gitlab_registry_database_password" {
+resource "kubernetes_secret_v1" "gitlab_registry_database_password" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.gitlab_registry_database_password
   ]
   metadata {
     name      = "registry-database-password"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -310,14 +310,14 @@ resource "kubernetes_secret" "gitlab_registry_database_password" {
   }
 }
 
-resource "kubernetes_secret" "gitlab_runner_s3_access" {
+resource "kubernetes_secret_v1" "gitlab_runner_s3_access" {
   depends_on = [
-    kubernetes_namespace.gitlab
+    kubernetes_namespace_v1.gitlab
   ]
 
   metadata {
     name      = "gitlab-runner-s3-access"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -336,11 +336,11 @@ resource "random_password" "gitlab_shell_secret" {
   special = false
 }
 
-resource "kubernetes_secret" "gitlab_shell_secret" {
+resource "kubernetes_secret_v1" "gitlab_shell_secret" {
   depends_on = [random_password.gitlab_shell_secret]
   metadata {
     name      = "gitlab-shell-secret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -358,14 +358,14 @@ resource "random_password" "gitaly_secret" {
   special = false
 }
 
-resource "kubernetes_secret" "gitaly_secret" {
+resource "kubernetes_secret_v1" "gitaly_secret" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     random_password.gitaly_secret
   ]
   metadata {
     name      = "gitaly-secret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -382,15 +382,15 @@ data "external" "generate_keys" {
   program = ["${path.module}/scripts/generate-host-keys.sh"]
 }
 
-resource "kubernetes_secret" "gitlab_shell_host_keys" {
+resource "kubernetes_secret_v1" "gitlab_shell_host_keys" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
     data.external.generate_keys
   ]
 
   metadata {
     name      = "gitlab-shell-host-keys"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -410,14 +410,14 @@ resource "kubernetes_secret" "gitlab_shell_host_keys" {
 }
 
 
-resource "kubernetes_secret" "gitlab_toolbox_s3cmd" {
+resource "kubernetes_secret_v1" "gitlab_toolbox_s3cmd" {
   depends_on = [
-    kubernetes_namespace.gitlab
+    kubernetes_namespace_v1.gitlab
   ]
 
   metadata {
     name      = "toolbox-s3cmd-secret"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {
@@ -438,14 +438,14 @@ resource "kubernetes_secret" "gitlab_toolbox_s3cmd" {
 }
 
 # Auth0 OAuth provider configuration secret
-resource "kubernetes_secret" "gitlab_auth0_provider" {
+resource "kubernetes_secret_v1" "gitlab_auth0_provider" {
   depends_on = [
-    kubernetes_namespace.gitlab,
+    kubernetes_namespace_v1.gitlab,
   ]
 
   metadata {
     name      = "gitlab-auth0-provider"
-    namespace = kubernetes_namespace.gitlab.metadata[0].name
+    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
   }
 
   data = {

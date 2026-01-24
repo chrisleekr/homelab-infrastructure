@@ -1,6 +1,6 @@
 output "auth_namespace" {
   description = "The Kubernetes namespace where authentication services are deployed"
-  value       = kubernetes_namespace.auth_namespace.metadata[0].name
+  value       = kubernetes_namespace_v1.auth_namespace.metadata[0].name
 }
 
 output "oauth2_proxy_cookie_secret" {

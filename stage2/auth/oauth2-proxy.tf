@@ -4,10 +4,10 @@ resource "random_password" "oauth2_proxy_cookie_secret" {
   special = false
 }
 
-resource "kubernetes_secret" "oauth2_proxy_cookie_secret" {
+resource "kubernetes_secret_v1" "oauth2_proxy_cookie_secret" {
   metadata {
     name      = "oauth2-proxy-cookie-secret"
-    namespace = kubernetes_namespace.auth_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.auth_namespace.metadata[0].name
   }
 
   data = {
@@ -25,13 +25,13 @@ resource "kubernetes_secret" "oauth2_proxy_cookie_secret" {
 
 
 resource "helm_release" "oauth2_proxy" {
-  depends_on = [kubernetes_namespace.auth_namespace]
+  depends_on = [kubernetes_namespace_v1.auth_namespace]
 
   name       = "oauth2-proxy"
   repository = "https://oauth2-proxy.github.io/manifests"
   chart      = "oauth2-proxy"
   version    = "9.0.0"
-  namespace  = kubernetes_namespace.auth_namespace.metadata[0].name
+  namespace  = kubernetes_namespace_v1.auth_namespace.metadata[0].name
   timeout    = 300
   wait       = true
 

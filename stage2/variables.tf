@@ -30,6 +30,12 @@ variable "kubernetes_override_ip" {
   description = "The IP address of the host alias."
   type        = string
   default     = "192.168.1.100"
+
+  # Validate IPv4 address format per HashiCorp variable validation best practices
+  validation {
+    condition     = can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.kubernetes_override_ip))
+    error_message = "Must be a valid IPv4 address (e.g., 192.168.1.100)"
+  }
 }
 
 variable "ingress_enable_tls" {
@@ -47,6 +53,13 @@ variable "nginx_frontend_basic_auth_base64" {
 variable "nginx_service_loadbalancer_ip" {
   description = "The IP address of the loadbalancer ip."
   type        = string
+
+  # Validate IPv4 address format per HashiCorp variable validation best practices
+  # Allow empty string for dynamic IP assignment by load balancer
+  validation {
+    condition     = var.nginx_service_loadbalancer_ip == "" || can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.nginx_service_loadbalancer_ip))
+    error_message = "Must be a valid IPv4 address (e.g., 192.168.1.100) or empty string"
+  }
 }
 
 variable "nginx_client_max_body_size" {
@@ -297,6 +310,13 @@ variable "prometheus_persistence_size" {
   description = "The size of the persistence storage"
   type        = string
   default     = "5Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.prometheus_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "prometheus_alertmanager_slack_channel" {
@@ -368,6 +388,13 @@ variable "elasticsearch_storage_size" {
   description = "Storage size for Elasticsearch"
   type        = string
   default     = "5Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.elasticsearch_storage_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "elasticsearch_storage_class_name" {
@@ -465,6 +492,12 @@ variable "wireguard_port" {
   description = "The port for the wireguard"
   type        = string
   default     = "51820"
+
+  # Validate port number range (1-65535)
+  validation {
+    condition     = can(regex("^[0-9]+$", var.wireguard_port)) && tonumber(var.wireguard_port) >= 1 && tonumber(var.wireguard_port) <= 65535
+    error_message = "Port must be a number between 1 and 65535"
+  }
 }
 
 variable "wireguard_peers" {

@@ -404,6 +404,7 @@ registry:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "900"
       nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
       nginx.ingress.kubernetes.io/proxy-buffering: "off"
   relativeurls: true
@@ -907,10 +908,10 @@ gitlab:
     enabled: true
     resources:
       requests:
-        memory: 500Mi
+        memory: 750Mi      # Increased for GitLab 18.8.x baseline usage
         cpu: 0
       limits:
-        memory: 1Gi
+        memory: 1.5Gi      # Increased from 1Gi to prevent OOM kills
         cpu: 1
     metrics:
       enabled: true

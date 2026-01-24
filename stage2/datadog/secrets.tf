@@ -1,8 +1,8 @@
 
-resource "kubernetes_secret" "datadog_api_key" {
+resource "kubernetes_secret_v1" "datadog_api_key" {
   metadata {
     name      = "datadog-api-key"
-    namespace = kubernetes_namespace.datadog.metadata[0].name
+    namespace = kubernetes_namespace_v1.datadog.metadata[0].name
   }
 
   data = {
@@ -17,10 +17,10 @@ resource "kubernetes_secret" "datadog_api_key" {
 }
 
 
-resource "kubernetes_secret" "datadog_app_key" {
+resource "kubernetes_secret_v1" "datadog_app_key" {
   metadata {
     name      = "datadog-app-key"
-    namespace = kubernetes_namespace.datadog.metadata[0].name
+    namespace = kubernetes_namespace_v1.datadog.metadata[0].name
   }
 
   data = {

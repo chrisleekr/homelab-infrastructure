@@ -6,7 +6,7 @@ resource "kubectl_manifest" "max_map_count_setter" {
   yaml_body = templatefile(
     "${path.module}/templates/eck/max-map-count-setter.tftpl",
     {
-      namespace = kubernetes_namespace.logging.metadata[0].name
+      namespace = kubernetes_namespace_v1.logging.metadata[0].name
     }
   )
 }
@@ -14,13 +14,13 @@ resource "kubectl_manifest" "max_map_count_setter" {
 resource "kubectl_manifest" "elasticsearch" {
   depends_on = [
     kubectl_manifest.max_map_count_setter,
-    kubernetes_secret.elasticsearch_secret
+    kubernetes_secret_v1.elasticsearch_secret
   ]
 
   yaml_body = templatefile(
     "${path.module}/templates/eck/elasticsearch.tftpl",
     {
-      namespace = kubernetes_namespace.logging.metadata[0].name
+      namespace = kubernetes_namespace_v1.logging.metadata[0].name
 
       resource_request_memory = var.elasticsearch_resource_request_memory
       resource_request_cpu    = var.elasticsearch_resource_request_cpu
@@ -46,7 +46,7 @@ resource "null_resource" "elasticsearch_ready" {
   provisioner "local-exec" {
     command = <<-EOT
       end=$((SECONDS+300))
-      until kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace.logging.metadata[0].name} pod -l elasticsearch.k8s.elastic.co/cluster-name=elasticsearch || [ $SECONDS -ge $end ]; do
+      until kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace_v1.logging.metadata[0].name} pod -l elasticsearch.k8s.elastic.co/cluster-name=elasticsearch || [ $SECONDS -ge $end ]; do
         echo "Waiting for Kibana pod to be ready..."
         sleep 10
       done
@@ -55,14 +55,14 @@ resource "null_resource" "elasticsearch_ready" {
 }
 
 # Comment out because ilm will be created by post setup.
-# resource "kubernetes_config_map" "filebeat_ilm" {
+# resource "kubernetes_config_map_v1" "filebeat_ilm" {
 #   depends_on = [
 #     kubectl_manifest.elasticsearch
 #   ]
 
 #   metadata {
 #     name      = "filebeat-ilm"
-#     namespace = kubernetes_namespace.logging.metadata[0].name
+#     namespace = kubernetes_namespace_v1.logging.metadata[0].name
 #   }
 
 #   data = {
@@ -79,7 +79,7 @@ resource "kubectl_manifest" "kibana" {
   yaml_body = templatefile(
     "${path.module}/templates/eck/kibana.tftpl",
     {
-      namespace = kubernetes_namespace.logging.metadata[0].name
+      namespace = kubernetes_namespace_v1.logging.metadata[0].name
 
       resource_request_memory = var.kibana_resource_request_memory
       resource_limit_memory   = var.kibana_resource_limit_memory
@@ -106,7 +106,7 @@ resource "null_resource" "kibana_ready" {
   provisioner "local-exec" {
     command = <<-EOT
       end=$((SECONDS+300))
-      until kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace.logging.metadata[0].name} pod -l kibana.k8s.elastic.co/name=kibana || [ $SECONDS -ge $end ]; do
+      until kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace_v1.logging.metadata[0].name} pod -l kibana.k8s.elastic.co/name=kibana || [ $SECONDS -ge $end ]; do
         echo "Waiting for Kibana pod to be ready..."
         sleep 10
       done
@@ -115,11 +115,11 @@ resource "null_resource" "kibana_ready" {
 }
 
 resource "kubernetes_ingress_v1" "kibana_ingress" {
-  depends_on = [null_resource.kibana_ready, kubernetes_secret.frontend_basic_auth]
+  depends_on = [null_resource.kibana_ready, kubernetes_secret_v1.frontend_basic_auth]
 
   metadata {
     name      = "kibana-ingress"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
     annotations = {
       "cert-manager.io/cluster-issuer"                    = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/auth-url"              = "https://${var.auth_oauth2_proxy_host}/oauth2/auth"
@@ -179,7 +179,7 @@ resource "kubernetes_manifest" "filebeat_cluster_role" {
 
 resource "kubernetes_manifest" "filebeat_service_account" {
   depends_on = [
-    kubernetes_namespace.logging,
+    kubernetes_namespace_v1.logging,
     kubernetes_manifest.filebeat_cluster_role
   ]
 
@@ -188,7 +188,7 @@ resource "kubernetes_manifest" "filebeat_service_account" {
     "kind"       = "ServiceAccount"
     "metadata" = {
       "name"      = "filebeat"
-      "namespace" = kubernetes_namespace.logging.metadata[0].name
+      "namespace" = kubernetes_namespace_v1.logging.metadata[0].name
     }
   }
 }
@@ -208,7 +208,7 @@ resource "kubernetes_manifest" "filebeat_cluster_role_binding" {
       {
         "kind"      = "ServiceAccount"
         "name"      = "filebeat"
-        "namespace" = kubernetes_namespace.logging.metadata[0].name
+        "namespace" = kubernetes_namespace_v1.logging.metadata[0].name
       }
     ]
     "roleRef" = {
@@ -222,7 +222,7 @@ resource "kubernetes_manifest" "filebeat_cluster_role_binding" {
 resource "kubectl_manifest" "filebeat" {
   depends_on = [
     kubectl_manifest.elasticsearch,
-    kubernetes_job.elasticsearch_post_setup,
+    kubernetes_job_v1.elasticsearch_post_setup,
     kubernetes_manifest.filebeat_cluster_role,
     kubernetes_manifest.filebeat_service_account,
     kubernetes_manifest.filebeat_cluster_role_binding,
@@ -231,7 +231,7 @@ resource "kubectl_manifest" "filebeat" {
   yaml_body = templatefile(
     "${path.module}/templates/eck/filebeat.tftpl",
     {
-      namespace = kubernetes_namespace.logging.metadata[0].name
+      namespace = kubernetes_namespace_v1.logging.metadata[0].name
     }
   )
 }
@@ -242,7 +242,7 @@ resource "kubernetes_manifest" "metricbeat_service_account" {
     "kind"       = "ServiceAccount"
     "metadata" = {
       "name"      = "metricbeat"
-      "namespace" = kubernetes_namespace.logging.metadata[0].name
+      "namespace" = kubernetes_namespace_v1.logging.metadata[0].name
     }
   }
 }
@@ -290,7 +290,7 @@ resource "kubernetes_manifest" "metricbeat_cluster_role_binding" {
       {
         "kind"      = "ServiceAccount"
         "name"      = "metricbeat"
-        "namespace" = kubernetes_namespace.logging.metadata[0].name
+        "namespace" = kubernetes_namespace_v1.logging.metadata[0].name
       }
     ]
     "roleRef" = {
@@ -312,7 +312,7 @@ resource "kubectl_manifest" "metricbeat" {
   yaml_body = templatefile(
     "${path.module}/templates/eck/metricbeat.tftpl",
     {
-      namespace              = kubernetes_namespace.logging.metadata[0].name
+      namespace              = kubernetes_namespace_v1.logging.metadata[0].name
       elasticsearch_password = random_password.elastic_password.result
       node_name              = "kubernetes.default.svc"
     }

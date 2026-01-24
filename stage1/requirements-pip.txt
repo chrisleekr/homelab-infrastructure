@@ -1,3 +1,8 @@
 ansible==13.0.0
 ansible-core==2.20.0
-kubernetes==34.1.0
+# Upgrade to 35.0.0 for urllib3 2.6.x compatibility (34.1.0 has urllib3<2.4.0 constraint)
+# Reference: https://pypi.org/project/kubernetes/35.0.0/
+kubernetes==35.0.0
+# Pin urllib3 to fix CVE-2025-66418, CVE-2025-66471, CVE-2026-21441
+# Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
+urllib3>=2.6.3

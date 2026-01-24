@@ -1,13 +1,13 @@
 resource "helm_release" "eck_operator" {
   depends_on = [
-    kubernetes_namespace.logging,
+    kubernetes_namespace_v1.logging,
   ]
 
   name       = "elastic-operator"
   repository = "https://helm.elastic.co"
   chart      = "eck-operator"
   version    = "2.16.1"
-  namespace  = kubernetes_namespace.logging.metadata[0].name
+  namespace  = kubernetes_namespace_v1.logging.metadata[0].name
   timeout    = 300
   wait       = true
 
@@ -21,6 +21,6 @@ resource "null_resource" "eck_operator_ready" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace.logging.metadata[0].name} pod -l app.kubernetes.io/name=elastic-operator"
+    command = "kubectl wait --for=condition=ready --timeout=300s --namespace ${kubernetes_namespace_v1.logging.metadata[0].name} pod -l app.kubernetes.io/name=elastic-operator"
   }
 }

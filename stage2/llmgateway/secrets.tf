@@ -1,12 +1,12 @@
 # Kubernetes secret for LLM Gateway authentication
 # AUTH_SECRET is used for session management and security
 
-resource "kubernetes_secret" "llmgateway_auth" {
+resource "kubernetes_secret_v1" "llmgateway_auth" {
   count = var.llmgateway_enable ? 1 : 0
 
   metadata {
     name      = "llmgateway-auth"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
   }
 
   data = {

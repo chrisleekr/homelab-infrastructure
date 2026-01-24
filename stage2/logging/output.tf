@@ -1,6 +1,6 @@
 output "elasticsearch_host" {
   description = "The internal Kubernetes service hostname for Elasticsearch"
-  value       = "elasticsearch-es-internal-http.${kubernetes_namespace.logging.metadata[0].name}.svc"
+  value       = "elasticsearch-es-internal-http.${kubernetes_namespace_v1.logging.metadata[0].name}.svc"
 }
 
 output "elasticsearch_port" {

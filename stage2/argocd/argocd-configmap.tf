@@ -1,12 +1,12 @@
 # Auth0 OIDC RBAC configmap
-resource "kubernetes_config_map" "argocd_rbac_cm" {
+resource "kubernetes_config_map_v1" "argocd_rbac_cm" {
 
   depends_on = [
-    kubernetes_namespace.argocd
+    kubernetes_namespace_v1.argocd
   ]
   metadata {
     name      = "argocd-rbac-cm"
-    namespace = kubernetes_namespace.argocd.metadata[0].name
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
 
     labels = {
       # REQUIRED: This label is essential for ArgoCD to access the secret

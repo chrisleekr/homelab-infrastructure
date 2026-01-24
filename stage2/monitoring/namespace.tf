@@ -1,4 +1,4 @@
-resource "kubernetes_namespace" "monitoring_namespace" {
+resource "kubernetes_namespace_v1" "monitoring_namespace" {
   metadata {
     name = "monitoring"
   }

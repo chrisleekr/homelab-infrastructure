@@ -1,7 +1,7 @@
-resource "kubernetes_secret" "frontend_basic_auth" {
+resource "kubernetes_secret_v1" "frontend_basic_auth" {
   metadata {
     name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 
   data = {
@@ -21,16 +21,16 @@ resource "random_password" "elastic_password" {
   special = false
 }
 
-resource "kubernetes_secret" "elasticsearch_secret" {
+resource "kubernetes_secret_v1" "elasticsearch_secret" {
   depends_on = [
-    kubernetes_namespace.logging,
+    kubernetes_namespace_v1.logging,
     random_password.elastic_password,
     kubectl_manifest.max_map_count_setter
   ]
 
   metadata {
     name      = "elasticsearch-es-elastic-user"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 
   data = {
@@ -59,9 +59,9 @@ resource "random_password" "kibana_reporting_encryption_key" {
   special = false
 }
 
-resource "kubernetes_secret" "kibana_secret_settings" {
+resource "kubernetes_secret_v1" "kibana_secret_settings" {
   depends_on = [
-    kubernetes_namespace.logging,
+    kubernetes_namespace_v1.logging,
     random_password.kibana_encryption_key,
     random_password.kibana_encrypted_saved_objects_key,
     random_password.kibana_reporting_encryption_key
@@ -69,7 +69,7 @@ resource "kubernetes_secret" "kibana_secret_settings" {
 
   metadata {
     name      = "kibana-secret-settings"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 
   data = {
