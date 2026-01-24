@@ -47,6 +47,17 @@ jobs:
           # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
           no-cache: true
 
+      # Debug: Run trivy scan with table output first to see findings
+      - name: Debug Trivy scan (table output)
+        run: |
+          trivy image \
+            --config trivy.yaml \
+            --ignorefile .trivyignore \
+            --severity CRITICAL,HIGH \
+            --scanners vuln,misconfig \
+            homelab-infrastructure:scan
+        continue-on-error: true
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         with:
