@@ -66,3 +66,12 @@ tasks:
     dir: stage2
     cmds:
       - terraform apply
+
+  stage2:terraform:lock:
+    desc: Regenerate provider lock file with multi-platform hashes (darwin_arm64 + linux_arm64)
+    dir: stage2
+    cmds:
+      # Per HashiCorp docs: https://developer.hashicorp.com/terraform/cli/commands/providers/lock
+      # Generates checksums for both local dev (Mac) and CI (GitHub Actions ARM runner)
+      - terraform providers lock -platform=darwin_arm64 -platform=linux_arm64
+      - terraform init

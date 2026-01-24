@@ -38,7 +38,7 @@ repos:
         args:
           # Use --ignorefile for suppression rules, not --config (which is for trivy.yaml)
           # Ref: https://trivy.dev/docs/latest/configuration/filtering/#trivyignoreyaml
-          - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore.yaml
+          - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore
       - id: terraform_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
