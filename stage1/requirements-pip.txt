@@ -1,5 +1,5 @@
 ansible==13.0.0
-ansible-core==2.20.0
+ansible-core==2.20.1
 # Upgrade to 35.0.0 for urllib3 2.6.x compatibility (34.1.0 has urllib3<2.4.0 constraint)
 # Reference: https://pypi.org/project/kubernetes/35.0.0/
 kubernetes==35.0.0
