@@ -47,7 +47,13 @@ jobs:
           # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
           no-cache: true
 
-      # Debug: Run trivy scan with table output first to see findings
+      # Install Trivy first for debug step
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          version: v0.68.2
+
+      # Debug: Run trivy scan with table output to see findings
       - name: Debug Trivy scan (table output)
         run: |
           trivy image \
