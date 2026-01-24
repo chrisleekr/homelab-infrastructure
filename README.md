@@ -1,6 +1,7 @@
 # Homelab Infrastructure
 
 [![CI](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml)
+[![Container Security](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml)
 [![Terraform](https://img.shields.io/badge/terraform-1.14.3-blue)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.35.0-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
