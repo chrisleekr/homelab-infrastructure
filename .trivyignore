@@ -9,3 +9,8 @@ CVE-2025-61729
 AVD-DS-0002
 # No HEALTHCHECK needed (not cloud)
 AVD-DS-0026
+
+# Alpine transitive dependencies - waiting for base image updates
+# libpng is a dependency of graphviz, not directly pinned
+CVE-2026-22695
+CVE-2026-22801

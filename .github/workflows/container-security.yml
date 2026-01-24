@@ -12,13 +12,8 @@ on:
       - "Dockerfile"
       - "scripts/container/**"
       - ".github/workflows/container-security.yml"
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "Dockerfile"
-      - "scripts/container/**"
+      - ".trivyignore"
+      - "stage1/requirements-pip.txt"
   workflow_dispatch:
 
 concurrency:
@@ -48,8 +43,9 @@ jobs:
           push: false
           load: true
           tags: homelab-infrastructure:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Disable cache to ensure fresh Alpine packages with security fixes
+          # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
+          no-cache: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
