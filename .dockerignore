@@ -27,4 +27,6 @@ venv
 
 container/root
 !container/root/.bashrc
+# Exclude secrets from container builds
+stage2/host-keys
 stage2/minio-object-storage/tenant-1-ca.crt

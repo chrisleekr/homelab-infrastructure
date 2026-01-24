@@ -85,6 +85,7 @@
     "tolerations",
     "traefik",
     "trivy",
+    "trivyignores",
     "venv"
   ],
   "yaml.format.enable": true,
