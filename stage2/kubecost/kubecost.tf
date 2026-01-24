@@ -1,14 +1,14 @@
-resource "kubernetes_namespace" "kubecost" {
+resource "kubernetes_namespace_v1" "kubecost" {
   metadata {
     name = "kubecost"
   }
 }
 
 
-resource "kubernetes_secret" "frontend_basic_auth" {
+resource "kubernetes_secret_v1" "frontend_basic_auth" {
   metadata {
     name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace.kubecost.metadata[0].name
+    namespace = kubernetes_namespace_v1.kubecost.metadata[0].name
   }
 
   data = {
@@ -24,12 +24,12 @@ resource "kubernetes_secret" "frontend_basic_auth" {
 
 # https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/README.md#config-options
 resource "helm_release" "kubecost" {
-  depends_on = [kubernetes_namespace.kubecost]
+  depends_on = [kubernetes_namespace_v1.kubecost]
 
   name       = "cost-analyzer"
   repository = "https://kubecost.github.io/cost-analyzer/"
   chart      = "cost-analyzer"
-  namespace  = kubernetes_namespace.kubecost.metadata[0].name
+  namespace  = kubernetes_namespace_v1.kubecost.metadata[0].name
   # https://github.com/kubecost/cost-analyzer-helm-chart/releases
   version = "2.8.6"
   wait    = true
@@ -46,7 +46,7 @@ resource "helm_release" "kubecost" {
         ingress_class_name = var.kubecost_ingress_class_name
 
         kubecost_ingress_host           = var.kubecost_ingress_host
-        kubecost_basic_auth_secret_name = kubernetes_secret.frontend_basic_auth.metadata[0].name
+        kubecost_basic_auth_secret_name = kubernetes_secret_v1.frontend_basic_auth.metadata[0].name
       }
     )
   ]

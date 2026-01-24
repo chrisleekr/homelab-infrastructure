@@ -4,6 +4,11 @@
 # - s3_v2 uses AWS SDK v2 with improved performance and security
 # - forcepathstyle: required for MinIO (path-style URLs instead of virtual-hosted)
 # - Removed loglevel: debug (not a valid s3_v2 parameter, caused warning)
+# - chunksize: 25MB for multipart uploads, recommended for MinIO compatibility
+#   Reference: https://docs.gitlab.com/administration/packages/container_registry_troubleshooting/#aws-s3-with-the-gitlab-registry-error-when-pushing-large-images
+# - checksum_disabled: required for MinIO compatibility with s3_v2 driver
+#   MinIO requires CRC64NVME checksums for UploadPartCopy, but AWS SDK v2 doesn't send them
+#   Reference: https://docs.gitlab.com/ee/administration/packages/container_registry.html
 s3_v2:
   region: us-east-1
   bucket: gitlab-registry-storage
@@ -11,3 +16,5 @@ s3_v2:
   forcepathstyle: true
   accesskey: ${minio_access_key}
   secretkey: ${minio_secret_key}
+  chunksize: 26214400
+  checksum_disabled: true

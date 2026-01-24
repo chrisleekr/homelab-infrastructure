@@ -1,4 +1,4 @@
-resource "kubernetes_namespace" "logging" {
+resource "kubernetes_namespace_v1" "logging" {
   metadata {
     name = "logging"
   }

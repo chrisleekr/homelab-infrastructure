@@ -1,11 +1,11 @@
-resource "kubernetes_secret" "elastalert2_credentials" {
+resource "kubernetes_secret_v1" "elastalert2_credentials" {
   count = var.elastalert2_elasticsearch_enabled ? 1 : 0
 
-  depends_on = [kubernetes_namespace.monitoring_namespace]
+  depends_on = [kubernetes_namespace_v1.monitoring_namespace]
 
   metadata {
     name      = "elastalert2-credentials"
-    namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   }
 
   data = {
@@ -19,19 +19,19 @@ resource "kubernetes_secret" "elastalert2_credentials" {
   }
 }
 
-resource "kubernetes_secret" "elastalert2_config" {
+resource "kubernetes_secret_v1" "elastalert2_config" {
   count = var.elastalert2_elasticsearch_enabled ? 1 : 0
 
-  depends_on = [kubernetes_namespace.monitoring_namespace]
+  depends_on = [kubernetes_namespace_v1.monitoring_namespace]
 
   metadata {
     name      = "elastalert2-config-secret"
-    namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   }
 
   data = {
     elastalert_config = templatefile("${path.module}/elastalert2/elastalert2-config-secret.tftpl", {
-      monitoring_namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
+      monitoring_namespace = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
       elasticsearch_host   = var.elastalert2_elasticsearch_host
       elasticsearch_port   = var.elastalert2_elasticsearch_port
     })
@@ -46,16 +46,16 @@ resource "helm_release" "elastalert2" {
   count = var.elastalert2_elasticsearch_enabled ? 1 : 0
 
   depends_on = [
-    kubernetes_namespace.monitoring_namespace,
-    kubernetes_secret.elastalert2_credentials[0],
-    kubernetes_secret.elastalert2_config[0]
+    kubernetes_namespace_v1.monitoring_namespace,
+    kubernetes_secret_v1.elastalert2_credentials[0],
+    kubernetes_secret_v1.elastalert2_config[0]
   ]
 
   name       = "elastalert2"
   repository = "https://jertel.github.io/elastalert2/"
   chart      = "elastalert2"
   version    = "2.27.0"
-  namespace  = kubernetes_namespace.monitoring_namespace.metadata[0].name
+  namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   timeout    = 360
   wait       = true
 
@@ -63,19 +63,19 @@ resource "helm_release" "elastalert2" {
   set = [
     {
       name  = "secretChecksum"
-      value = md5(jsonencode(kubernetes_secret.elastalert2_config[0].data)) # Use a hash of the secret data
+      value = md5(jsonencode(kubernetes_secret_v1.elastalert2_config[0].data)) # Use a hash of the secret data
     }
   ]
 
   values = [
     templatefile("${path.module}/elastalert2/elastalert2-values.tftpl", {
-      prometheus_namespace = kubernetes_namespace.monitoring_namespace.metadata[0].name
+      prometheus_namespace = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
 
-      secret_config_name = kubernetes_secret.elastalert2_config[0].metadata[0].name
+      secret_config_name = kubernetes_secret_v1.elastalert2_config[0].metadata[0].name
 
       elasticsearch_host               = var.elastalert2_elasticsearch_host
       elasticsearch_port               = var.elastalert2_elasticsearch_port
-      elasticsearch_credentials_secret = kubernetes_secret.elastalert2_credentials[0].metadata[0].name
+      elasticsearch_credentials_secret = kubernetes_secret_v1.elastalert2_credentials[0].metadata[0].name
     })
   ]
 }

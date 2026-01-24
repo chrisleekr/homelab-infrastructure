@@ -3,16 +3,16 @@
 
 resource "helm_release" "argo_cd" {
   depends_on = [
-    kubernetes_namespace.argocd,
-    kubernetes_secret.argocd_auth0_oidc_secret,
-    kubernetes_config_map.argocd_rbac_cm
+    kubernetes_namespace_v1.argocd,
+    kubernetes_secret_v1.argocd_auth0_oidc_secret,
+    kubernetes_config_map_v1.argocd_rbac_cm
   ]
 
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
   version    = "9.3.4"
-  namespace  = kubernetes_namespace.argocd.metadata[0].name
+  namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
   timeout    = 300
   wait       = true
 
@@ -32,10 +32,10 @@ resource "helm_release" "argo_cd" {
     })
   ]
 }
-data "kubernetes_secret" "argocd_initial_admin_secret" {
+data "kubernetes_secret_v1" "argocd_initial_admin_secret" {
   metadata {
     name      = "argocd-initial-admin-secret"
-    namespace = kubernetes_namespace.argocd.metadata[0].name
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
   }
 
   depends_on = [

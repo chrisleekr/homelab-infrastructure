@@ -5,7 +5,7 @@ resource "kubernetes_persistent_volume_claim_v1" "wireguard_config" {
 
   metadata {
     name      = "wireguard-config"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   spec {
@@ -22,7 +22,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
   count = var.wireguard_enable ? 1 : 0
 
   depends_on = [
-    kubernetes_namespace.vpn_namespace,
+    kubernetes_namespace_v1.vpn_namespace,
     kubernetes_persistent_volume_claim_v1.wireguard_config[0],
   ]
 
@@ -34,7 +34,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
   metadata {
     name      = "wireguard"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   spec {
@@ -169,7 +169,7 @@ resource "kubernetes_service_v1" "wireguard" {
 
   metadata {
     name      = "wireguard"
-    namespace = kubernetes_namespace.vpn_namespace.metadata[0].name
+    namespace = kubernetes_namespace_v1.vpn_namespace.metadata[0].name
   }
 
   spec {

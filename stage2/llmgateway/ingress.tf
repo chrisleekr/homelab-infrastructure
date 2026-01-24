@@ -9,7 +9,7 @@ resource "kubernetes_ingress_v1" "llmgateway_ui" {
 
   metadata {
     name      = "llmgateway-ui"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
 
     annotations = {
       "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
@@ -63,7 +63,7 @@ resource "kubernetes_ingress_v1" "llmgateway_api" {
 
   metadata {
     name      = "llmgateway-api"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
 
     annotations = {
       "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
@@ -124,7 +124,7 @@ resource "kubernetes_ingress_v1" "llmgateway_gateway" {
 
   metadata {
     name      = "llmgateway-gateway"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
 
     annotations = {
       "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
@@ -178,7 +178,7 @@ resource "kubernetes_ingress_v1" "llmgateway_admin" {
 
   metadata {
     name      = "llmgateway-admin"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
 
     annotations = {
       "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
@@ -237,7 +237,7 @@ resource "kubernetes_manifest" "llmgateway_certificate" {
 
     metadata = {
       name      = "llmgateway-tls"
-      namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+      namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
     }
 
     spec = {

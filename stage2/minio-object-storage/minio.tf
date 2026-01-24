@@ -1,19 +1,19 @@
-resource "kubernetes_namespace" "minio_operator" {
+resource "kubernetes_namespace_v1" "minio_operator" {
   metadata {
     name = "minio-operator"
   }
 }
 
-resource "kubernetes_namespace" "minio_tenant" {
+resource "kubernetes_namespace_v1" "minio_tenant" {
   metadata {
     name = "minio-tenant"
   }
 }
 
-resource "kubernetes_secret" "frontend_basic_auth" {
+resource "kubernetes_secret_v1" "frontend_basic_auth" {
   metadata {
     name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace.minio_tenant.metadata[0].name
+    namespace = kubernetes_namespace_v1.minio_tenant.metadata[0].name
   }
 
   data = {
@@ -28,9 +28,9 @@ resource "kubernetes_secret" "frontend_basic_auth" {
 }
 
 
-resource "kubernetes_config_map" "minio_custom_headers" {
+resource "kubernetes_config_map_v1" "minio_custom_headers" {
   depends_on = [
-    kubernetes_namespace.minio_tenant
+    kubernetes_namespace_v1.minio_tenant
   ]
 
   metadata {
@@ -47,7 +47,7 @@ resource "kubernetes_config_map" "minio_custom_headers" {
 
 resource "helm_release" "minio_operator" {
   depends_on = [
-    kubernetes_namespace.minio_operator,
+    kubernetes_namespace_v1.minio_operator,
     # kubectl_manifest.sts_tls_certificate
   ]
 
@@ -55,7 +55,7 @@ resource "helm_release" "minio_operator" {
   repository = "https://operator.min.io"
   chart      = "operator"
   version    = "7.1.1"
-  namespace  = kubernetes_namespace.minio_operator.metadata[0].name
+  namespace  = kubernetes_namespace_v1.minio_operator.metadata[0].name
   timeout    = 300
   wait       = true
 
@@ -73,15 +73,15 @@ resource "random_password" "minio_tenant_root_password" {
   special = false
 }
 
-resource "kubernetes_secret" "minio_tenant_env" {
+resource "kubernetes_secret_v1" "minio_tenant_env" {
   depends_on = [
-    kubernetes_namespace.minio_tenant,
+    kubernetes_namespace_v1.minio_tenant,
     random_password.minio_tenant_root_password
   ]
 
   metadata {
     name      = "minio-env-configuration"
-    namespace = kubernetes_namespace.minio_tenant.metadata[0].name
+    namespace = kubernetes_namespace_v1.minio_tenant.metadata[0].name
   }
 
   data = {
@@ -111,14 +111,14 @@ resource "random_password" "minio_tenant_user_secret_key" {
 }
 
 
-resource "kubernetes_secret" "minio_tenant_user" {
+resource "kubernetes_secret_v1" "minio_tenant_user" {
   depends_on = [
-    kubernetes_namespace.minio_tenant
+    kubernetes_namespace_v1.minio_tenant
   ]
 
   metadata {
     name      = var.minio_tenant_user_access_key
-    namespace = kubernetes_namespace.minio_tenant.metadata[0].name
+    namespace = kubernetes_namespace_v1.minio_tenant.metadata[0].name
   }
 
   data = {
@@ -136,11 +136,11 @@ resource "kubernetes_secret" "minio_tenant_user" {
 resource "helm_release" "minio_tenant" {
   depends_on = [
     helm_release.minio_operator,
-    kubernetes_namespace.minio_tenant,
-    kubernetes_secret.minio_tenant_env,
-    kubernetes_secret.minio_tenant_user,
-    kubernetes_secret.frontend_basic_auth,
-    kubernetes_config_map.minio_custom_headers
+    kubernetes_namespace_v1.minio_tenant,
+    kubernetes_secret_v1.minio_tenant_env,
+    kubernetes_secret_v1.minio_tenant_user,
+    kubernetes_secret_v1.frontend_basic_auth,
+    kubernetes_config_map_v1.minio_custom_headers
     # kubectl_manifest.minio_tenant_certmanager_cert
   ]
 
@@ -148,7 +148,7 @@ resource "helm_release" "minio_tenant" {
   repository = "https://operator.min.io"
   chart      = "tenant"
   version    = "7.1.1"
-  namespace  = kubernetes_namespace.minio_tenant.metadata[0].name
+  namespace  = kubernetes_namespace_v1.minio_tenant.metadata[0].name
   timeout    = 300
   wait       = true
 
@@ -156,8 +156,8 @@ resource "helm_release" "minio_tenant" {
     templatefile(
       "${path.module}/minio-tenant-values.tftpl",
       {
-        frontend_basic_auth_secret_name = kubernetes_secret.frontend_basic_auth.metadata[0].name
-        tenant_configuration_name       = kubernetes_secret.minio_tenant_env.metadata[0].name
+        frontend_basic_auth_secret_name = kubernetes_secret_v1.frontend_basic_auth.metadata[0].name
+        tenant_configuration_name       = kubernetes_secret_v1.minio_tenant_env.metadata[0].name
         tenant_pools_servers            = var.minio_tenant_pools_servers
         tenant_pools_size               = var.minio_tenant_pools_size
         tenant_pools_storage_class_name = var.minio_tenant_pools_storage_class_name

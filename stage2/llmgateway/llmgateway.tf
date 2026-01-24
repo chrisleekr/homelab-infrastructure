@@ -17,9 +17,9 @@ resource "kubernetes_deployment_v1" "llmgateway" {
   count = var.llmgateway_enable ? 1 : 0
 
   depends_on = [
-    kubernetes_namespace.llmgateway,
+    kubernetes_namespace_v1.llmgateway,
     kubernetes_persistent_volume_claim_v1.llmgateway_data,
-    kubernetes_secret.llmgateway_auth,
+    kubernetes_secret_v1.llmgateway_auth,
   ]
 
   timeouts {
@@ -30,7 +30,7 @@ resource "kubernetes_deployment_v1" "llmgateway" {
 
   metadata {
     name      = "llmgateway"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
   }
 
   spec {
@@ -121,7 +121,7 @@ resource "kubernetes_deployment_v1" "llmgateway" {
             name = "AUTH_SECRET"
             value_from {
               secret_key_ref {
-                name = kubernetes_secret.llmgateway_auth[0].metadata[0].name
+                name = kubernetes_secret_v1.llmgateway_auth[0].metadata[0].name
                 key  = "AUTH_SECRET"
               }
             }
@@ -292,7 +292,7 @@ resource "kubernetes_service_v1" "llmgateway" {
 
   metadata {
     name      = "llmgateway"
-    namespace = kubernetes_namespace.llmgateway[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.llmgateway[0].metadata[0].name
   }
 
   spec {

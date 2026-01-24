@@ -5,15 +5,15 @@ data "kubernetes_resource" "elasticsearch" {
 
   metadata {
     name      = "elasticsearch"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 }
 
 # Create ConfigMap for the setup script and templates
-resource "kubernetes_config_map" "elasticsearch_setup_script" {
+resource "kubernetes_config_map_v1" "elasticsearch_setup_script" {
   metadata {
     name      = "elasticsearch-setup-script"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 
   data = {
@@ -31,16 +31,16 @@ resource "kubernetes_config_map" "elasticsearch_setup_script" {
 # │
 # │ This is a bug in the provider, which should be reported in the provider's own issue tracker.
 # $ terraform apply -target=data.kubernetes_resource.elasticsearch
-resource "kubernetes_job" "elasticsearch_post_setup" {
+resource "kubernetes_job_v1" "elasticsearch_post_setup" {
   depends_on = [
-    kubernetes_config_map.elasticsearch_setup_script,
+    kubernetes_config_map_v1.elasticsearch_setup_script,
     data.kubernetes_resource.elasticsearch,
     random_password.elastic_password
   ]
 
   metadata {
     name      = "elasticsearch-post-setup"
-    namespace = kubernetes_namespace.logging.metadata[0].name
+    namespace = kubernetes_namespace_v1.logging.metadata[0].name
   }
 
   spec {
@@ -65,7 +65,7 @@ resource "kubernetes_job" "elasticsearch_post_setup" {
 
           env {
             name  = "ELASTICSEARCH_URL"
-            value = "http://elasticsearch-es-http.${kubernetes_namespace.logging.metadata[0].name}.svc:9200"
+            value = "http://elasticsearch-es-http.${kubernetes_namespace_v1.logging.metadata[0].name}.svc:9200"
           }
 
           volume_mount {
@@ -80,7 +80,7 @@ resource "kubernetes_job" "elasticsearch_post_setup" {
         volume {
           name = "setup-script"
           config_map {
-            name         = kubernetes_config_map.elasticsearch_setup_script.metadata[0].name
+            name         = kubernetes_config_map_v1.elasticsearch_setup_script.metadata[0].name
             default_mode = "0755"
           }
         }

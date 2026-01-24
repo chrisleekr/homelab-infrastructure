@@ -1,50 +1,54 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  # Provider version constraints use pessimistic operator (~>) per HashiCorp best practices:
+  # https://developer.hashicorp.com/terraform/language/expressions/version-constraints#best-practices
+  # This allows minor/patch updates but prevents breaking major version changes.
+  # Updated to latest versions as of January 2026.
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.31.0"
+      version = "~> 3.0"
     }
 
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.14.0"
+      version = "~> 3.1"
     }
 
     tls = {
       source  = "hashicorp/tls"
-      version = ">= 4.0.5"
+      version = "~> 4.1"
     }
 
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.6.2"
+      version = "~> 3.8"
     }
 
     null = {
       source  = "hashicorp/null"
-      version = ">= 3.2.2"
+      version = "~> 3.2"
     }
 
     kubectl = {
       source  = "alekc/kubectl"
-      version = ">= 2.0.4"
+      version = "~> 2.1"
     }
 
     local = {
       source  = "hashicorp/local"
-      version = ">= 2.5.1"
+      version = "~> 2.6"
     }
 
     external = {
       source  = "hashicorp/external"
-      version = ">= 2.3.3"
+      version = "~> 2.3"
     }
 
     http = {
       source  = "hashicorp/http"
-      version = ">= 3.4.3"
+      version = "~> 3.5"
     }
   }
 }

@@ -1,4 +1,4 @@
-resource "kubernetes_namespace" "nginx" {
+resource "kubernetes_namespace_v1" "nginx" {
   metadata {
     name = "nginx"
   }
@@ -6,7 +6,7 @@ resource "kubernetes_namespace" "nginx" {
 
 resource "helm_release" "nginx" {
   depends_on = [
-    kubernetes_namespace.nginx,
+    kubernetes_namespace_v1.nginx,
   ]
 
   name       = "nginx"
