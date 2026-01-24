@@ -35,13 +35,13 @@ RUN set -eux; \
   curl=8.14.1-r2 \
   bash=5.2.37-r0 \
   jq=1.7.1-r0 \
-  bind-tools=9.18.41-r0 \
+  bind-tools=9.18.44-r0 \
   git=2.47.3-r0 \
   graphviz=12.2.0-r0 \
   python3=3.12.12-r0 \
   py3-pip=24.3.1-r0 \
   pre-commit=4.0.1-r0 \
-  shellcheck \
+  shellcheck=0.10.0-r1 \
   bash-completion=2.14.0-r0 \
   && \
   \
@@ -90,9 +90,6 @@ RUN set -eux; \
   \
   # Install tflint
   curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash && \
-  \
-  # Install kubent - https://github.com/doitintl/kube-no-trouble
-  sh -c "$(curl -sSL https://git.io/install-kubent)" && \
   \
   # Cleanup
   rm -rf /var/cache/apk/* /usr/share/doc /usr/share/man/ /usr/share/info/* /var/cache/man/* /tmp/*

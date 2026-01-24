@@ -20,6 +20,7 @@ variables:
 
 stages:
   - build
+  - test
 
 docker-build-dev:
   stage: build
@@ -61,3 +62,48 @@ docker-build:
       --tag $CI_REGISTRY/chrisleekr/homelab-infrastructure:latest
       --tag $CI_REGISTRY/chrisleekr/homelab-infrastructure:v$(cat version.txt)
       --push .
+
+# Container security scanning with Trivy
+# Per Trivy GitLab CI documentation: https://trivy.dev/docs/latest/tutorials/integrations/gitlab-ci/
+trivy-scan-dev:
+  stage: test
+  image: aquasec/trivy:latest
+  needs:
+    - docker-build-dev
+  variables:
+    # Use fetch to get trivy.yaml and .trivyignore.yaml from the repository
+    GIT_STRATEGY: fetch
+    TRIVY_USERNAME: $CI_REGISTRY_USER
+    TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+    TRIVY_AUTH_URL: $CI_REGISTRY
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL
+        --config trivy.yaml
+        --ignorefile .trivyignore.yaml
+        ${CI_REGISTRY}/chrisleekr/homelab-infrastructure:dev-${CI_COMMIT_REF_SLUG}
+  except:
+    - master
+    - main
+  interruptible: true
+  allow_failure: false
+
+trivy-scan:
+  stage: test
+  image: aquasec/trivy:latest
+  needs:
+    - docker-build
+  variables:
+    # Use fetch to get trivy.yaml and .trivyignore.yaml from the repository
+    GIT_STRATEGY: fetch
+    TRIVY_USERNAME: $CI_REGISTRY_USER
+    TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+    TRIVY_AUTH_URL: $CI_REGISTRY
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL
+        --config trivy.yaml
+        --ignorefile .trivyignore.yaml
+        ${CI_REGISTRY}/chrisleekr/homelab-infrastructure:latest
+  only:
+    - master
+    - main
+  allow_failure: false

@@ -27,6 +27,13 @@ repos:
       - id: terraform_fmt
       - id: terraform_validate
         exclude: "^[^/]+$"
+        args:
+          # Optimization: Skip backend init (not needed for validation)
+          # Ref: https://developer.hashicorp.com/terraform/cli/commands/init#backend-false
+          - --tf-init-args=-backend=false
+          # Optimization: Don't modify lockfile during init
+          # Ref: https://github.com/antonbabenko/pre-commit-terraform#terraform_validate
+          - --tf-init-args=-lockfile=readonly
       - id: terraform_trivy
         args:
           - --args=--config=__GIT_WORKING_DIR__/.trivyignore.yaml

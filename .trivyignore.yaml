@@ -1,5 +1,16 @@
-misconfiguration:
+vulnerabilities:
+  # Upstream Go dependency issues - waiting for new tool releases
+  - id: CVE-2025-66564
+    statement: "sigstore/timestamp-authority in tflint/trivy - waiting for upstream fix"
+  - id: CVE-2025-61729
+    statement: "Go stdlib crypto/x509 in tflint - waiting for upstream fix"
+
+misconfigurations:
   - id: AVD-DS-0002
     statement: The image needs root privileges to run. https://avd.aquasec.com/misconfig/ds002
   - id: AVD-DS-0026
     statement: The image is not running in the cloud, so do not require HEALTHCHECK. https://avd.aquasec.com/misconfig/ds026
+
+# Note: Secrets are handled via skip-dirs in trivy.yaml instead of here
+# because .trivyignore.yaml paths field requires exact file paths (no glob patterns)
+# Reference: https://trivy.dev/docs/latest/configuration/filtering/#trivyignoreyaml
