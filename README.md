@@ -81,7 +81,6 @@ homelab-infrastructure/
 | taskfile | 3.46.4 |
 | trivy | 0.68.2 |
 <!-- VERSIONS_END - Do not remove this comment -->
-<!-- VERSIONS_END - Do not remove this comment -->
 
 ## Quick Start
 
