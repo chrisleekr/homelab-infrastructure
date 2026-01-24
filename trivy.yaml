@@ -14,4 +14,4 @@ scan:
   skip-dirs:
     - "/tmp/.venv/lib/python3.12/site-packages/ansible_collections"
     # Skip pre-commit cache - contains third-party hooks with their own Dockerfiles/manifests
-    - "container/root/.cache/pre-commit"
+    - "container/root/.cache"
