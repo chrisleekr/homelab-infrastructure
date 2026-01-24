@@ -15,6 +15,9 @@ on:
       - ".github/workflows/container-security.yml"
       - ".trivyignore"
       - "stage1/requirements-pip.txt"
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -63,7 +66,6 @@ jobs:
             --config trivy.yaml \
             --ignorefile .trivyignore \
             --severity CRITICAL,HIGH \
-            --scanners vuln,misconfig \
             --exit-code 1 \
             --format sarif \
             --output trivy-results.sarif \
