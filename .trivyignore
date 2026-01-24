@@ -1,0 +1,11 @@
+# Upstream Go dependency issues - waiting for new tool releases
+# sigstore/timestamp-authority in tflint/trivy
+CVE-2025-66564
+# Go stdlib crypto/x509 in tflint
+CVE-2025-61729
+
+# Misconfigurations - acceptable for this use case
+# Image needs root privileges
+AVD-DS-0002
+# No HEALTHCHECK needed (not cloud)
+AVD-DS-0026
