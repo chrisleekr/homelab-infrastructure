@@ -61,8 +61,8 @@ jobs:
             --ignorefile .trivyignore \
             --severity CRITICAL,HIGH \
             --scanners vuln,misconfig \
+            --exit-code 1 \
             homelab-infrastructure:scan
-        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
