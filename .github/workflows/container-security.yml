@@ -58,6 +58,14 @@ jobs:
           trivy-config: "trivy.yaml"
           # Use plain text trivyignore (more stable than YAML format)
           trivyignores: ".trivyignore"
+          # Pin Trivy version to match local development environment (v0.68.2)
+          # Per trivy-action docs: https://github.com/aquasecurity/trivy-action#inputs
+          version: "v0.68.2"
+          # Explicitly set scanners to match trivy.yaml (vuln, misconfig)
+          # Action inputs can override config file settings
+          scanners: "vuln,misconfig"
+          # Skip directories that cause false positives (matches trivy.yaml skip-dirs)
+          skip-dirs: "/tmp/.venv/lib/python3.12/site-packages/ansible_collections,container/root/.cache"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4

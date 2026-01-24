@@ -30,6 +30,21 @@ tasks:
       - task: docker:run
       - docker exec -it "homelab-infrastructure" /bin/bash
 
+  docker:trivy:
+    desc: Build and scan container image for vulnerabilities (matches CI workflow)
+    cmds:
+      # Build image with --no-cache to match CI workflow behavior
+      # Per docker/build-push-action: https://github.com/docker/build-push-action#inputs
+      - ./scripts/docker-build.sh --no-cache
+      # Scan with Trivy matching container-security.yml workflow
+      # Per Trivy CLI docs: https://trivy.dev/docs/latest/references/configuration/cli/trivy_image/
+      - trivy image
+        --config trivy.yaml
+        --ignorefile .trivyignore
+        --severity CRITICAL,HIGH
+        --exit-code 1
+        chrisleekr/homelab-infrastructure:latest
+
   stage1:ansible:ping:
     desc: Verify access to the cluster
     dir: stage1
