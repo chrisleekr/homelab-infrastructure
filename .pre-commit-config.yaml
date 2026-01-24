@@ -36,7 +36,9 @@ repos:
           - --tf-init-args=-lockfile=readonly
       - id: terraform_trivy
         args:
-          - --args=--config=__GIT_WORKING_DIR__/.trivyignore.yaml
+          # Use --ignorefile for suppression rules, not --config (which is for trivy.yaml)
+          # Ref: https://trivy.dev/docs/latest/configuration/filtering/#trivyignoreyaml
+          - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore.yaml
       - id: terraform_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
