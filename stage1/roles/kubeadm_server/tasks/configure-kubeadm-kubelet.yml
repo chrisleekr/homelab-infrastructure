@@ -28,13 +28,15 @@
     (kubeadm_server_version_output.rc != 0) or
     (kubeadm_server_installed_version is defined and kubeadm_server_installed_version is version(kubeadm_version, '<'))
   block:
+    # Using loop instead of with_items per Ansible best practices:
+    # https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html
     - name: Download kubeadm and kubelet
       ansible.builtin.get_url:
         url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ host_machine_architecture }}/{{ item }}"
         dest: /usr/local/bin/{{ item }}
         mode: "0755"
         force: true
-      with_items:
+      loop:
         - kubeadm
         - kubelet
 

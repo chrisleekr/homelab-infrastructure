@@ -1,11 +1,9 @@
 ---
-- name: Restart fail2ban (with service)
-  listen: "restart fail2ban"
-  ansible.builtin.service:
-    name: fail2ban
-    state: restarted
-
-- name: Restart fail2ban (with systemd)
+# Single handler for fail2ban restart
+# Per Ansible handlers documentation: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_handlers.html
+# Multiple handlers with same listen value all execute, causing redundant restarts.
+# Using systemd_service as target is Ubuntu with systemd.
+- name: Restart fail2ban
   listen: "restart fail2ban"
   ansible.builtin.systemd_service:
     name: fail2ban
