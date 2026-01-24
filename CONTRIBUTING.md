@@ -82,7 +82,7 @@ The following hooks are configured:
 
 ## Pull Request Process
 
-1. **Create a feature branch** from `master`:
+1. **Create a feature branch** from `main`:
 
    ```bash
    git checkout -b feature/your-feature-name

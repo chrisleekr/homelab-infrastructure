@@ -55,9 +55,10 @@ variable "nginx_service_loadbalancer_ip" {
   type        = string
 
   # Validate IPv4 address format per HashiCorp variable validation best practices
+  # Allow empty string for dynamic IP assignment by load balancer
   validation {
-    condition     = can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.nginx_service_loadbalancer_ip))
-    error_message = "Must be a valid IPv4 address (e.g., 192.168.1.100)"
+    condition     = var.nginx_service_loadbalancer_ip == "" || can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.nginx_service_loadbalancer_ip))
+    error_message = "Must be a valid IPv4 address (e.g., 192.168.1.100) or empty string"
   }
 }
 
@@ -310,10 +311,11 @@ variable "prometheus_persistence_size" {
   type        = string
   default     = "5Gi"
 
-  # Validate Kubernetes storage size format (e.g., 5Gi, 500Mi, 1Ti)
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^[0-9]+[KMGTP]i?$", var.prometheus_persistence_size))
-    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 500Mi, 1Ti)"
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.prometheus_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 1.5Ti, 500Mi)"
   }
 }
 
@@ -387,10 +389,11 @@ variable "elasticsearch_storage_size" {
   type        = string
   default     = "5Gi"
 
-  # Validate Kubernetes storage size format (e.g., 5Gi, 500Mi, 1Ti)
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^[0-9]+[KMGTP]i?$", var.elasticsearch_storage_size))
-    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 500Mi, 1Ti)"
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.elasticsearch_storage_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 1.5Ti, 500Mi)"
   }
 }
 
