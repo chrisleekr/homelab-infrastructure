@@ -53,7 +53,7 @@ jobs:
 
       # Install Trivy CLI (pinned version for consistency)
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
           version: v0.68.2
 
