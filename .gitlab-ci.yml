@@ -71,7 +71,7 @@ trivy-scan-dev:
   needs:
     - docker-build-dev
   variables:
-    # Use fetch to get trivy.yaml and .trivyignore from the repository
+    # Use fetch to get trivy.yaml and .trivyignore.yaml from the repository
     GIT_STRATEGY: fetch
     TRIVY_USERNAME: $CI_REGISTRY_USER
     TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
@@ -79,7 +79,7 @@ trivy-scan-dev:
   script:
     - trivy image --exit-code 1 --severity HIGH,CRITICAL
         --config trivy.yaml
-        --ignorefile .trivyignore
+        --ignorefile .trivyignore.yaml
         ${CI_REGISTRY}/chrisleekr/homelab-infrastructure:dev-${CI_COMMIT_REF_SLUG}
   except:
     - master
@@ -93,7 +93,7 @@ trivy-scan:
   needs:
     - docker-build
   variables:
-    # Use fetch to get trivy.yaml and .trivyignore from the repository
+    # Use fetch to get trivy.yaml and .trivyignore.yaml from the repository
     GIT_STRATEGY: fetch
     TRIVY_USERNAME: $CI_REGISTRY_USER
     TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
@@ -101,7 +101,7 @@ trivy-scan:
   script:
     - trivy image --exit-code 1 --severity HIGH,CRITICAL
         --config trivy.yaml
-        --ignorefile .trivyignore
+        --ignorefile .trivyignore.yaml
         ${CI_REGISTRY}/chrisleekr/homelab-infrastructure:latest
   only:
     - master
