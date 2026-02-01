@@ -13,7 +13,7 @@ on:
       - "Dockerfile"
       - "scripts/container/**"
       - ".github/workflows/container-security.yml"
-      - ".trivyignore"
+      - ".trivyignore.yaml"
       - "stage1/requirements-pip.txt"
   push:
     branches:
@@ -53,9 +53,9 @@ jobs:
 
       # Install Trivy CLI (pinned version for consistency)
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
-          version: v0.68.2
+          version: v0.69.0
 
       # Run Trivy scan with CLI (trivy-action has .trivyignore bug)
       # https://github.com/aquasecurity/trivy-action/issues/436
@@ -64,7 +64,7 @@ jobs:
         run: |
           trivy image \
             --config trivy.yaml \
-            --ignorefile .trivyignore \
+            --ignorefile .trivyignore.yaml \
             --severity CRITICAL,HIGH \
             --exit-code 1 \
             --format sarif \

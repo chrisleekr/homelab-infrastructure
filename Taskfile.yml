@@ -40,7 +40,7 @@ tasks:
       # Per Trivy CLI docs: https://trivy.dev/docs/latest/references/configuration/cli/trivy_image/
       - trivy image
         --config trivy.yaml
-        --ignorefile .trivyignore
+        --ignorefile .trivyignore.yaml
         --severity CRITICAL,HIGH
         --exit-code 1
         chrisleekr/homelab-infrastructure:latest
