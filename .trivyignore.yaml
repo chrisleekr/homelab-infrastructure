@@ -3,11 +3,16 @@
 # Note: Misconfiguration IDs use DS- format (not AVD-DS-)
 
 vulnerabilities:
-  # Upstream Go dependency issues - waiting for new tool releases
-  - id: CVE-2025-66564
-    statement: sigstore/timestamp-authority in tflint/trivy - waiting for upstream fix
+  # Go stdlib vulnerabilities in upstream tools (helm, kubectl, terraform, tflint, trivy)
+  # These require upstream maintainers to rebuild with Go 1.24.12+ or 1.25.6+
+  - id: CVE-2025-61726
+    statement: Go stdlib net/url - no limit on query parameters - waiting for upstream rebuild
+  - id: CVE-2025-61728
+    statement: Go stdlib archive/zip - excessive CPU consumption - waiting for upstream rebuild
   - id: CVE-2025-61729
     statement: Go stdlib crypto/x509 in tflint - waiting for upstream fix
+  - id: CVE-2025-66564
+    statement: sigstore/timestamp-authority in tflint/trivy - waiting for upstream fix
   # Alpine transitive dependencies - waiting for base image updates
   - id: CVE-2026-22695
     statement: libpng transitive dependency via graphviz
