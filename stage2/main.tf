@@ -221,6 +221,8 @@ module "argocd" {
   argocd_auth0_domain        = var.auth_auth0_domain
   argocd_auth0_client_id     = var.auth_auth0_client_id
   argocd_auth0_client_secret = var.auth_auth0_client_secret
+
+  argocd_apps_repo_url = var.argocd_apps_repo_url
 }
 
 
@@ -238,6 +240,14 @@ module "datadog" {
 module "reloader" {
   depends_on = [module.kubernetes]
   source     = "./stakater-reloader"
+}
+
+# Sealed Secrets — destination cluster secret management for GitOps
+# Decrypts SealedSecret CRDs committed to Git into regular K8s Secrets
+# Reference: https://argo-cd.readthedocs.io/en/stable/operator-manual/secret-management/
+module "sealed_secrets" {
+  depends_on = [module.kubernetes]
+  source     = "./bitnami-sealed-secrets"
 }
 
 # LLM Gateway - Unified API gateway for multiple LLM providers

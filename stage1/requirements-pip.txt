@@ -6,3 +6,6 @@ kubernetes==35.0.0
 # Pin urllib3 to fix CVE-2025-66418, CVE-2025-66471, CVE-2026-21441
 # Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
 urllib3>=2.6.3
+# Pin cryptography to fix CVE-2026-26007 (HIGH) - Subgroup Attack on SECT Curves
+# Reference: https://seclists.org/oss-sec/2026/q1/161
+cryptography>=46.0.5
