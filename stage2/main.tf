@@ -246,8 +246,11 @@ module "reloader" {
 # Decrypts SealedSecret CRDs committed to Git into regular K8s Secrets
 # Reference: https://argo-cd.readthedocs.io/en/stable/operator-manual/secret-management/
 module "sealed_secrets" {
+  count      = var.sealed_secrets_enable ? 1 : 0
   depends_on = [module.kubernetes]
   source     = "./bitnami-sealed-secrets"
+
+  sealed_secrets_key_renewal_period = var.sealed_secrets_key_renewal_period
 }
 
 # LLM Gateway - Unified API gateway for multiple LLM providers

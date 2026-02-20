@@ -76,14 +76,20 @@ kubectl create secret generic my-secret \
   --namespace=my-app \
   --from-literal=API_KEY=supersecret \
   --dry-run=client -o yaml | \
-  kubeseal --format yaml > my-sealed-secret.yaml
+  kubeseal \
+    --controller-namespace sealed-secrets \
+    --controller-name sealed-secrets-controller \
+    --format yaml > my-sealed-secret.yaml
 ```
 
 ### Seal an existing secret from the cluster
 
 ```bash
 kubectl get secret my-secret -n my-app -o yaml | \
-  kubeseal --format yaml > my-sealed-secret.yaml
+  kubeseal \
+    --controller-namespace sealed-secrets \
+    --controller-name sealed-secrets-controller \
+    --format yaml > my-sealed-secret.yaml
 ```
 
 ### Backup the sealing key (important!)
