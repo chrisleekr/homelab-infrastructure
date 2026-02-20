@@ -4,17 +4,17 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.31.0"
+      version = "~> 3.0"
     }
 
     http = {
       source  = "hashicorp/http"
-      version = ">= 3.4.3"
+      version = "~> 3.5"
     }
 
     kubectl = {
       source  = "alekc/kubectl"
-      version = ">= 2.0.4"
+      version = "~> 2.1"
     }
 
 

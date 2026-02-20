@@ -543,6 +543,17 @@ variable "argocd_rbac_policy_csv" {
   default     = ""
 }
 
+variable "argocd_apps_repo_url" {
+  description = "Git repo URL for the central ArgoCD apps repository (ApplicationSet source)"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.argocd_apps_repo_url == "" || can(regex("^(https?://|git@|ssh://)", var.argocd_apps_repo_url))
+    error_message = "argocd_apps_repo_url must be empty or a valid Git URL (https://, http://, git@, or ssh://)"
+  }
+}
+
 variable "auth_ingress_class_name" {
   description = "Ingress class name for the oauth2 proxy"
   type        = string
@@ -585,6 +596,23 @@ variable "auth_auth0_client_secret" {
   sensitive   = true
 }
 
+
+variable "sealed_secrets_enable" {
+  description = "Enable the Bitnami Sealed Secrets controller"
+  type        = bool
+  default     = true
+}
+
+variable "sealed_secrets_key_renewal_period" {
+  description = "Key renewal period for the Sealed Secrets controller (Go duration string, e.g. 720h = 30 days)"
+  type        = string
+  default     = "720h"
+
+  validation {
+    condition     = can(regex("^[0-9]+(h|m|s)$", var.sealed_secrets_key_renewal_period))
+    error_message = "sealed_secrets_key_renewal_period must be a simple duration with a single unit, e.g. '720h', '30m', or '3600s'."
+  }
+}
 
 variable "datadog_enable" {
   description = "Enable Datadog"

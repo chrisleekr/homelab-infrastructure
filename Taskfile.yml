@@ -64,6 +64,39 @@ tasks:
       - terraform init
       - terraform workspace select homelab-k8s
 
+  stage2:terraform:init:upgrade:
+    desc: Upgrade Terraform providers to latest versions satisfying constraints. Run in root and all child modules.
+    cmds:
+      - cd stage2 && terraform init -upgrade
+      - |
+        for dir in stage2/*/; do
+          if [ -f "${dir}provider.tf" ]; then
+            echo "Upgrading providers in ${dir}..."
+            (cd "${dir}" && terraform init -upgrade -backend=false)
+          fi
+        done
+
+  stage2:terraform:init:lock:
+    desc: Regenerate all provider lock files with multi-platform hashes. Run inside Docker container
+    cmds:
+      # Remove darwin-built provider caches from child modules — they cannot be used inside linux_amd64 Docker container.
+      # Per HashiCorp Discuss: https://discuss.hashicorp.com/t/trying-to-run-terraform-validate-with-tf-plugin-cache-dir-set/64632
+      - find stage2 -mindepth 2 -maxdepth 2 -name ".terraform" -type d -exec rm -rf {} +
+      # Lock root module (darwin_arm64 + linux_amd64 so both macOS and Docker CI work)
+      # Per HashiCorp docs: https://developer.hashicorp.com/terraform/cli/commands/providers/lock
+      - cd stage2 && terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
+      # Lock each child module that declares its own providers.
+      # terraform init -upgrade is required first to resolve any stale lock file versions
+      # that no longer satisfy current version constraints in provider.tf.
+      # Ref: https://developer.hashicorp.com/terraform/cli/commands/init#upgrade
+      - |
+        for dir in stage2/*/; do
+          if [ -f "${dir}provider.tf" ]; then
+            echo "Locking providers in ${dir}..."
+            (cd "${dir}" && terraform providers lock -platform=darwin_arm64 -platform=linux_amd64)
+          fi
+        done
+
   stage2:terraform:plan:
     desc: Plan the Terraform deployment
     dir: stage2
@@ -81,12 +114,3 @@ tasks:
     dir: stage2
     cmds:
       - terraform apply
-
-  stage2:terraform:lock:
-    desc: Regenerate provider lock file with multi-platform hashes (linux_amd64)
-    dir: stage2
-    cmds:
-      # Per HashiCorp docs: https://developer.hashicorp.com/terraform/cli/commands/providers/lock
-      # Generates checksums for AMD64 only. Run this on docker container running amd64.
-      - terraform providers lock -platform=linux_amd64
-      - terraform init

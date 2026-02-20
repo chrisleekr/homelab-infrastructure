@@ -88,3 +88,14 @@ variable "argocd_rbac_policy_csv" {
   type        = string
   default     = ""
 }
+
+variable "argocd_apps_repo_url" {
+  description = "Git repo URL for the central ArgoCD apps repository. When set, creates a root Application that bootstraps ApplicationSets from the repo."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.argocd_apps_repo_url == "" || can(regex("^(https?://|git@|ssh://)", var.argocd_apps_repo_url))
+    error_message = "argocd_apps_repo_url must be empty or a valid Git URL (https://, http://, git@, or ssh://)"
+  }
+}

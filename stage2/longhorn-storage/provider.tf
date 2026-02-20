@@ -4,22 +4,22 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.31.0"
+      version = "~> 3.0"
     }
 
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.14.0"
+      version = "~> 3.1"
     }
 
     kubectl = {
       source  = "alekc/kubectl"
-      version = ">= 2.0.4"
+      version = "~> 2.1"
     }
 
     null = {
       source  = "hashicorp/null"
-      version = ">= 3.2.2"
+      version = "~> 3.2"
     }
 
     external = {
