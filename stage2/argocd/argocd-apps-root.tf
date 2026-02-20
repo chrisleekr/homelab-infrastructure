@@ -43,7 +43,7 @@ resource "kubernetes_manifest" "argocd_apps_root" {
 
       ignoreDifferences = [
         {
-          group = "*"
+          group = "argoproj.io"
           kind  = "Application"
           jsonPointers = [
             "/spec/syncPolicy/automated",

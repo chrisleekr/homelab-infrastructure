@@ -15,13 +15,14 @@ vulnerabilities:
     statement: sigstore/timestamp-authority in tflint/trivy - waiting for upstream fix
   # Go stdlib crypto/tls vulnerabilities in all upstream Go binaries
   # (helm, kubectl, terraform, task, tflint, trivy)
-  # CRITICAL: Requires Go >= 1.25.7 - no upstream tool has been rebuilt yet as of 2026-02-20
+  # NVD CVSS 10.0 (CRITICAL), CISA-ADP 4.8 (MEDIUM) — risk mitigated: CI container not exposed to untrusted TLS
+  # Requires Go >= 1.25.7 - no upstream tool has been rebuilt yet as of 2026-02-20
   # Reference: https://security.snyk.io/vuln/SNYK-GOLANG-STDCRYPTOTLS-15238826
-  # EPSS: 0.01% (2nd percentile) - CI tooling container not exposed to untrusted TLS clients
   # TODO(CVE-2025-68121): Remove once upstream tools (helm, kubectl, terraform, tflint, trivy) rebuild with Go >= 1.25.7
   - id: CVE-2025-68121
     statement: Go stdlib crypto/tls session resumption - waiting for upstream rebuild with Go 1.25.7+
-  # HIGH: Requires Go >= 1.25.6 - fixed in trivy v0.69.1, other tools still pending upstream rebuild
+  # NVD CVSS pending, Ubuntu rates MEDIUM — Requires Go >= 1.25.6
+  # Fixed in trivy v0.69.1, other tools still pending upstream rebuild
   # Reference: https://avd.aquasec.com/nvd/cve-2025-61730
   # TODO(CVE-2025-61730): Remove once upstream tools (helm, kubectl, terraform, tflint) rebuild with Go >= 1.25.6
   - id: CVE-2025-61730

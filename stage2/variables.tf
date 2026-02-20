@@ -610,7 +610,7 @@ variable "sealed_secrets_key_renewal_period" {
 
   validation {
     condition     = can(regex("^[0-9]+(h|m|s)$", var.sealed_secrets_key_renewal_period))
-    error_message = "sealed_secrets_key_renewal_period must be a Go duration string, e.g. '720h', '30m', '3600s'."
+    error_message = "sealed_secrets_key_renewal_period must be a simple duration with a single unit, e.g. '720h', '30m', or '3600s'."
   }
 }
 
