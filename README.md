@@ -81,7 +81,7 @@ homelab-infrastructure/
 | helm | 3.19.4 |
 | terraform | 1.14.3 |
 | taskfile | 3.46.4 |
-| trivy | 0.69.0 |
+| trivy | 0.69.1 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 ## Quick Start
