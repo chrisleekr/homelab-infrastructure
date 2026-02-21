@@ -2,11 +2,21 @@ resource "kubernetes_namespace_v1" "minio_operator" {
   metadata {
     name = "minio-operator"
   }
+
+  # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "kubernetes_namespace_v1" "minio_tenant" {
   metadata {
     name = "minio-tenant"
+  }
+
+  # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
