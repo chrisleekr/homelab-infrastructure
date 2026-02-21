@@ -2,6 +2,11 @@ resource "kubernetes_namespace_v1" "cert_manager" {
   metadata {
     name = "cert-manager"
   }
+
+  # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 resource "helm_release" "cert_manager" {
   depends_on = [
