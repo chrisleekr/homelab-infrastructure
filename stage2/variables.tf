@@ -66,18 +66,36 @@ variable "nginx_client_max_body_size" {
   description = "The maximum body size for nginx."
   type        = string
   default     = "10M"
+
+  # Validate nginx size format per https://nginx.org/en/docs/syntax.html
+  validation {
+    condition     = can(regex("^[0-9]+[kKmMgG]?$", var.nginx_client_max_body_size))
+    error_message = "Must be a valid nginx size (e.g., 10M, 512k, 1G, or plain bytes like 1048576)"
+  }
 }
 
 variable "nginx_client_body_buffer_size" {
   description = "The client body buffer size for nginx."
   type        = string
   default     = "10M"
+
+  # Validate nginx size format per https://nginx.org/en/docs/syntax.html
+  validation {
+    condition     = can(regex("^[0-9]+[kKmMgG]?$", var.nginx_client_body_buffer_size))
+    error_message = "Must be a valid nginx size (e.g., 10M, 512k, 1G, or plain bytes like 1048576)"
+  }
 }
 
 variable "cert_manager_acme_email" {
   description = "The email address to register certificates requested from Let's Encrypt."
   type        = string
   default     = "chris@chrislee.local"
+
+  # Validate basic email format per RFC 5321
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.cert_manager_acme_email))
+    error_message = "Must be a valid email address (e.g., user@example.com)"
+  }
 }
 
 variable "cert_manager_ingress_class" {
@@ -118,6 +136,13 @@ variable "minio_tenant_pools_size" {
   description = "The capacity per volume requested per MinIO Tenant Pod."
   type        = string
   default     = "10Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.minio_tenant_pools_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 10Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "minio_tenant_pools_storage_class_name" {
@@ -224,31 +249,66 @@ variable "gitlab_persistence_storage_class_name" {
 variable "gitlab_toolbox_backups_cron_persistence_size" {
   description = "The size of the toolbox backups cron persistence"
   type        = string
-  default     = "20Gi"
+  default     = "30Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_toolbox_backups_cron_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 30Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "gitlab_toolbox_persistence_size" {
   description = "The size of the toolbox persistence"
   type        = string
   default     = "20Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_toolbox_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "gitlab_postgresql_primary_persistence_size" {
   description = "The size of the postgresql primary persistence"
   type        = string
   default     = "20Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_postgresql_primary_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "gitlab_redis_master_persistence_size" {
   description = "The size of the redis master persistence"
   type        = string
   default     = "20Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_redis_master_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "gitlab_gitlay_persistence_size" {
   description = "The size of the gitlay persistence"
   type        = string
   default     = "20Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_gitlay_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "gitlab_runner_authentication_token" {
@@ -502,7 +562,7 @@ variable "wireguard_port" {
 
 variable "wireguard_peers" {
   description = "The peers for the wireguard"
-  type        = string
+  type        = number
   default     = 3
 }
 
@@ -623,6 +683,12 @@ variable "datadog_enable" {
 variable "datadog_site" {
   description = "The site for Datadog"
   type        = string
+
+  # Validate Datadog site per https://docs.datadoghq.com/getting_started/site/
+  validation {
+    condition     = contains(["datadoghq.com", "us3.datadoghq.com", "us5.datadoghq.com", "datadoghq.eu", "ap1.datadoghq.com", "ap2.datadoghq.com", "ddog-gov.com"], var.datadog_site)
+    error_message = "datadog_site must be a valid Datadog site: datadoghq.com, us3.datadoghq.com, us5.datadoghq.com, datadoghq.eu, ap1.datadoghq.com, ap2.datadoghq.com, or ddog-gov.com"
+  }
 }
 
 variable "datadog_cluster_name" {
@@ -667,6 +733,13 @@ variable "llmgateway_storage_size" {
   description = "Storage size for LLM Gateway PostgreSQL data persistence"
   type        = string
   default     = "10Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.llmgateway_storage_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 10Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "llmgateway_storage_class_name" {

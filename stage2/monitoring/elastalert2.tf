@@ -56,7 +56,7 @@ resource "helm_release" "elastalert2" {
   chart      = "elastalert2"
   version    = "2.27.0"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
-  timeout    = 360
+  timeout    = 360 # 6 minutes — extended for ElastAlert2 readiness checks against Elasticsearch
   wait       = true
 
   # Trigger release update if secret changes

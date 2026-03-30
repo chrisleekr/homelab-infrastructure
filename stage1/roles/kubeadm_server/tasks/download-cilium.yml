@@ -14,7 +14,7 @@
   ansible.builtin.command: /usr/local/bin/cilium version
   register: kubeadm_server_cilium_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Debug cilium installed version
   ansible.builtin.debug:

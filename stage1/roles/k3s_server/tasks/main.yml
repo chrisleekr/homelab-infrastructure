@@ -3,7 +3,7 @@
   ansible.builtin.command: k3s --version
   register: k3s_server_k3s_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Set k3s installed version
   when: k3s_server_k3s_version_output.rc == 0
@@ -99,13 +99,13 @@
     - name: Check whether kubectl is installed on control node
       ansible.builtin.command: "kubectl"
       register: k3s_server_kubectl_installed
-      ignore_errors: true
+      failed_when: false
       delegate_to: 127.0.0.1
       become: false
       changed_when: false
 
     - name: Apply K3S kubeconfig to control node
-      when: kubectl_installed.rc == 0
+      when: k3s_server_kubectl_installed.rc == 0
       block:
         - name: Copy kubeconfig to control node
           ansible.builtin.fetch:

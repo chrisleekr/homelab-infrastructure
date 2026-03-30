@@ -3,7 +3,7 @@
 
 provider "registry.terraform.io/hashicorp/helm" {
   version     = "3.1.1"
-  constraints = ">= 2.14.0"
+  constraints = "~> 3.1"
   hashes = [
     "h1:47CqNwkxctJtL/N/JuEj+8QMg8mRNI/NWeKO5/ydfZU=",
     "h1:5b2ojWKT0noujHiweCds37ZreRFRQLNaErdJLusJN88=",
@@ -25,7 +25,7 @@ provider "registry.terraform.io/hashicorp/helm" {
 
 provider "registry.terraform.io/hashicorp/kubernetes" {
   version     = "3.0.1"
-  constraints = ">= 2.31.0"
+  constraints = "~> 3.0"
   hashes = [
     "h1:P0c8knzZnouTNFIRij8IS7+pqd0OKaFDYX0j4GRsiqo=",
     "h1:uRzxEKw6nmLiKhD95yVsvk4bkAEYNhzO7ivoFFo4iEQ=",

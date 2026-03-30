@@ -1,24 +1,32 @@
 ---
 - name: Install packages
   ansible.builtin.include_tasks: install-packages.yml
+  tags: [packages]
 
 - name: Remove snapd
   ansible.builtin.include_tasks: remove-snapd.yml
+  tags: [packages]
 
 - name: Update /etc/hosts
   ansible.builtin.include_tasks: update-etc-hosts.yml
+  tags: [network]
 
 - name: Update multipath blacklist
   ansible.builtin.include_tasks: update-multipath.yml
+  tags: [storage]
 
 - name: Update sysctl settings
   ansible.builtin.include_tasks: update-sysctl.yml
+  tags: [network]
 
 - name: Install fail2ban
   ansible.builtin.include_tasks: install-fail2ban.yml
+  tags: [security]
 
 - name: Setup UFW
   ansible.builtin.include_tasks: setup-ufw.yml
+  tags: [security]
 
 - name: Disable swap
   ansible.builtin.include_tasks: disable-swap.yml
+  tags: [system]

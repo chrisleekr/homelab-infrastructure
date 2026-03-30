@@ -3,6 +3,11 @@
 resource "kubernetes_namespace_v1" "sealed_secrets_namespace" {
   metadata {
     name = "sealed-secrets"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "app.kubernetes.io/part-of"    = "homelab"
+    }
   }
 
   # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.

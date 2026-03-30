@@ -6,15 +6,15 @@ ARG BUILDPLATFORM
 ARG BUILDARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.35.0
+ARG KUBECTL_VERSION=1.35.3
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=3.19.4
+ARG HELM_VERSION=4.1.3
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.14.3
+ARG TERRAFORM_VERSION=1.14.8
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.46.4
+ARG TASKFILE_VERSION=3.49.1
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.69.1
+ARG TRIVY_VERSION=0.69.3
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -35,7 +35,7 @@ RUN set -eux; \
   curl=8.14.1-r2 \
   bash=5.2.37-r0 \
   jq=1.7.1-r0 \
-  bind-tools=9.18.44-r0 \
+  bind-tools=9.18.47-r0 \
   git=2.47.3-r0 \
   graphviz=12.2.0-r0 \
   python3=3.12.12-r0 \
@@ -45,7 +45,7 @@ RUN set -eux; \
   bash-completion=2.14.0-r0 \
   && \
   \
-  # Install kubectl - https://dl.k8s.io/release/v1.30.2/bin/linux/arm64/kubectl
+  # Install kubectl
   curl -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${BUILDARCH}/kubectl -o /usr/local/bin/kubectl && \
   chmod +x /usr/local/bin/kubectl && \
   kubectl version || true && \
@@ -71,8 +71,7 @@ RUN set -eux; \
   g++=14.2.0-r4 \
   gcc=14.2.0-r4 \
   libffi-dev=3.4.7-r0 \
-  python3-dev=3.12.12-r0 \
-  py3-pip=24.3.1-r0 && \
+  python3-dev=3.12.12-r0 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
   . .venv/bin/activate && \
@@ -93,6 +92,8 @@ RUN set -eux; \
   \
   # Cleanup
   rm -rf /var/cache/apk/* /usr/share/doc /usr/share/man/ /usr/share/info/* /var/cache/man/* /tmp/*
+
+ENV PATH="/tmp/.venv/bin:$PATH"
 
 WORKDIR /srv
 

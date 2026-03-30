@@ -1,3 +1,4 @@
 ---
 - name: Setup Docker
   ansible.builtin.include_tasks: setup-docker.yml
+  tags: [container_runtime]

@@ -1,13 +1,16 @@
 ---
 - name: Install Minikube
   ansible.builtin.include_tasks: install-minikube.yml
+  tags: [k8s_install]
   register: minikube_server_minikube_installed
 
 - name: Setup Minikube services
   ansible.builtin.include_tasks: setup-minikube-services.yml
+  tags: [k8s_config]
   register: minikube_server_minikube_services
   when: minikube_server_minikube_installed is defined
 
 - name: Generate kubeconfig
   ansible.builtin.include_tasks: generate-kubeconfig.yml
+  tags: [kubeconfig]
   when: minikube_server_minikube_services is defined

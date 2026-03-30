@@ -11,7 +11,7 @@
   ansible.builtin.command: /usr/local/bin/nerdctl --version
   register: kubeadm_server_nerdctl_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 # - name: Debug nerdctl installed version
 #   ansible.builtin.debug:

@@ -99,7 +99,7 @@ variable "gitlab_persistence_storage_class_name" {
 variable "gitlab_toolbox_backups_cron_persistence_size" {
   description = "The size of the toolbox backups cron persistence"
   type        = string
-  default     = "20Gi"
+  default     = "30Gi"
 }
 
 variable "gitlab_toolbox_persistence_size" {

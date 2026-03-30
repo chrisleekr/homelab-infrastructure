@@ -6,7 +6,7 @@
   ansible.builtin.command: /usr/local/bin/containerd --version
   register: kubeadm_server_containerd_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 # - name: Debug containerd installed version
 #   ansible.builtin.debug:
@@ -79,7 +79,7 @@
     - name: Generate default config for containerd and save it to config.toml file.
       ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
       register: kubeadm_server_containerd_toml
-      changed_when: kubeadm_server_containerd_toml.rc != 0 and kubeadm_server_containerd_toml.stdout != ""
+      changed_when: kubeadm_server_containerd_toml.rc == 0
 
     - name: Update the value of SystemdCgroup in the config.toml file.
       ansible.builtin.replace:

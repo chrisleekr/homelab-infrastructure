@@ -9,9 +9,9 @@
     - name: Upgrade Cilium
       ansible.builtin.command: cilium upgrade --wait
       register: kubeadm_server_cilium_upgrade_output
-      changed_when: kubeadm_server_cilium_upgrade_output.rc != 0
+      changed_when: kubeadm_server_cilium_upgrade_output.rc == 0
 
     - name: Wait for Cilium status to be ready
       ansible.builtin.command: cilium status --wait
       register: kubeadm_server_cilium_status
-      changed_when: kubeadm_server_cilium_status.rc != 0
+      changed_when: false

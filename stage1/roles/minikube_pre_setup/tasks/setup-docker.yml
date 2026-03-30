@@ -37,7 +37,7 @@
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     executable: /bin/bash
   register: minikube_pre_setup_docker_apt_source
-  changed_when: minikube_pre_setup_docker_apt_source.rc != 0
+  changed_when: minikube_pre_setup_docker_apt_source.rc == 0
 
 - name: Run the equivalent of "apt-get update" as a separate step
   ansible.builtin.apt:

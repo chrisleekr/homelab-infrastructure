@@ -1,6 +1,11 @@
 resource "kubernetes_namespace_v1" "gitlab" {
   metadata {
     name = "gitlab"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "app.kubernetes.io/part-of"    = "homelab"
+    }
   }
 
   # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.
@@ -79,7 +84,6 @@ resource "helm_release" "gitlab" {
         minio_host       = var.gitlab_minio_host
         minio_access_key = var.gitlab_minio_access_key
         minio_secret_key = var.gitlab_minio_secret_key
-        # minio_endpoint = var.gitlab_minio_endpoint
 
         persistence_storage_class_name = var.gitlab_persistence_storage_class_name
 
