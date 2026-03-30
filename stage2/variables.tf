@@ -564,6 +564,11 @@ variable "wireguard_peers" {
   description = "The peers for the wireguard"
   type        = number
   default     = 3
+
+  validation {
+    condition     = var.wireguard_peers >= 1 && var.wireguard_peers == floor(var.wireguard_peers)
+    error_message = "wireguard_peers must be a positive integer (e.g., 1, 2, 3)."
+  }
 }
 
 variable "argocd_domain" {

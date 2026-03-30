@@ -62,29 +62,42 @@ trap 'rm -rf "$TMPDIR_WORK"' EXIT
 
 echo -e "${BOLD}Fetching latest tool versions…${NC}"
 
+validate_version() {
+  local name="$1" version="$2"
+  if [[ -z "$version" || "$version" == "null" ]]; then
+    echo "Error: Failed to fetch latest version for $name" >&2
+    exit 1
+  fi
+}
+
 # kubectl – https://dl.k8s.io/release/stable.txt
 KUBECTL_CURRENT=$(extract_arg "KUBECTL_VERSION")
 KUBECTL_LATEST=$(curl -fsSL https://dl.k8s.io/release/stable.txt | sed 's/^v//')
+validate_version "kubectl" "$KUBECTL_LATEST"
 
 # Helm – GitHub releases
 HELM_CURRENT=$(extract_arg "HELM_VERSION")
 HELM_LATEST=$(github_curl "https://api.github.com/repos/helm/helm/releases/latest" \
   | jq -r '.tag_name' | sed 's/^v//')
+validate_version "helm" "$HELM_LATEST"
 
 # Terraform – GitHub releases
 TERRAFORM_CURRENT=$(extract_arg "TERRAFORM_VERSION")
 TERRAFORM_LATEST=$(github_curl "https://api.github.com/repos/hashicorp/terraform/releases/latest" \
   | jq -r '.tag_name' | sed 's/^v//')
+validate_version "terraform" "$TERRAFORM_LATEST"
 
 # Taskfile – GitHub releases
 TASKFILE_CURRENT=$(extract_arg "TASKFILE_VERSION")
 TASKFILE_LATEST=$(github_curl "https://api.github.com/repos/go-task/task/releases/latest" \
   | jq -r '.tag_name' | sed 's/^v//')
+validate_version "taskfile" "$TASKFILE_LATEST"
 
 # Trivy – GitHub releases
 TRIVY_CURRENT=$(extract_arg "TRIVY_VERSION")
 TRIVY_LATEST=$(github_curl "https://api.github.com/repos/aquasecurity/trivy/releases/latest" \
   | jq -r '.tag_name' | sed 's/^v//')
+validate_version "trivy" "$TRIVY_LATEST"
 
 ###############################################################################
 # PART 2 – Fetch latest Alpine package versions
