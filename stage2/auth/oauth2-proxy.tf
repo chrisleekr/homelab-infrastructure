@@ -1,6 +1,6 @@
 # Generate cookie secret
 resource "random_password" "oauth2_proxy_cookie_secret" {
-  length  = 16
+  length  = 32
   special = false
 }
 

@@ -67,7 +67,7 @@ docker-build:
 # Per Trivy GitLab CI documentation: https://trivy.dev/docs/latest/tutorials/integrations/gitlab-ci/
 trivy-scan-dev:
   stage: test
-  image: aquasec/trivy:latest
+  image: ghcr.io/aquasecurity/trivy:latest
   needs:
     - docker-build-dev
   variables:
@@ -89,7 +89,7 @@ trivy-scan-dev:
 
 trivy-scan:
   stage: test
-  image: aquasec/trivy:latest
+  image: ghcr.io/aquasecurity/trivy:latest
   needs:
     - docker-build
   variables:

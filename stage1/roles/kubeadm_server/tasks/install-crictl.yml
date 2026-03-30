@@ -11,7 +11,7 @@
   ansible.builtin.command: /usr/local/bin/crictl --version
   register: kubeadm_server_crictl_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Debug crictl installed version
   ansible.builtin.debug:

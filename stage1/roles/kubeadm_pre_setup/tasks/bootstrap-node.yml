@@ -22,10 +22,12 @@
       - ipvsadm
 
 - name: Check if packages are installed (Errors will be ignored.)
-  ansible.builtin.shell: dpkg-query -s {{ item }} | grep 'install ok installed'
+  ansible.builtin.shell: set -o pipefail && dpkg-query -s {{ item }} | grep 'install ok installed'
+  args:
+    executable: /bin/bash
   register: kubeadm_pre_setup_dpkg_check_item
-  changed_when: kubeadm_pre_setup_dpkg_check_item.rc != 0
-  ignore_errors: true
+  changed_when: false
+  failed_when: false
   loop: "{{ kubeadm_pre_setup_packages }}"
 
 - name: Set kubeadm_pre_setup_dpkg_check fact from results of package check loop

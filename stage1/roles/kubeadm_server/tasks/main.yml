@@ -1,39 +1,52 @@
 ---
 - name: Install runc
   ansible.builtin.include_tasks: install-runc.yml
+  tags: [container_runtime]
 
 - name: Install cni
   ansible.builtin.include_tasks: install-cni.yml
+  tags: [container_runtime]
 
 - name: Configure containerd
   ansible.builtin.include_tasks: configure-containerd.yml
+  tags: [container_runtime]
 
 - name: Install nerdctl
   ansible.builtin.include_tasks: install-nerdctl.yml
+  tags: [container_tools]
 
 - name: Install crictl
   ansible.builtin.include_tasks: install-crictl.yml
+  tags: [container_tools]
 
 - name: Configure kubeadm and kubelet
   ansible.builtin.include_tasks: configure-kubeadm-kubelet.yml
+  tags: [k8s_install]
 
 - name: Install kubectl
   ansible.builtin.include_tasks: install-kubectl.yml
+  tags: [k8s_install]
 
 - name: Download cilium
   ansible.builtin.include_tasks: download-cilium.yml
+  tags: [cni]
 
 - name: Initialise kubeadm
   ansible.builtin.include_tasks: initialise-kubeadm.yml
+  tags: [k8s_install]
 
 - name: Install cilium
   ansible.builtin.include_tasks: install-cilium.yml
+  tags: [cni]
 
 - name: Upgrade cilium
   ansible.builtin.include_tasks: upgrade-cilium.yml
+  tags: [cni]
 
 - name: Download kubeconfig
   ansible.builtin.include_tasks: download-kubeconfig.yml
+  tags: [kubeconfig]
 
 - name: Untaint node
   ansible.builtin.include_tasks: untaint-node.yml
+  tags: [k8s_config]

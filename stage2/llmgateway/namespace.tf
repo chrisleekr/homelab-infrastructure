@@ -6,5 +6,10 @@ resource "kubernetes_namespace_v1" "llmgateway" {
 
   metadata {
     name = "llmgateway"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "app.kubernetes.io/part-of"    = "homelab"
+    }
   }
 }

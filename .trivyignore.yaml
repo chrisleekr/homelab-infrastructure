@@ -13,6 +13,14 @@ vulnerabilities:
     statement: Go stdlib crypto/x509 in tflint - waiting for upstream fix
   - id: CVE-2025-66564
     statement: sigstore/timestamp-authority in tflint/trivy - waiting for upstream fix
+  - id: CVE-2026-25679
+    statement: net/url Incorrect parsing of IPv6 host
+  - id: CVE-2025-15558
+    statement: docker/cli Docker CLI for Windows Privilege malicious plugin binaries
+  - id: CVE-2026-33186
+    statement: gRPC-Go has an authorization bypass via missing slash in path
+  - id: CVE-2026-24051
+    statement: OpenTelemetry Go SDK Vulnerable to Arbitrary via PATH Hijacking
   # Go stdlib crypto/tls vulnerabilities in all upstream Go binaries
   # (helm, kubectl, terraform, task, tflint, trivy)
   # NVD CVSS 10.0 (CRITICAL), CISA-ADP 4.8 (MEDIUM) — risk mitigated: CI container not exposed to untrusted TLS

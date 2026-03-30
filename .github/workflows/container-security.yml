@@ -53,9 +53,9 @@ jobs:
 
       # Install Trivy CLI (pinned version for consistency)
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.5
+        uses: aquasecurity/setup-trivy@v0.2.6
         with:
-          version: v0.69.0
+          version: v0.69.3
 
       # Run Trivy scan with CLI (trivy-action has .trivyignore bug)
       # https://github.com/aquasecurity/trivy-action/issues/436

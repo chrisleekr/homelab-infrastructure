@@ -17,4 +17,4 @@
     executable: /bin/bash
   when: kubeadm_server_taint_check.rc == 0
   register: kubeadm_server_kubectl_taint_nodes
-  changed_when: kubeadm_server_kubectl_taint_nodes.rc != 0
+  changed_when: kubeadm_server_kubectl_taint_nodes.rc == 0

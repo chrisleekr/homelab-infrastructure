@@ -1,6 +1,11 @@
 resource "kubernetes_namespace_v1" "minio_operator" {
   metadata {
     name = "minio-operator"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "app.kubernetes.io/part-of"    = "homelab"
+    }
   }
 
   # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.
@@ -12,6 +17,11 @@ resource "kubernetes_namespace_v1" "minio_operator" {
 resource "kubernetes_namespace_v1" "minio_tenant" {
   metadata {
     name = "minio-tenant"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "app.kubernetes.io/part-of"    = "homelab"
+    }
   }
 
   # Required module: guards against accidental destruction. To intentionally destroy, set prevent_destroy = false, apply, then revert.

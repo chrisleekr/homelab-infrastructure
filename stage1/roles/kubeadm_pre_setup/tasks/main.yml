@@ -1,3 +1,4 @@
 ---
 - name: Bootstrap node
   ansible.builtin.include_tasks: bootstrap-node.yml
+  tags: [bootstrap]

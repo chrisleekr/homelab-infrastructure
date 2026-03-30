@@ -8,7 +8,7 @@
   ansible.builtin.command: kubeadm version --output=short
   register: kubeadm_server_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Set kubeadm installed version
   when: kubeadm_server_version_output.rc == 0

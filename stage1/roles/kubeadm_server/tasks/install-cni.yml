@@ -12,7 +12,7 @@
   ansible.builtin.command: /opt/cni/bin/macvlan --version
   register: kubeadm_server_cni_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Set CNI installed version
   when:

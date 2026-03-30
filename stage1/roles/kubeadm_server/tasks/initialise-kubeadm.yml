@@ -16,7 +16,7 @@
     - name: Initialise kubeadm
       ansible.builtin.command: "kubeadm init --config {{ ansible_env.HOME }}/kubeadm-config.yaml --upload-certs"
       register: kubeadm_server_kubeadm_init
-      changed_when: kubeadm_server_kubeadm_init.rc != 0
+      changed_when: kubeadm_server_kubeadm_init.rc == 0
 
 - name: Include copy-kubeconfig role
   ansible.builtin.include_tasks: copy-kubeconfig.yml
@@ -28,7 +28,7 @@
       kubectl get nodes --no-headers | wc -l
     executable: /bin/bash
   register: kubeadm_server_node_count_check
-  changed_when: kubeadm_server_node_count_check.rc != 0
+  changed_when: false
 
 - name: Print kubeadm_server_node_count_check
   ansible.builtin.debug:
@@ -44,7 +44,7 @@
       --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace)
     executable: /bin/bash
   register: kubeadm_server_kubeadm_join_command
-  changed_when: kubeadm_server_kubeadm_join_command.rc != 0
+  changed_when: kubeadm_server_kubeadm_join_command.rc == 0
 
 - name: Check if kubeadm-config has controlPlaneEndpoint configured
   ansible.builtin.shell:
@@ -55,7 +55,7 @@
     executable: /bin/bash
   register: kubeadm_server_check_control_plane_endpoint
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Update kubeadm-config and kube-proxy configmap
   when: kubeadm_server_check_control_plane_endpoint.rc != 0

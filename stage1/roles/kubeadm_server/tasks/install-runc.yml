@@ -15,7 +15,7 @@
   ansible.builtin.command: /usr/local/sbin/runc --version
   register: kubeadm_server_runc_version_output
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Set runc installed version
   when:
@@ -27,6 +27,7 @@
 - name: Debug runc installed version
   ansible.builtin.debug:
     msg: "Runc installed version: {{ kubeadm_server_runc_installed_version }}"
+    verbosity: 2
 
 - name: Display runc version information
   ansible.builtin.debug:
@@ -34,6 +35,7 @@
       Current runc version: {{ kubeadm_server_runc_installed_version | default('Not installed') }}
       Target runc version: {{ runc_version }}
       Upgrade needed: {{ (kubeadm_server_runc_installed_version is defined and kubeadm_server_runc_installed_version is version(runc_version, '<')) | default(true) }}
+    verbosity: 2
 
 - name: Install or upgrade runc
   when: >
@@ -56,7 +58,9 @@
     - name: Display runc post download version
       ansible.builtin.debug:
         msg: "{{ kubeadm_server_runc_post_download_version.stdout }}"
+        verbosity: 2
 
     - name: Display downloaded runc version
       ansible.builtin.debug:
         msg: "Downloaded runc version: {{ (kubeadm_server_runc_post_download_version.stdout | regex_replace('^runc version (.*)$', '\\1')) }}"
+        verbosity: 2

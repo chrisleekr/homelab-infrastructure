@@ -17,6 +17,17 @@ tasks:
     cmds:
       - pre-commit run --all-files
 
+  versions:check:
+    desc: Check for newer tool and Alpine package versions in Dockerfile
+    cmds:
+      - ./scripts/bump-versions.sh --check
+
+  versions:bump:
+    desc: Bump all tool and Alpine package versions in Dockerfile and sync README
+    cmds:
+      - ./scripts/bump-versions.sh --apply
+      - ./scripts/sync-versions.sh
+
   docker:build:
     cmds:
       - ./scripts/docker-build.sh
