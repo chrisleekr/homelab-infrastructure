@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml)
 [![Container Security](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml)
-[![Terraform](https://img.shields.io/badge/terraform-1.14.3-blue)](https://www.terraform.io/)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.35.0-blue)](https://kubernetes.io/)
+[![Terraform](https://img.shields.io/badge/terraform-1.14.8-blue)](https://www.terraform.io/)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.35.3-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Provisioning a single-node Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
@@ -77,11 +77,11 @@ homelab-infrastructure/
 <!-- VERSIONS_START - Do not remove this comment, used by sync-versions workflow -->
 | Tool | Version |
 |------|---------|
-| kubectl | 1.35.0 |
-| helm | 3.19.4 |
-| terraform | 1.14.3 |
-| taskfile | 3.46.4 |
-| trivy | 0.69.1 |
+| kubectl | 1.35.3 |
+| helm | 4.1.3 |
+| terraform | 1.14.8 |
+| taskfile | 3.49.1 |
+| trivy | 0.69.3 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 ## Quick Start
