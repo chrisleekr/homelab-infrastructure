@@ -233,7 +233,9 @@ global:
       enabled: false
       bucket: gitlab-ci-secure-files
     dependencyProxy:
-      enabled: false
+      # Migrations job fails with "Object storage for dependency_proxy must have a bucket specified" when dependencyProxy is disabled
+      # https://support.gitlab.com/hc/en-us/articles/27068215242524-Migrations-job-fails-with-Object-storage-for-dependency-proxy-must-have-a-bucket-specified-when-dependencyProxy-is-disabled
+      enabled: true
       proxy_download: true
       bucket: gitlab-dependency-proxy
     backups:
