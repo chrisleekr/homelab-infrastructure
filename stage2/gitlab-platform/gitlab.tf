@@ -35,7 +35,7 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "9.8.2"
+  version    = "9.11.3"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   timeout    = 600 # 10 minutes
   wait       = true
