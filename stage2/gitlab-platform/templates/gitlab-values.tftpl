@@ -233,7 +233,9 @@ global:
       enabled: false
       bucket: gitlab-ci-secure-files
     dependencyProxy:
-      enabled: false
+      # Migrations job fails with "Object storage for dependency_proxy must have a bucket specified" when dependencyProxy is disabled
+      # https://support.gitlab.com/hc/en-us/articles/27068215242524-Migrations-job-fails-with-Object-storage-for-dependency-proxy-must-have-a-bucket-specified-when-dependencyProxy-is-disabled
+      enabled: true
       proxy_download: true
       bucket: gitlab-dependency-proxy
     backups:
@@ -324,26 +326,15 @@ global:
     workerTimeout: 60
 
   ## https://docs.gitlab.com/charts/charts/globals#custom-certificate-authorities
-  # configuration of certificates container & custom CA injection
   certificates:
-    image:
-      repository: registry.gitlab.com/gitlab-org/build/cng/certificates
-      tag: ${platform_image_tag}
     customCAs: []
 
   ## kubectl image used by hooks to carry out specific jobs
   kubectl:
-    image:
-      repository: registry.gitlab.com/gitlab-org/build/cng/kubectl
-      tag: ${platform_image_tag}
     securityContext:
       # in most base images, this is `nobody:nogroup`
       runAsUser: 65534
       fsGroup: 65534
-  gitlabBase:
-    image:
-      repository: registry.gitlab.com/gitlab-org/build/cng/gitlab-base
-      tag: ${platform_image_tag}
 
   ## https://docs.gitlab.com/charts/charts/globals#service-accounts
   serviceAccount:
@@ -751,9 +742,6 @@ shared-secrets:
   rbac:
     create: true
   selfsign:
-    image:
-      repository: registry.gitlab.com/gitlab-org/build/cng/cfssl-self-sign
-      tag: ${platform_image_tag}
     keyAlgorithm: "rsa"
     keySize: "4096"
     expiry: "3650d"

@@ -6,15 +6,15 @@ ARG BUILDPLATFORM
 ARG BUILDARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.35.3
+ARG KUBECTL_VERSION=1.36.0
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.1.3
+ARG HELM_VERSION=4.1.4
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.14.8
+ARG TERRAFORM_VERSION=1.15.2
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.49.1
+ARG TASKFILE_VERSION=3.50.0
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.69.3
+ARG TRIVY_VERSION=0.70.0
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -31,14 +31,14 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN set -eux; \
   \
   apk add --no-cache \
-  ca-certificates=20250911-r0 \
+  ca-certificates=20260413-r0 \
   curl=8.14.1-r2 \
   bash=5.2.37-r0 \
   jq=1.7.1-r0 \
   bind-tools=9.18.47-r0 \
   git=2.47.3-r0 \
   graphviz=12.2.0-r0 \
-  python3=3.12.12-r0 \
+  python3=3.12.13-r0 \
   py3-pip=24.3.1-r0 \
   pre-commit=4.0.1-r0 \
   shellcheck=0.10.0-r1 \
@@ -71,7 +71,7 @@ RUN set -eux; \
   g++=14.2.0-r4 \
   gcc=14.2.0-r4 \
   libffi-dev=3.4.7-r0 \
-  python3-dev=3.12.12-r0 && \
+  python3-dev=3.12.13-r0 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
   . .venv/bin/activate && \

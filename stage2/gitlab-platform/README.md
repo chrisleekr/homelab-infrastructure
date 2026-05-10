@@ -125,7 +125,6 @@ sequenceDiagram
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `host_machine_architecture` | Architecture (amd64/arm64) | `amd64` |
 | `gitlab_global_hosts_domain` | Base domain for GitLab | `chrislee.local` |
 | `gitlab_global_hosts_host_suffix` | Subdomain suffix | `""` |
 | `gitlab_global_hosts_https` | Use HTTPS | `true` |

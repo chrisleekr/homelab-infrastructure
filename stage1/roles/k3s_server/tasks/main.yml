@@ -32,7 +32,9 @@
       environment:
         INSTALL_K3S_SKIP_START: "true"
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
-      changed_when: true
+      changed_when:
+        - k3s_server_installed_k3s_version is not defined
+          or k3s_server_installed_k3s_version is version(k3s_version, '<')
 
 - name: Add K3s autocomplete to user bashrc
   ansible.builtin.lineinfile:

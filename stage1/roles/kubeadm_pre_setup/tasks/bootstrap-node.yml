@@ -1,10 +1,19 @@
 ---
-- name: Update and upgrade apt packages
+- name: Refresh apt cache if older than 1 hour
   ansible.builtin.apt:
     update_cache: true
-    upgrade: true
+    cache_valid_time: 3600
+
+# Patches the host on every default playbook run because unattended-upgrades is
+# turned off by the `Disable automatic updates` task later in this file. Use
+# `--skip-tags system_upgrade` to skip the apt safe-upgrade plus the bundled
+# autoclean/autoremove; other mutating tasks in this role still run.
+- name: Upgrade apt packages
+  ansible.builtin.apt:
+    upgrade: safe
     autoclean: true
     autoremove: true
+  tags: [system_upgrade]
 
 - name: Define list of packages
   ansible.builtin.set_fact:
