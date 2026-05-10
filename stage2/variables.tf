@@ -21,9 +21,17 @@ variable "host_machine_architecture" {
 }
 
 variable "kubernetes_override_domains" {
-  description = "The list of domains to be added to the CoreDNS configuration. Space delimiter. i.e. gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
+  description = "Space-delimited list of domains added to the CoreDNS configuration. Each entry must be a lowercase FQDN. Example: \"gitlab.chrislee.local registry.chrislee.local minio.chrislee.local\""
   type        = string
   default     = "gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
+
+  validation {
+    condition = alltrue([
+      for d in split(" ", var.kubernetes_override_domains) :
+      can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", d))
+    ])
+    error_message = "kubernetes_override_domains must be a non-empty, single-space-delimited list of lowercase FQDNs (e.g., \"gitlab.chrislee.local registry.chrislee.local\"). No leading/trailing/multiple spaces, no uppercase, no empty entries."
+  }
 }
 
 variable "kubernetes_override_ip" {

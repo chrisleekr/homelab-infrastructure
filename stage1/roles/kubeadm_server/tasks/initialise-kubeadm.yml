@@ -70,7 +70,9 @@
         kubectl apply -f -
       args:
         executable: /bin/bash
-      changed_when: false
+      register: kubeadm_server_kubeadm_config_update
+      # kubectl apply emits "...configured" on mutation, "...unchanged" on no-op.
+      changed_when: "'configured' in kubeadm_server_kubeadm_config_update.stdout"
     - name: Update kube-proxy configmap to bind metrics endpoint to 0.0.0.0
       ansible.builtin.shell: |
         set -o pipefail && \
@@ -81,7 +83,9 @@
         kubectl apply -f -
       args:
         executable: /bin/bash
-      changed_when: false
+      register: kubeadm_server_kube_proxy_update
+      # kubectl apply emits "...configured" on mutation, "...unchanged" on no-op.
+      changed_when: "'configured' in kubeadm_server_kube_proxy_update.stdout"
     - name: Restart kubelet service
       ansible.builtin.systemd:
         name: kubelet

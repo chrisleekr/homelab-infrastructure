@@ -21,6 +21,12 @@ vulnerabilities:
     statement: gRPC-Go has an authorization bypass via missing slash in path
   - id: CVE-2026-24051
     statement: OpenTelemetry Go SDK Vulnerable to Arbitrary via PATH Hijacking
+  - id: CVE-2026-32280
+    statement: Go has Denial of Service vulnerability in certificate chain building
+  - id: CVE-2026-32281
+    statement: Go has Denial of Service vulnerability via inefficient certificate chain validation
+  - id: CVE-2026-32283
+    statement: Go has Denial of Service vulnerability via multiple TLS 1.3 key
   # Go stdlib crypto/tls vulnerabilities in all upstream Go binaries
   # (helm, kubectl, terraform, task, tflint, trivy)
   # NVD CVSS 10.0 (CRITICAL), CISA-ADP 4.8 (MEDIUM) — risk mitigated: CI container not exposed to untrusted TLS
