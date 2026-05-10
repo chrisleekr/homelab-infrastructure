@@ -87,3 +87,10 @@ repos:
     hooks:
       - id: gitleaks
         stages: [pre-commit]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        # -x follows `source` directives across files
+        args: ["-x"]
