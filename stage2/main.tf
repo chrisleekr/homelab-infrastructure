@@ -83,8 +83,6 @@ module "gitlab_platform" {
   depends_on = [module.minio_object_storage]
   source     = "./gitlab-platform"
 
-  host_machine_architecture = var.host_machine_architecture
-
   gitlab_global_hosts_domain       = var.gitlab_global_hosts_domain
   gitlab_global_hosts_host_suffix  = var.gitlab_global_hosts_host_suffix
   gitlab_global_hosts_external_ip  = var.gitlab_global_hosts_external_ip

@@ -74,20 +74,21 @@
       ansible.builtin.file:
         path: /etc/containerd/
         state: directory
+        mode: "0755"
+
+    - name: Generate default containerd config
+      ansible.builtin.command: containerd config default
+      register: kubeadm_server_containerd_default_config
+      changed_when: false
+
+    - name: Write containerd config.toml with SystemdCgroup enabled
+      ansible.builtin.copy:
+        content: "{{ kubeadm_server_containerd_default_config.stdout
+                     | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
+        dest: /etc/containerd/config.toml
         mode: "0644"
+      notify: Restart containerd
 
-    - name: Generate default config for containerd and save it to config.toml file.
-      ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
-      register: kubeadm_server_containerd_toml
-      changed_when: kubeadm_server_containerd_toml.rc == 0
-
-    - name: Update the value of SystemdCgroup in the config.toml file.
-      ansible.builtin.replace:
-        path: /etc/containerd/config.toml
-        regexp: "SystemdCgroup = false"
-        replace: "SystemdCgroup = true"
-
-    - name: Restart containerd service
-      ansible.builtin.service:
-        name: containerd
-        state: restarted
+    # Flush so containerd restart completes before kubeadm init runs.
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers

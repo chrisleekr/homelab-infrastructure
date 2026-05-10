@@ -140,7 +140,14 @@ resource "kubernetes_secret_v1" "rails_secret" {
   }
 
   data = {
-    "secrets.yml" = templatefile(
+    # chomp() strips the template's trailing newline so the rendered string
+    # matches what the gitlab-shared-secrets pre-upgrade hook writes back via
+    # `kubectl apply` with stringData |- (which strips trailing newlines).
+    # Without this, the secret reports a perpetual data diff on every plan.
+    # Byte-format and field order verified against gitlab chart 9.11.3
+    # (charts/shared-secrets/templates/_generate_secrets.sh.tpl). Re-verify
+    # if the chart version in gitlab.tf is bumped.
+    "secrets.yml" = chomp(templatefile(
       "${path.module}/templates/rails-secrets.tftpl",
       {
         production_secret_key_base                              = random_password.rails_secret_key_base.result,
@@ -152,7 +159,7 @@ resource "kubernetes_secret_v1" "rails_secret" {
         production_active_record_encryption_key_derivation_salt = random_password.active_record_encryption_key_derivation_salt.result,
         production_openid_connect_signing_key                   = indent(4, tls_private_key.openid_connect_signing_key.private_key_pem_pkcs8),
       }
-    )
+    ))
   }
 
   lifecycle {

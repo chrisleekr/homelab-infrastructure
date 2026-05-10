@@ -17,5 +17,5 @@ data "http" "longhorn_crd" {
 resource "kubectl_manifest" "longhorn_crd" {
   count = length(local.longhorn_crds)
 
-  yaml_body = data.http.longhorn_crd[count.index].body
+  yaml_body = data.http.longhorn_crd[count.index].response_body
 }

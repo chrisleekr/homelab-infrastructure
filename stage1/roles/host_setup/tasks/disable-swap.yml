@@ -1,8 +1,13 @@
 ---
+- name: Check active swap
+  ansible.builtin.command: swapon --show
+  register: host_setup_active_swap
+  changed_when: false
+
 - name: Disable swap
   ansible.builtin.command: swapoff -a
-  register: host_setup_swapoff
-  changed_when: host_setup_swapoff.rc == 0
+  when: host_setup_active_swap.stdout | length > 0
+  changed_when: true
 
 - name: Remove swap entry from /etc/fstab
   ansible.builtin.replace:
