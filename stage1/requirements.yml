@@ -7,4 +7,6 @@ collections:
     version: ">=12.0.1"
 
   - name: kubernetes.core
-    version: ">=6.2.0"
+    # 6.4.0 adds Helm v4 compatibility (issue #1038); <6.4.0 emits the
+    # removed `helm list --all` flag and fails against Helm 4.x.
+    version: ">=6.4.0"

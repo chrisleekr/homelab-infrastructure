@@ -46,6 +46,45 @@ vulnerabilities:
     statement: libpng transitive dependency via graphviz
   - id: CVE-2026-22801
     statement: libpng transitive dependency via graphviz
+  # Go stdlib vulnerabilities affecting kubectl/task/terraform/trivy binaries
+  # Fix landed in Go 1.25.10 / 1.26.3; kubectl 1.36.1 ships Go 1.26.2, task 3.51.1
+  # and terraform 1.15.4 still on older Go. trivy 0.70.0 is latest but pre-Go-1.26.3.
+  # Re-evaluate after upstream rebuilds (~30 days).
+  # TODO: Remove once kubectl >= 1.36.2 and trivy >= 0.71.0 (or equivalent rebuilds) land.
+  - id: CVE-2026-33811
+    statement: Go stdlib LookupCNAME cgo DNS resolver - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-33814
+    statement: Go stdlib HTTP/2 SETTINGS frames infinite loop - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-39820
+    statement: Go stdlib net/mail ParseAddress malformed input - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-39836
+    statement: Go stdlib net.Dial/LookupPort NUL byte panic (Windows-only, low risk on Alpine) - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-42499
+    statement: Go stdlib net/mail consumePhrase DoS - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-39823
+    statement: Go stdlib net/url parsing in kubectl/trivy - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-39825
+    statement: Go stdlib net/http/httputil ReverseProxy query forwarding in kubectl/trivy - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  - id: CVE-2026-39826
+    statement: Go stdlib html/template script tag escaping in kubectl/trivy - waiting for upstream rebuild with Go 1.25.10+/1.26.3+
+    expired_at: 2026-06-22
+  # Trivy 0.70.0 transitive dependencies - fixed upstream, awaiting next Trivy release
+  - id: CVE-2026-46680
+    statement: containerd user ID handling bypass in trivy v0.70.0 (vendored v1.7.30/v2.2.2) - fixed in containerd 1.7.32/2.2.4, awaiting trivy rebuild
+    expired_at: 2026-06-22
+  - id: CVE-2026-45022
+    statement: go-git parsing flaw in trivy v0.70.0 (vendored v5.17.2) - fixed in go-git 5.19.0, awaiting trivy rebuild
+    expired_at: 2026-06-22
+  - id: CVE-2026-44973
+    statement: go-billy path traversal in trivy v0.70.0 (vendored v5.8.0) - fixed in go-billy 5.9.0, awaiting trivy rebuild
+    expired_at: 2026-06-22
 
 misconfigurations:
   # Dockerfile checks - acceptable for this use case

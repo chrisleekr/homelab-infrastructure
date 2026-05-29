@@ -1,5 +1,15 @@
 ---
-# https://longhorn.io/kb/troubleshooting-volume-with-multipath/
+# Longhorn flags Multipathd condition as False whenever the multipathd
+# service is running on a node, regardless of blacklist state. The check
+# runs `multipathd show status` and treats any non-empty output as failure.
+# Ref: https://github.com/longhorn/longhorn-manager/blob/v1.9.0/controller/monitor/environment_check_monitor.go
+# KB:  https://longhorn.io/kb/troubleshooting-volume-with-multipath/
+#
+# We keep the blacklist for defense in depth (in case the service is ever
+# unmasked manually) and stop + disable + mask the units so Longhorn's
+# environment check clears. The previous `notify: restart multipathd`
+# handler was removed intentionally: a masked unit cannot be restarted,
+# and the service is no longer expected to run on these hosts.
 
 - name: Check if /etc/multipath.conf exists
   ansible.builtin.stat:
@@ -23,4 +33,15 @@
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
     create: true
     mode: "0644"
-  notify: "restart multipathd"
+
+- name: Stop, disable and mask multipathd units
+  # Mask the socket as well: otherwise systemd re-activates multipathd.service
+  # on /dev/mapper/control access via socket activation.
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop:
+    - multipathd.service
+    - multipathd.socket
