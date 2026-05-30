@@ -8,11 +8,16 @@ scan:
   scanners:
     - vuln
     - misconfig
-  # Skip Ansible collections directory
-  # Collections contain Jinja2 templates (*.j2) that trigger Dockerfile parse errors
-  # Path: /tmp/.venv persists because shell glob '*' doesn't match dotfiles
+  # Paths are absolute within the scanned image. The CI job runs
+  # `trivy image --config trivy.yaml`, so build-context paths (e.g. container/...)
+  # never match; they must be the container filesystem paths.
+  # Third-party Ansible collections install in two locations: ansible-galaxy
+  # writes to the galaxy home (/root/.ansible/collections) while others land in
+  # the Python venv site-packages. Their test/molecule fixtures (kubernetes.core,
+  # community.okd) ship pods with default security contexts that trip
+  # KSV-0118/KSV-0014 HIGH misconfigs. Skip both trees.
   skip-dirs:
+    - "/root/.ansible"
     - "/tmp/.venv/lib/python3.12/site-packages/ansible_collections"
-    # Skip pre-commit cache - contains third-party hooks with their own Dockerfiles/manifests
-    - "container/root/.cache"
-    - "container/root/.ansible"
+    # Pre-commit cache: third-party hooks with their own Dockerfiles/manifests.
+    - "/root/.cache"

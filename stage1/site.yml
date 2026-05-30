@@ -6,9 +6,6 @@
     - role: host_setup
       tags: [host_setup]
   handlers:
-    - name: Multipathd handlers
-      ansible.builtin.import_tasks:
-        file: handlers/multipathd.yml
     - name: Fail2ban handlers
       ansible.builtin.import_tasks:
         file: handlers/fail2ban.yml
