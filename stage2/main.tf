@@ -17,6 +17,19 @@ module "nginx" {
   wireguard_port = var.wireguard_port
 }
 
+# Cloudflare Tunnel connector (cloudflared). Exposes services through Cloudflare,
+# bypassing ISP CGNAT. Tunnel/public-hostnames/DNS/Access are managed in the dashboard.
+module "cloudflare_tunnel" {
+  count      = var.cloudflare_tunnel_enable ? 1 : 0
+  depends_on = [module.nginx]
+  source     = "./cloudflare-tunnel"
+
+  cloudflare_tunnel_token         = var.cloudflare_tunnel_token
+  cloudflare_tunnel_chart_version = var.cloudflare_tunnel_chart_version
+  cloudflare_tunnel_image_tag     = var.cloudflare_tunnel_image_tag
+  cloudflare_tunnel_replica_count = var.cloudflare_tunnel_replica_count
+}
+
 module "auth" {
   depends_on = [module.nginx, module.monitoring, module.cert_manager_letsencrypt]
   source     = "./auth"

@@ -6,15 +6,17 @@ ARG BUILDPLATFORM
 ARG BUILDARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.36.1
+ARG KUBECTL_VERSION=1.36.2
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.2.0
+ARG HELM_VERSION=4.2.1
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.15.4
+ARG TERRAFORM_VERSION=1.15.7
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.51.1
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.70.0
+ARG TRIVY_VERSION=0.72.0
+# https://github.com/terraform-linters/tflint/releases
+ARG TFLINT_VERSION=v0.63.1
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -87,8 +89,8 @@ RUN set -eux; \
   # Install trivy - https://github.com/aquasecurity/trivy/releases
   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v${TRIVY_VERSION} && \
   \
-  # Install tflint
-  curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash && \
+  # Install tflint (pinned via TFLINT_VERSION env honored by the install script)
+  curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | TFLINT_VERSION="${TFLINT_VERSION}" bash && \
   \
   # Cleanup
   rm -rf /var/cache/apk/* /usr/share/doc /usr/share/man/ /usr/share/info/* /var/cache/man/* /tmp/*
