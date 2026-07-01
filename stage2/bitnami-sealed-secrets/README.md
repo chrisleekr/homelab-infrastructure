@@ -1,6 +1,6 @@
 # Sealed Secrets Module
 
-Terraform module for deploying [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) controller to Kubernetes. Enables GitOps-native secret management by encrypting secrets client-side and decrypting them in-cluster.
+Terraform module for deploying [Bitnami Sealed Secrets](https://github.com/bitnami/sealed-secrets) controller to Kubernetes. Enables GitOps-native secret management by encrypting secrets client-side and decrypting them in-cluster.
 
 ## Architecture
 
@@ -102,13 +102,13 @@ kubectl get secret -n sealed-secrets -l sealedsecrets.bitnami.com/sealed-secrets
 
 | Property | Value |
 |----------|-------|
-| Repository | <https://bitnami-labs.github.io/sealed-secrets> |
+| Repository | <https://bitnami.github.io/sealed-secrets> |
 | Chart | sealed-secrets |
 | Version | 2.18.1 |
 | App Version | 0.35.0 |
 
 ## References
 
-- [Sealed Secrets GitHub](https://github.com/bitnami-labs/sealed-secrets)
+- [Sealed Secrets GitHub](https://github.com/bitnami/sealed-secrets)
 - [ArgoCD Secret Management Best Practice](https://argo-cd.readthedocs.io/en/stable/operator-manual/secret-management/)
-- [Helm Chart Values](https://github.com/bitnami-labs/sealed-secrets/blob/main/helm/sealed-secrets/values.yaml)
+- [Helm Chart Values](https://github.com/bitnami/sealed-secrets/blob/main/helm/sealed-secrets/values.yaml)

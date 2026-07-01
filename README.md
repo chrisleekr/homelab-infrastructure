@@ -277,6 +277,7 @@ Each module has its own README with detailed configuration options:
 | [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
 | [Stakater Reloader](stage2/stakater-reloader/README.md) | Auto-restart on Secret/ConfigMap changes |
 | [LLM Gateway](stage2/llmgateway/README.md) | Unified LLM API (optional) |
+| [Cloudflare Tunnel](stage2/cloudflare-tunnel/README.md) | cloudflared connector, exposes services via Cloudflare (optional) |
 
 ## Optional Modules
 
@@ -290,6 +291,7 @@ Modules controlled by enable flags in Terraform variables:
 | Tailscale | `tailscale_enable` | `false` |
 | WireGuard | `wireguard_enable` | `false` |
 | LLM Gateway | `llmgateway_enable` | `false` |
+| Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
 
 ## Troubleshooting
 

@@ -798,3 +798,34 @@ variable "llmgateway_admin_emails" {
   sensitive   = true
   default     = ""
 }
+
+variable "cloudflare_tunnel_enable" {
+  description = "Deploy the remotely-managed Cloudflare Tunnel connector (cloudflared) into the cluster."
+  type        = bool
+  default     = false
+}
+
+variable "cloudflare_tunnel_token" {
+  description = "Cloudflare Tunnel token (sensitive). Not self-generated; Cloudflare issues it per tunnel. Get it: dashboard > Zero Trust > Networks > Tunnels > Create a tunnel > cloudflared > name it > Save; on the install screen copy the value after --token (the eyJ... string)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_tunnel_chart_version" {
+  description = "cloudflare-tunnel-remote Helm chart version. Pinned per repo convention. Reference: helm show chart cloudflare/cloudflare-tunnel-remote"
+  type        = string
+  default     = "0.1.2" # empty would resolve to latest chart and defeat pinning
+}
+
+variable "cloudflare_tunnel_image_tag" {
+  description = "cloudflared image tag to pin. Empty uses the chart default. Reference: https://github.com/cloudflare/cloudflared/releases"
+  type        = string
+  default     = ""
+}
+
+variable "cloudflare_tunnel_replica_count" {
+  description = "Number of cloudflared replicas. HA only; do not autoscale (downscaling breaks live connections)."
+  type        = number
+  default     = 2
+}
