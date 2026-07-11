@@ -627,6 +627,44 @@ variable "argocd_apps_repo_url" {
   }
 }
 
+variable "argocd_image_updater_enable" {
+  description = "Enable ArgoCD Image Updater"
+  type        = bool
+  default     = true
+}
+
+variable "container_registry_prefix" {
+  description = "Registry host that ArgoCD Image Updater scans. Must match the image prefix used in the ArgoCD app manifests."
+  type        = string
+  default     = "registry.chrislee.kr"
+}
+
+variable "container_registry_api_url" {
+  description = "Base URL of the registry API used to list tags and read manifests"
+  type        = string
+  default     = "https://registry.chrislee.kr"
+}
+
+variable "container_registry_credentials" {
+  description = "Registry read credentials as 'username:token'. GitLab deploy token with the read_registry scope."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "argocd_apps_git_username" {
+  description = "Username for the git write-back token. For a GitLab project access token this is the token name."
+  type        = string
+  default     = "argocd-image-updater"
+}
+
+variable "argocd_apps_git_password" {
+  description = "Git write-back token for the argocd-apps repository. GitLab project access token with the write_repository scope."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "auth_ingress_class_name" {
   description = "Ingress class name for the oauth2 proxy"
   type        = string

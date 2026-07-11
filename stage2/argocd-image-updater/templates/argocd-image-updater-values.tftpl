@@ -1,0 +1,34 @@
+# https://github.com/argoproj/argo-helm/blob/main/charts/argocd-image-updater/values.yaml
+
+# The chart ships the ImageUpdater CRD as a template (not a crds/ directory), so
+# `helm upgrade` reconciles it. `keep` leaves the CRD behind on uninstall.
+crds:
+  install: true
+  keep: true
+
+config:
+  git.user: "${git_user}"
+  git.email: "${git_email}"
+
+  # Both the ImageUpdater CRs and the Application CRs live in the ArgoCD namespace.
+  # Any flat key under `config` is copied verbatim into argocd-image-updater-config.
+  watch.namespaces: "${argocd_namespace}"
+
+  registries:
+    - name: Homelab GitLab
+      prefix: ${registry_prefix}
+      api_url: ${registry_api_url}
+      credentials: secret:${argocd_namespace}/container-registry-creds#creds
+      # Without credsexpire the credentials are read once at startup and never refreshed.
+      credsexpire: 5h
+      limit: 10
+
+metrics:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

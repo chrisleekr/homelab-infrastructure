@@ -237,6 +237,24 @@ module "argocd" {
 }
 
 
+# ArgoCD Image Updater — resolves mutable image tags to digests and commits them back to the
+# GitOps repository, so a CI push under an unchanged tag still reaches the cluster.
+# Reference: https://argocd-image-updater.readthedocs.io/en/stable/
+module "argocd_image_updater" {
+  count      = var.argocd_image_updater_enable ? 1 : 0
+  depends_on = [module.argocd]
+  source     = "./argocd-image-updater"
+
+  argocd_namespace = module.argocd.argocd_namespace
+
+  container_registry_prefix      = var.container_registry_prefix
+  container_registry_api_url     = var.container_registry_api_url
+  container_registry_credentials = var.container_registry_credentials
+
+  argocd_apps_git_username = var.argocd_apps_git_username
+  argocd_apps_git_password = var.argocd_apps_git_password
+}
+
 module "datadog" {
   count      = var.datadog_enable ? 1 : 0
   depends_on = [module.cert_manager_letsencrypt]
