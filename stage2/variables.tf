@@ -636,13 +636,13 @@ variable "argocd_image_updater_enable" {
 variable "container_registry_prefix" {
   description = "Registry host that ArgoCD Image Updater scans. Must match the image prefix used in the ArgoCD app manifests."
   type        = string
-  default     = "registry.chrislee.kr"
+  default     = "registry.chrislee.local"
 }
 
 variable "container_registry_api_url" {
   description = "Base URL of the registry API used to list tags and read manifests"
   type        = string
-  default     = "https://registry.chrislee.kr"
+  default     = "https://registry.chrislee.local"
 }
 
 variable "container_registry_credentials" {

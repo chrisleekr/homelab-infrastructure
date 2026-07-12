@@ -11,7 +11,7 @@ As of v1.x, Image Updater is a Kubernetes controller driven by the `ImageUpdater
 ```mermaid
 flowchart LR
     CIPipeline["CI pipeline<br/>pushes image:master"]:::infra
-    Registry["Container registry<br/>registry.chrislee.kr"]:::infra
+    Registry["Container registry<br/>registry.chrislee.local"]:::infra
     Updater["ArgoCD Image Updater<br/>this module"]:::owned
     GitOpsRepo["argocd-apps repo<br/>kustomization.yaml"]:::infra
     ArgoCD["ArgoCD"]:::infra
@@ -63,8 +63,8 @@ The namespace is **not** created here. It is owned by the `argocd` module and pa
 | Name | Description | Type | Default |
 | --- | --- | --- | --- |
 | `argocd_namespace` | Namespace holding ArgoCD, the Application CRs and the ImageUpdater CRs | `string` | required |
-| `container_registry_prefix` | Registry host to scan; must match the image prefix in the app manifests | `string` | `registry.chrislee.kr` |
-| `container_registry_api_url` | Registry API base URL | `string` | `https://registry.chrislee.kr` |
+| `container_registry_prefix` | Registry host to scan; must match the image prefix in the app manifests | `string` | `registry.chrislee.local` |
+| `container_registry_api_url` | Registry API base URL | `string` | `https://registry.chrislee.local` |
 | `container_registry_credentials` | `username:token`; GitLab deploy token with `read_registry` | `string` (sensitive) | required |
 | `argocd_apps_git_username` | Username for the write-back token | `string` | `argocd-image-updater` |
 | `argocd_apps_git_password` | GitLab project access token on `argocd-apps` with `write_repository` | `string` (sensitive) | required |
