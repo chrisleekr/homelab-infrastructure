@@ -30,6 +30,7 @@
     "coredns",
     "Corefile",
     "crds",
+    "credsexpire",
     "crictl",
     "datadoghq",
     "dotenv",

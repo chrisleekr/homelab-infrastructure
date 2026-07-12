@@ -18,7 +18,7 @@ config:
     - name: Homelab GitLab
       prefix: ${registry_prefix}
       api_url: ${registry_api_url}
-      credentials: secret:${argocd_namespace}/container-registry-creds#creds
+      credentials: "secret:${argocd_namespace}/container-registry-creds#creds"
       # Without credsexpire the credentials are read once at startup and never refreshed.
       credsexpire: 5h
       limit: 10
