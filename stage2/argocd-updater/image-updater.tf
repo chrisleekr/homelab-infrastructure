@@ -27,7 +27,7 @@ resource "helm_release" "argocd_image_updater" {
       {
         argocd_namespace = var.argocd_namespace
         git_user         = var.argocd_apps_git_username
-        git_email        = "argocd-image-updater@noreply.chrislee.kr"
+        git_email        = "argocd-image-updater@noreply.chrislee.local"
         registry_prefix  = var.container_registry_prefix
         registry_api_url = var.container_registry_api_url
       }

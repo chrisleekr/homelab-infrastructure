@@ -243,7 +243,7 @@ module "argocd" {
 module "argocd_image_updater" {
   count      = var.argocd_image_updater_enable ? 1 : 0
   depends_on = [module.argocd]
-  source     = "./argocd-image-updater"
+  source     = "./argocd-updater"
 
   argocd_namespace = module.argocd.argocd_namespace
 
