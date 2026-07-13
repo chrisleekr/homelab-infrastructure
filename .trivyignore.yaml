@@ -72,6 +72,22 @@ vulnerabilities:
     statement: github.com/sigstore/rekor OOM via unbounded gzip (tflint) - waiting for upstream rebuild with rekor >= 1.5.2
     expired_at: 2026-08-15
 
+  - id: CVE-2026-50163
+    statement: oras-go tar extraction Hardlink entry with relative Linkname escapes extract dir - waiting for upstream fix
+    expired_at: 2026-08-15
+
+  - id: CVE-2026-39822
+    statement: os golang Go os.Root Symlink following vulnerability
+    expired_at: 2026-08-15
+
+  - id: CVE-2026-42504
+    statement: mime golang Golang MIME Denial of Service via maliciously-crafted MIME header
+    expired_at: 2026-08-15
+
+  - id: CVE-2026-50151
+    statement: oras-go blob upload vulnerable to credential forwarding via unvalidated Location header
+    expired_at: 2026-08-15
+
 misconfigurations:
   # Dockerfile checks - acceptable for this use case
   - id: DS-0002
