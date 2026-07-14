@@ -1,10 +1,10 @@
 # Sealed Secrets controller decrypts SealedSecret CRDs into regular K8s Secrets.
-# Reference: https://github.com/bitnami-labs/sealed-secrets
+# Reference: https://github.com/bitnami/sealed-secrets
 resource "helm_release" "sealed_secrets" {
   depends_on = [kubernetes_namespace_v1.sealed_secrets_namespace]
 
   name       = "sealed-secrets"
-  repository = "https://bitnami-labs.github.io/sealed-secrets"
+  repository = "https://bitnami.github.io/sealed-secrets"
   chart      = "sealed-secrets"
   version    = "2.18.1" # app version 0.35.0, released 2026-02-12
   namespace  = kubernetes_namespace_v1.sealed_secrets_namespace.metadata[0].name

@@ -17,6 +17,19 @@ module "nginx" {
   wireguard_port = var.wireguard_port
 }
 
+# Cloudflare Tunnel connector (cloudflared). Exposes services through Cloudflare,
+# bypassing ISP CGNAT. Tunnel/public-hostnames/DNS/Access are managed in the dashboard.
+module "cloudflare_tunnel" {
+  count      = var.cloudflare_tunnel_enable ? 1 : 0
+  depends_on = [module.nginx]
+  source     = "./cloudflare-tunnel"
+
+  cloudflare_tunnel_token         = var.cloudflare_tunnel_token
+  cloudflare_tunnel_chart_version = var.cloudflare_tunnel_chart_version
+  cloudflare_tunnel_image_tag     = var.cloudflare_tunnel_image_tag
+  cloudflare_tunnel_replica_count = var.cloudflare_tunnel_replica_count
+}
+
 module "auth" {
   depends_on = [module.nginx, module.monitoring, module.cert_manager_letsencrypt]
   source     = "./auth"
@@ -223,6 +236,24 @@ module "argocd" {
   argocd_apps_repo_url = var.argocd_apps_repo_url
 }
 
+
+# ArgoCD Image Updater — resolves mutable image tags to digests and commits them back to the
+# GitOps repository, so a CI push under an unchanged tag still reaches the cluster.
+# Reference: https://argocd-image-updater.readthedocs.io/en/stable/
+module "argocd_image_updater" {
+  count      = var.argocd_image_updater_enable ? 1 : 0
+  depends_on = [module.argocd]
+  source     = "./argocd-updater"
+
+  argocd_namespace = module.argocd.argocd_namespace
+
+  container_registry_prefix      = var.container_registry_prefix
+  container_registry_api_url     = var.container_registry_api_url
+  container_registry_credentials = var.container_registry_credentials
+
+  argocd_apps_git_username = var.argocd_apps_git_username
+  argocd_apps_git_password = var.argocd_apps_git_password
+}
 
 module "datadog" {
   count      = var.datadog_enable ? 1 : 0

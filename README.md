@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml)
 [![Container Security](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml)
-[![Terraform](https://img.shields.io/badge/terraform-1.15.4-blue)](https://www.terraform.io/)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.1-blue)](https://kubernetes.io/)
+[![Terraform](https://img.shields.io/badge/terraform-1.15.8-blue)](https://www.terraform.io/)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.2-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Provisioning a single-node Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
@@ -77,11 +77,11 @@ homelab-infrastructure/
 <!-- VERSIONS_START - Do not remove this comment, used by sync-versions workflow -->
 | Tool | Version |
 |------|---------|
-| kubectl | 1.36.1 |
-| helm | 4.2.0 |
-| terraform | 1.15.4 |
-| taskfile | 3.51.1 |
-| trivy | 0.70.0 |
+| kubectl | 1.36.2 |
+| helm | 4.2.3 |
+| terraform | 1.15.8 |
+| taskfile | 3.52.0 |
+| trivy | 0.72.0 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 ## Quick Start
@@ -272,11 +272,13 @@ Each module has its own README with detailed configuration options:
 | [Logging](stage2/logging/README.md) | ECK (Elasticsearch, Kibana, Filebeat) |
 | [Auth](stage2/auth/README.md) | OAuth2 proxy with Auth0 |
 | [ArgoCD](stage2/argocd/README.md) | GitOps continuous deployment |
+| [ArgoCD Image Updater](stage2/argocd-updater/README.md) | Resolves mutable image tags to digests and commits them back to the GitOps repo |
 | [Kubecost](stage2/kubecost/README.md) | Cost monitoring |
 | [VPN](stage2/vpn/README.md) | Tailscale and WireGuard |
 | [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
 | [Stakater Reloader](stage2/stakater-reloader/README.md) | Auto-restart on Secret/ConfigMap changes |
 | [LLM Gateway](stage2/llmgateway/README.md) | Unified LLM API (optional) |
+| [Cloudflare Tunnel](stage2/cloudflare-tunnel/README.md) | cloudflared connector, exposes services via Cloudflare (optional) |
 
 ## Optional Modules
 
@@ -290,6 +292,8 @@ Modules controlled by enable flags in Terraform variables:
 | Tailscale | `tailscale_enable` | `false` |
 | WireGuard | `wireguard_enable` | `false` |
 | LLM Gateway | `llmgateway_enable` | `false` |
+| Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
+| ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
 
 ## Troubleshooting
 
