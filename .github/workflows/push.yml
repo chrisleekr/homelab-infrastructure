@@ -19,7 +19,7 @@ jobs:
     # needs: build
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -43,7 +43,7 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
           cache: true
 
