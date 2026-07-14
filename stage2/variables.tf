@@ -630,19 +630,30 @@ variable "argocd_apps_repo_url" {
 variable "argocd_image_updater_enable" {
   description = "Enable ArgoCD Image Updater"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "container_registry_prefix" {
   description = "Registry host that ArgoCD Image Updater scans. Must match the image prefix used in the ArgoCD app manifests."
   type        = string
   default     = "registry.chrislee.local"
+
+  validation {
+    # Host only. A scheme here would never match the image prefix in the manifests.
+    condition     = can(regex("^[a-z0-9.-]+(:[0-9]+)?$", var.container_registry_prefix))
+    error_message = "container_registry_prefix must be a registry host such as registry.example.com, with no scheme and no path"
+  }
 }
 
 variable "container_registry_api_url" {
   description = "Base URL of the registry API used to list tags and read manifests"
   type        = string
   default     = "https://registry.chrislee.local"
+
+  validation {
+    condition     = can(regex("^https?://", var.container_registry_api_url))
+    error_message = "container_registry_api_url must start with https:// or http://"
+  }
 }
 
 variable "container_registry_credentials" {
@@ -650,12 +661,23 @@ variable "container_registry_credentials" {
   type        = string
   sensitive   = true
   default     = ""
+
+  validation {
+    # Empty is allowed so the module can stay disabled. The module enforces non-empty when enabled.
+    condition     = var.container_registry_credentials == "" || can(regex("^[^:]+:[^:]+$", var.container_registry_credentials))
+    error_message = "container_registry_credentials must be empty or in 'username:token' form"
+  }
 }
 
 variable "argocd_apps_git_username" {
   description = "Username for the git write-back token. For a GitLab project access token this is the token name."
   type        = string
   default     = "argocd-image-updater"
+
+  validation {
+    condition     = length(var.argocd_apps_git_username) > 0
+    error_message = "argocd_apps_git_username must not be empty"
+  }
 }
 
 variable "argocd_apps_git_password" {
@@ -663,6 +685,8 @@ variable "argocd_apps_git_password" {
   type        = string
   sensitive   = true
   default     = ""
+
+  # No format validation: token shapes vary by GitLab version. The module enforces non-empty when enabled.
 }
 
 variable "auth_ingress_class_name" {

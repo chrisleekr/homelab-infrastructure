@@ -293,6 +293,7 @@ Modules controlled by enable flags in Terraform variables:
 | WireGuard | `wireguard_enable` | `false` |
 | LLM Gateway | `llmgateway_enable` | `false` |
 | Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
+| ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
 
 ## Troubleshooting
 

@@ -80,7 +80,7 @@ TF_VAR_argocd_apps_git_password="<project-access-token>"
 
 Then apply from `stage2`. Per-application image configuration is **not** set here — it lives in `argocd-apps` as `ImageUpdater` custom resources.
 
-`registries.conf` is read only at controller startup, so a change to the registry settings rolls the pod. That is intended.
+`registries.conf` is read once, at controller startup, so a change to the registry settings rolls the pod. That is intended.
 
 ## Helm Chart
 
