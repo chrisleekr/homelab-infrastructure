@@ -8,11 +8,11 @@ ARG BUILDARCH
 # https://dl.k8s.io/release/stable.txt
 ARG KUBECTL_VERSION=1.36.2
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.2.1
+ARG HELM_VERSION=4.2.3
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.15.7
+ARG TERRAFORM_VERSION=1.15.8
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.51.1
+ARG TASKFILE_VERSION=3.52.0
 # https://github.com/aquasecurity/trivy/releases
 ARG TRIVY_VERSION=0.72.0
 # https://github.com/terraform-linters/tflint/releases

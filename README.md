@@ -272,6 +272,7 @@ Each module has its own README with detailed configuration options:
 | [Logging](stage2/logging/README.md) | ECK (Elasticsearch, Kibana, Filebeat) |
 | [Auth](stage2/auth/README.md) | OAuth2 proxy with Auth0 |
 | [ArgoCD](stage2/argocd/README.md) | GitOps continuous deployment |
+| [ArgoCD Image Updater](stage2/argocd-updater/README.md) | Resolves mutable image tags to digests and commits them back to the GitOps repo |
 | [Kubecost](stage2/kubecost/README.md) | Cost monitoring |
 | [VPN](stage2/vpn/README.md) | Tailscale and WireGuard |
 | [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
@@ -292,6 +293,7 @@ Modules controlled by enable flags in Terraform variables:
 | WireGuard | `wireguard_enable` | `false` |
 | LLM Gateway | `llmgateway_enable` | `false` |
 | Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
+| ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
 
 ## Troubleshooting
 
