@@ -43,7 +43,7 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
           cache: true
 
