@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -53,9 +53,9 @@ jobs:
 
       # Install Trivy CLI (pinned version for consistency)
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
-          version: v0.69.3
+          version: v0.72.0
 
       # Run Trivy scan with CLI (trivy-action has .trivyignore bug)
       # https://github.com/aquasecurity/trivy-action/issues/436
