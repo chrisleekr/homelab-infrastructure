@@ -30,7 +30,7 @@ tasks:
 
   docker:build:
     cmds:
-      - ./scripts/docker-build.sh
+      - ./scripts/docker-build.sh {{.CLI_ARGS}}
 
   docker:run:
     cmds:

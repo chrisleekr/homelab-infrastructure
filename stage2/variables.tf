@@ -627,6 +627,68 @@ variable "argocd_apps_repo_url" {
   }
 }
 
+variable "argocd_image_updater_enable" {
+  description = "Enable ArgoCD Image Updater"
+  type        = bool
+  default     = false
+}
+
+variable "container_registry_prefix" {
+  description = "Registry host that ArgoCD Image Updater scans. Must match the image prefix used in the ArgoCD app manifests."
+  type        = string
+  default     = "registry.chrislee.local"
+
+  validation {
+    # Host only. A scheme here would never match the image prefix in the manifests.
+    condition     = can(regex("^[a-z0-9.-]+(:[0-9]+)?$", var.container_registry_prefix))
+    error_message = "container_registry_prefix must be a registry host such as registry.example.com, with no scheme and no path"
+  }
+}
+
+variable "container_registry_api_url" {
+  description = "Base URL of the registry API used to list tags and read manifests"
+  type        = string
+  default     = "https://registry.chrislee.local"
+
+  validation {
+    condition     = can(regex("^https?://", var.container_registry_api_url))
+    error_message = "container_registry_api_url must start with https:// or http://"
+  }
+}
+
+variable "container_registry_credentials" {
+  description = "Registry read credentials as 'username:token'. GitLab deploy token with the read_registry scope."
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    # Empty is allowed so the module can stay disabled. The module enforces non-empty when enabled.
+    condition     = var.container_registry_credentials == "" || can(regex("^[^:]+:[^:]+$", var.container_registry_credentials))
+    error_message = "container_registry_credentials must be empty or in 'username:token' form"
+  }
+}
+
+variable "argocd_apps_git_username" {
+  description = "Username for the git write-back token. For a GitLab project access token this is the token name."
+  type        = string
+  default     = "argocd-image-updater"
+
+  validation {
+    condition     = length(var.argocd_apps_git_username) > 0
+    error_message = "argocd_apps_git_username must not be empty"
+  }
+}
+
+variable "argocd_apps_git_password" {
+  description = "Git write-back token for the argocd-apps repository. GitLab project access token with the write_repository scope."
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  # No format validation: token shapes vary by GitLab version. The module enforces non-empty when enabled.
+}
+
 variable "auth_ingress_class_name" {
   description = "Ingress class name for the oauth2 proxy"
   type        = string
@@ -797,4 +859,35 @@ variable "llmgateway_admin_emails" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+variable "cloudflare_tunnel_enable" {
+  description = "Deploy the remotely-managed Cloudflare Tunnel connector (cloudflared) into the cluster."
+  type        = bool
+  default     = false
+}
+
+variable "cloudflare_tunnel_token" {
+  description = "Cloudflare Tunnel token (sensitive). Not self-generated; Cloudflare issues it per tunnel. Get it: dashboard > Zero Trust > Networks > Tunnels > Create a tunnel > cloudflared > name it > Save; on the install screen copy the value after --token (the eyJ... string)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_tunnel_chart_version" {
+  description = "cloudflare-tunnel-remote Helm chart version. Pinned per repo convention. Reference: helm show chart cloudflare/cloudflare-tunnel-remote"
+  type        = string
+  default     = "0.1.2" # empty would resolve to latest chart and defeat pinning
+}
+
+variable "cloudflare_tunnel_image_tag" {
+  description = "cloudflared image tag to pin. Empty uses the chart default. Reference: https://github.com/cloudflare/cloudflared/releases"
+  type        = string
+  default     = ""
+}
+
+variable "cloudflare_tunnel_replica_count" {
+  description = "Number of cloudflared replicas. HA only; do not autoscale (downscaling breaks live connections)."
+  type        = number
+  default     = 2
 }
