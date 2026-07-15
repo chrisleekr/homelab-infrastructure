@@ -1,0 +1,49 @@
+#cloud-config
+# Identity seed for a Raspberry Pi Kubernetes worker node.
+#
+# Copy over `user-data` on the `system-boot` partition of a freshly flashed Ubuntu Server
+# image. Networking is configured separately, in `network-config` (see the example beside
+# this file). The filename is exact: `user-data`, no extension, UTF-8 without BOM.
+#
+# It must be Ubuntu Server, not Ubuntu Desktop and not Raspberry Pi OS. See
+# docs/adding-a-worker-node.md for how to tell them apart before you boot.
+
+# MUST match the "name" of this node in worker_hosts_json. kubeadm registers the node
+# under its hostname, and Ansible addresses it by the same name.
+hostname: worker-01
+manage_etc_hosts: true
+
+# sshd stays on the DEFAULT port 22. Do not change the port in this seed: Ubuntu
+# socket-activates sshd, and a partial ssh.socket override leaves the daemon bound to
+# nothing on both ports, which locks you out with no recovery but a re-flash. Change the
+# port, if you want one, on the live node after it has joined (see docs).
+#
+# Password auth is ON as a deliberate recovery hatch during bring-up: if the SSH key below
+# is wrong, you can still log in on a monitor or over SSH and fix it rather than being
+# locked out. Harden this after the node joins (docs: "Harden the worker after join").
+ssh_pwauth: true
+
+users:
+  - name: ubuntu
+    groups: [adm, sudo]
+    shell: /bin/bash
+    # lock_passwd defaults to true in cloud-init, which disables password login entirely
+    # and removes the console recovery path. Keep it false during bring-up.
+    lock_passwd: false
+    # Required, not cosmetic. The playbook runs with --ask-become-pass, which prompts once
+    # and sends the same password to every host; a fleet with differing sudo passwords
+    # cannot work otherwise.
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA...REPLACE_WITH_YOUR_PUBLIC_KEY
+
+# Recovery password for the ubuntu user (console and SSH). REPLACE the placeholder before
+# flashing: with ssh_pwauth on and NOPASSWD sudo, a known password means anyone on the LAN
+# who reaches port 22 gets passwordless root until you run the post-join hardening. Pick a
+# strong, unique value. expire: false so first boot is not blocked by a forced change.
+chpasswd:
+  expire: false
+  users:
+    - name: ubuntu
+      password: CHANGE-ME-BEFORE-FLASHING
+      type: text

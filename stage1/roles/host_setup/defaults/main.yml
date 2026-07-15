@@ -4,6 +4,26 @@ host_setup_sshd_port: '{{ lookup("env", "server_ssh_port") or 22 }}'
 host_setup_docker_default_data_path: "/var/lib/docker"
 host_setup_etc_hosts_json: "[]"
 
+# Start: memory cgroup
+# Candidate kernel command line locations, most specific first. Only present on
+# boot-firmware hosts (ARM SBC images such as Ubuntu on Raspberry Pi); a GRUB host
+# matches none of them and the task skips.
+#
+# Ubuntu 26.04 moved the Pi image to an A/B boot layout (piboot-try), where the boot
+# assets, cmdline.txt included, live under current/ and are rotated on kernel updates.
+# A manual edit to current/cmdline.txt does NOT persist: a kernel update regenerates it,
+# so this cgroup v1 fallback may need re-applying (re-running the play re-adds the flag).
+# This is a no-op on the cgroup v2 images this repo targets, where memory is already on.
+# https://ubuntu.com/hardware/docs/boards/explanations/piboot-ab
+host_setup_boot_cmdline_paths:
+  - /boot/firmware/current/cmdline.txt # Ubuntu 26.04+ (A/B piboot-try layout)
+  - /boot/firmware/cmdline.txt # Ubuntu 24.04 and earlier
+host_setup_cgroup_kernel_args:
+  - cgroup_enable=cpuset
+  - cgroup_enable=memory
+  - cgroup_memory=1
+# Finish: memory cgroup
+
 # Start: install packages
 host_setup_install_packages:
   - ca-certificates

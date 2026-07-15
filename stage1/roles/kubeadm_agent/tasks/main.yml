@@ -1,0 +1,85 @@
+---
+- name: Check if node has already joined the cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubeadm_agent_kubelet_conf
+
+- name: Join node to the cluster
+  when: not kubeadm_agent_kubelet_conf.stat.exists
+  block:
+    - name: Create bootstrap token on the control plane
+      ansible.builtin.command: "kubeadm token create --ttl {{ kubeadm_agent_token_ttl }}"
+      delegate_to: "{{ groups['server'][0] }}"
+      register: kubeadm_agent_token_result
+      changed_when: true
+      no_log: true # bootstrap token grants cluster join rights
+
+    - name: Read CA certificate hash from the control plane
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt |
+          openssl rsa -pubin -outform der 2>/dev/null |
+          openssl dgst -sha256 -hex | sed 's/^.* //'
+        executable: /bin/bash
+      delegate_to: "{{ groups['server'][0] }}"
+      register: kubeadm_agent_ca_hash_result
+      changed_when: false
+
+    - name: Set join facts
+      ansible.builtin.set_fact:
+        kubeadm_agent_token: "{{ kubeadm_agent_token_result.stdout | trim }}"
+        kubeadm_agent_ca_hash: "{{ kubeadm_agent_ca_hash_result.stdout | trim }}"
+      no_log: true
+
+    - name: Ensure the kubernetes config directory exists
+      # A node that has not joined yet has no /etc/kubernetes; kubeadm creates it during
+      # join, but the config file is written before that. template does not create parents.
+      ansible.builtin.file:
+        path: "{{ kubeadm_agent_join_config_path | dirname }}"
+        state: directory
+        mode: "0755"
+
+    - name: Create kubeadm join config
+      ansible.builtin.template:
+        src: kubeadm-join-config.yaml.j2
+        dest: "{{ kubeadm_agent_join_config_path }}"
+        mode: "0600" # contains the bootstrap token
+      no_log: true
+
+    - name: Join the cluster
+      ansible.builtin.command: "kubeadm join --config {{ kubeadm_agent_join_config_path }}"
+      register: kubeadm_agent_join
+      changed_when: kubeadm_agent_join.rc == 0
+
+    - name: Remove the join config now the node has joined
+      # The config holds the bootstrap token, a cluster-join credential. Do not leave it on
+      # disk past the handshake. Inside the join block, so re-runs (already joined) skip it.
+      ansible.builtin.file:
+        path: "{{ kubeadm_agent_join_config_path }}"
+        state: absent
+
+# Labels run on every pass, not just on join, so relabelling an existing worker is a
+# matter of editing worker_hosts_json and re-running.
+#
+# Labels in the kubernetes.io namespace cannot be self-set by kubelet (NodeRestriction
+# admission), so they are applied from the control plane rather than via the join config.
+# Taints carry no such restriction, which is why they live in the join config instead.
+- name: Wait for the node to register with the API server
+  ansible.builtin.command: "kubectl get node {{ inventory_hostname }}"
+  delegate_to: "{{ groups['server'][0] }}"
+  register: kubeadm_agent_node_registered
+  until: kubeadm_agent_node_registered.rc == 0
+  retries: 12
+  delay: 5
+  changed_when: false
+
+- name: Label the worker node from the control plane
+  ansible.builtin.command: >-
+    kubectl label node {{ inventory_hostname }}
+    {{ item.key }}={{ item.value }} --overwrite
+  delegate_to: "{{ groups['server'][0] }}"
+  loop: "{{ kubeadm_agent_labels | combine({'node-role.kubernetes.io/worker': ''}) | dict2items }}"
+  register: kubeadm_agent_label
+  # kubectl label prints "not labeled" when the value is already set.
+  changed_when: "'not labeled' not in kubeadm_agent_label.stdout"

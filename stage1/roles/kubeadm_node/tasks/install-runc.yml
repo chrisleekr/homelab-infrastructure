@@ -1,0 +1,66 @@
+---
+- name: Check if runc exists
+  ansible.builtin.stat:
+    path: /usr/local/sbin/runc
+  register: kubeadm_node_runc_file
+
+# $ runc --version
+# runc version 1.1.13
+# commit: v1.1.13-0-g58aa9203-dirty
+# spec: 1.0.2-dev
+# go: go1.21.11
+# libseccomp: 2.5.5
+
+- name: Get runc installed version
+  ansible.builtin.command: /usr/local/sbin/runc --version
+  register: kubeadm_node_runc_version_output
+  changed_when: false
+  failed_when: false
+
+- name: Set runc installed version
+  when:
+    - kubeadm_node_runc_version_output.rc == 0
+    - kubeadm_node_runc_version_output.stdout_lines | length > 0
+  ansible.builtin.set_fact:
+    kubeadm_node_runc_installed_version: "{{ kubeadm_node_runc_version_output.stdout_lines[0] | regex_replace('^runc version ([0-9.]+).*$', '\\1') }}"
+
+- name: Debug runc installed version
+  ansible.builtin.debug:
+    msg: "Runc installed version: {{ kubeadm_node_runc_installed_version | default('Not installed') }}"
+    verbosity: 2
+
+- name: Display runc version information
+  ansible.builtin.debug:
+    msg: |
+      Current runc version: {{ kubeadm_node_runc_installed_version | default('Not installed') }}
+      Target runc version: {{ runc_version }}
+      Upgrade needed: {{ (kubeadm_node_runc_installed_version is defined and kubeadm_node_runc_installed_version is version(runc_version, '<')) | default(true) }}
+    verbosity: 2
+
+- name: Install or upgrade runc
+  when: >
+    not kubeadm_node_runc_file.stat.exists or
+    (kubeadm_node_runc_version_output.rc != 0) or
+    (kubeadm_node_runc_installed_version is defined and kubeadm_node_runc_installed_version is version(runc_version, '<'))
+  block:
+    - name: Download runc
+      ansible.builtin.get_url:
+        url: "https://github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.{{ node_architecture }}"
+        dest: /usr/local/sbin/runc
+        mode: "0755"
+        force: true
+
+    - name: Verify runc version after download
+      ansible.builtin.command: /usr/local/sbin/runc --version
+      register: kubeadm_node_runc_post_download_version
+      changed_when: false
+
+    - name: Display runc post download version
+      ansible.builtin.debug:
+        msg: "{{ kubeadm_node_runc_post_download_version.stdout }}"
+        verbosity: 2
+
+    - name: Display downloaded runc version
+      ansible.builtin.debug:
+        msg: "Downloaded runc version: {{ (kubeadm_node_runc_post_download_version.stdout_lines[0] | regex_replace('^runc version (.*)$', '\\1')) }}"
+        verbosity: 2

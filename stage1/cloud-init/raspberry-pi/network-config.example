@@ -1,0 +1,51 @@
+# Network seed for a Raspberry Pi Kubernetes worker node.
+#
+# Copy over `network-config` on the `system-boot` partition, beside `user-data`.
+# The filename is exact: `network-config`, no extension, UTF-8 without BOM.
+#
+# This is netplan v2 format, and is the mechanism the Ubuntu Pi image documents for this
+# (see the README on the boot partition). meta-data sets `dsmode: local`, so cloud-init
+# applies this BEFORE bringing the network up: the node comes up directly on its static
+# address rather than taking a DHCP lease first and switching.
+#
+# The address here must match "host" for this node in worker_hosts_json.
+#
+# Note: cloud-init only applies this on FIRST boot. To change the address later, edit
+# /etc/netplan/50-cloud-init.yaml on the node and run `netplan apply`, or re-flash.
+
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: false
+      addresses: [192.168.1.101/24]
+      routes:
+        - to: default
+          via: 192.168.1.1
+      nameservers:
+        addresses: [192.168.1.1, 1.1.1.1]
+      # `optional: true` lets boot proceed without waiting for this link. Leave it false
+      # (the default) on the interface the node actually needs: cloud-init would otherwise
+      # start before the network is ready.
+      optional: false
+
+  # --- Wifi ---
+  # Uncomment to use wifi, and delete the `ethernets` block above if wifi is the only
+  # link. wpasupplicant ships with the image, so nothing needs installing on first boot.
+  #
+  # Prefer ethernet for a worker: a Pi pulling containerd, kubelet and container images
+  # over wifi is slow, and a flaky link makes the node flap between Ready and NotReady.
+  #
+  # wifis:
+  #   wlan0:
+  #     dhcp4: false
+  #     addresses: [192.168.1.102/24]
+  #     routes:
+  #       - to: default
+  #         via: 192.168.1.1
+  #     nameservers:
+  #       addresses: [192.168.1.1, 1.1.1.1]
+  #     access-points:
+  #       "YOUR_SSID":
+  #         password: "YOUR_WIFI_PASSWORD"
+  #     optional: false
