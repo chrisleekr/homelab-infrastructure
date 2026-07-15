@@ -28,6 +28,12 @@
 
 - name: Server setup on cluster, not related with kubernetes
   hosts: cluster
+  # serial: 1 sidesteps an ansible-core AnsiballZ module-cache race: parallel host forks
+  # building the same module archive collide on the shared cache file's -part rename and
+  # one fails with ENOENT (ansible/ansible#16489). Only bites plays with >1 host, which is
+  # new here (host_setup moved from `hosts: server` to `hosts: cluster`). One host at a
+  # time is fine at homelab scale.
+  serial: 1
   become: true
   roles:
     - role: host_setup
@@ -100,6 +106,9 @@
 # when the agent group is empty ("skipping: no hosts matched").
 - name: Kubernetes worker setup
   hosts: agent
+  # serial: 1 for the same AnsiballZ cache race as the cluster play above, and it also
+  # serialises the join (one bootstrap token created on the control plane at a time).
+  serial: 1
   become: true
   pre_tasks:
     - name: Gather service state information as fact data
