@@ -49,7 +49,7 @@ For full documentation, see [README.md](README.md).
 - **GitLab AMD64 only**: Check `host_machine_architecture` variable; GitLab skipped on ARM64
 - **Module dependencies**: Defined in `stage2/main.tf` - respect `depends_on` chains
 - **Validation**: Always run `task precommit` before suggesting commits
-- **Secrets**: Never hardcode; use Terraform Cloud variables or `.env` (gitignored)
+- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/bitwarden-secrets-setup.md), injected at runtime; `.env` holds only the bws token
 - **Pre-commit hooks**: ansible-lint, terraform_fmt, terraform_validate, trivy, gitleaks
 
 ## Security & Best Practices
@@ -63,7 +63,7 @@ For full documentation, see [README.md](README.md).
 
 **Operational Security:**
 
-- **Secrets Management**: Terraform Cloud variables, never committed to Git
+- **Secrets Management**: Bitwarden Secrets Manager (bws), never committed to Git
 - **Regular Updates**: Automated package updates and security patching
 - **Monitoring**: Comprehensive alerting for security and operational events
 - **Backup Strategy**: Automated GitLab backups with retention policies

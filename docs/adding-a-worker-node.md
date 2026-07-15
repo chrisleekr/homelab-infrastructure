@@ -19,7 +19,7 @@ flowchart TD
     Flash["Raspberry Pi only: flash Ubuntu Server arm64<br/>Imager, no customisation"]:::step
     Seed["Raspberry Pi only: copy user-data and<br/>network-config onto system-boot"]:::step
     Boot["First boot: hostname, static IP or wifi,<br/>SSH key, passwordless sudo"]:::step
-    Env["Append the node to worker_hosts_json in .env"]:::step
+    Env["Add the node to the worker_hosts_json secret in Bitwarden"]:::step
     Play["task stage1:ansible:playbook:worker"]:::run
     Ready["Node Ready, tainted, opt-in only"]:::done
 
@@ -130,10 +130,11 @@ This is the only manual touch in the process.
 
 ## 4. Declare the node
 
-Add the node to `worker_hosts_json` in `.env`. One JSON object per worker:
+Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escaping needed — `bws run`
+injects it natively). One JSON object per worker:
 
-```bash
-worker_hosts_json=[{"name":"worker-01","host":"192.168.1.203","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
+```json
+[{"name":"worker-01","host":"192.168.1.203","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
 | Key | Required | Default | Notes |
@@ -197,7 +198,7 @@ Three ways to change the policy, in increasing order of scope:
 
 - **One schedulable worker**: give that node `"taints": []` in `worker_hosts_json`.
 - **A different taint for one node**: give that node its own `taints` list, e.g. a GPU key.
-- **A different fleet-wide default**: set `worker_default_taints` in `.env`.
+- **A different fleet-wide default**: set the `worker_default_taints` secret in Bitwarden.
 
 ## Harden the worker after join
 

@@ -47,7 +47,7 @@ If Ansible fails to connect to the target server:
    ssh-add
    ```
 
-3. Check that the SSH port in `.env` matches the server configuration.
+3. Check that the SSH port (the `server_ssh_port` secret in Bitwarden) matches the server configuration.
 
 ## Stage 2: Terraform
 
@@ -146,10 +146,11 @@ GitLab (`registry.gitlab.com/gitlab-org/build/cng/kubectl`) does not support ARM
 
 ### Checking Current Architecture
 
-The architecture is set in `.env`:
+The architecture is set by the `host_machine_architecture` secret in Bitwarden (`amd64` or `arm64`).
+Check the injected value inside the container:
 
 ```bash
-host_machine_architecture=amd64    # or arm64
+echo "$host_machine_architecture"    # amd64 or arm64
 ```
 
 ## Getting Help

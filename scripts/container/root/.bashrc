@@ -10,6 +10,24 @@ BLUE="\033[0;34m"
 CYAN="\033[0;36m"
 NOCOLOR="\033[0m"
 
+# --- Bitwarden Secrets Manager auto-load (guarded, fail-open to a usable shell) ---
+# The load logic lives in /root/bws-load.sh (shared with the `bws-load` reload command below).
+# The BWS_LOADED guard stops the recursion when the child bash re-sources this file: without it,
+# each injected shell would re-run `bws run -- bash` forever.
+if [ -n "$BWS_LOADED" ]; then
+  # Inside the injected child shell: the access token has served its purpose. Drop it so it is
+  # not inherited by terraform/ansible or any subprocess (limits the read-scoped credential's
+  # blast radius). The injected TF_VAR_*/config secrets stay.
+  unset BWS_ACCESS_TOKEN
+elif [ -z "$BWS_SKIP" ] && [[ $- == *i* ]]; then
+  # shellcheck source=/dev/null
+  [ -f /root/bws-load.sh ] && source /root/bws-load.sh
+fi
+
+# Refresh Bitwarden secrets in the CURRENT shell without restarting the container. Clears the
+# re-entry guard and re-execs bash, which re-runs the loader above and pulls the latest secrets.
+bws-load() { unset BWS_LOADED; exec bash; }
+
 echo '           __________
          .'\''----------'\''.
          | .--------. |
@@ -27,12 +45,6 @@ echo '           __________
 # Run ssh-agent/ssh-add to make sure SSH key is added to ssh agent
 eval "$(ssh-agent)"
 ssh-add
-
-# Source /srv/.env
-if [ -f /srv/.env ]; then
-  # shellcheck source=/dev/null
-  source /srv/.env
-fi
 
 # Activate virtualenv
 # shellcheck source=/dev/null

@@ -56,6 +56,11 @@ tasks:
         --exit-code 1
         chrisleekr/homelab-infrastructure:latest
 
+  bws:run:
+    desc: 'Run a command with Bitwarden secrets injected. Example: task bws:run -- terraform -chdir=stage2 plan'
+    cmds:
+      - bws run ${BWS_PROJECT_ID:+--project-id "$BWS_PROJECT_ID"} -- {{.CLI_ARGS}}
+
   stage1:ansible:ping:
     desc: Verify access to the cluster
     dir: stage1

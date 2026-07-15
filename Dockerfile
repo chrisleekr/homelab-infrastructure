@@ -17,6 +17,8 @@ ARG TASKFILE_VERSION=3.52.0
 ARG TRIVY_VERSION=0.72.0
 # https://github.com/terraform-linters/tflint/releases
 ARG TFLINT_VERSION=v0.63.1
+# https://github.com/bitwarden/sdk-sm/releases
+ARG BWS_VERSION=2.1.0
 
 # BUILDPLATFORM=linux/arm64/v8, TARGETPLATFORM=linux/arm64/v8, BUILDARCH=arm64
 RUN echo "BUILDPLATFORM=$BUILDPLATFORM, TARGETPLATFORM=$TARGETPLATFORM, BUILDARCH=$BUILDARCH"
@@ -91,6 +93,22 @@ RUN set -eux; \
   \
   # Install tflint (pinned via TFLINT_VERSION env honored by the install script)
   curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | TFLINT_VERSION="${TFLINT_VERSION}" bash && \
+  \
+  # Install bws (Bitwarden Secrets Manager CLI). Native musl build, so no gcompat needed.
+  # https://github.com/bitwarden/sdk-sm/releases
+  case "${BUILDARCH}" in \
+  amd64) BWS_TARGET="x86_64-unknown-linux-musl" ;; \
+  arm64) BWS_TARGET="aarch64-unknown-linux-musl" ;; \
+  *) echo "unsupported arch for bws: ${BUILDARCH}" && exit 1 ;; \
+  esac && \
+  BWS_BASE="https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}" && \
+  curl -fsSL "${BWS_BASE}/bws-${BWS_TARGET}-${BWS_VERSION}.zip" -o bws.zip && \
+  curl -fsSL "${BWS_BASE}/bws-sha256-checksums-${BWS_VERSION}.txt" -o bws-sums.txt && \
+  grep "bws-${BWS_TARGET}-${BWS_VERSION}.zip" bws-sums.txt | awk '{print $1"  bws.zip"}' | sha256sum -c - && \
+  unzip -o bws.zip -d /usr/local/bin && \
+  chmod +x /usr/local/bin/bws && \
+  rm bws.zip bws-sums.txt && \
+  bws --version && \
   \
   # Cleanup
   rm -rf /var/cache/apk/* /usr/share/doc /usr/share/man/ /usr/share/info/* /var/cache/man/* /tmp/*
