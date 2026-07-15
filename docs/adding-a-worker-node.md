@@ -117,7 +117,7 @@ network, and restarts `ssh.socket` on the new port.
 Confirm you can reach it (use `wlan0` instead of `eth0` if you configured wifi):
 
 ```bash
-ssh ubuntu@192.168.1.203 'hostname; ip -4 addr | grep inet; sudo -n true && echo "passwordless sudo OK"'
+ssh ubuntu@192.168.1.102 'hostname; ip -4 addr | grep inet; sudo -n true && echo "passwordless sudo OK"'
 ```
 
 Expect the hostname you set, the static address, and `passwordless sudo OK`. All three
@@ -134,7 +134,7 @@ Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escapin
 injects it natively). One JSON object per worker:
 
 ```json
-[{"name":"worker-01","host":"192.168.1.203","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
+[{"name":"worker-01","host":"192.168.1.102","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
 | Key | Required | Default | Notes |
@@ -207,7 +207,7 @@ Once the node has joined and key-based SSH is confirmed working, close that hatc
 
 ```bash
 # confirm key auth works first — this must succeed WITHOUT prompting for a password:
-ssh -o PasswordAuthentication=no ubuntu@192.168.1.203 true && echo "key auth OK"
+ssh -o PasswordAuthentication=no ubuntu@192.168.1.102 true && echo "key auth OK"
 
 # then disable password auth and lock the password
 sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config.d/*.conf 2>/dev/null
@@ -237,7 +237,7 @@ printf '[Socket]\nListenStream=\nListenStream=2222\n' | sudo tee /etc/systemd/sy
 sudo systemctl daemon-reload && sudo systemctl restart ssh.socket
 
 # 3. from ANOTHER terminal, confirm the new port works BEFORE closing the old session:
-ssh -p 2222 ubuntu@192.168.1.203 true && echo "2222 OK"
+ssh -p 2222 ubuntu@192.168.1.102 true && echo "2222 OK"
 ```
 
 Then set `"port": "2222"` for this node in `worker_hosts_json` and open it in the firewall.
