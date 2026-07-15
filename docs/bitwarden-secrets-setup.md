@@ -40,8 +40,6 @@ bws run --project-id <id> -- terraform -chdir=stage2 plan
 > **Important:** Bitwarden **cloud** is required. Vaultwarden does **not** implement Secrets Manager.
 > The free tier covers this repo (unlimited secrets, 3 projects, 3 machine accounts).
 
-> **Important:** Bitwarden **cloud** is required. Vaultwarden does **not** implement Secrets Manager.
-> The free tier covers this repo (unlimited secrets, 3 projects, 3 machine accounts).
 
 ## 1. Install the `bws` CLI locally
 
