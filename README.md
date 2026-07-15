@@ -52,7 +52,7 @@ homelab-infrastructure/
 ├── Dockerfile                    # Alpine container with all tools
 ├── Taskfile.yml                  # Task runner (primary command interface)
 ├── .pre-commit-config.yaml       # Pre-commit hooks configuration
-└── .env.sample                   # Environment variable template
+└── .env.example                  # Bitwarden access-token template (secrets live in Bitwarden)
 ```
 
 ## Build & Commands
@@ -115,13 +115,17 @@ homelab-infrastructure/
 
 ### Stage 0: Setup the Environment
 
-1. Copy the `.env.sample` file to a new file named `.env` and configure it accordingly.
+1. Secrets and configuration are stored in **Bitwarden Secrets Manager** and injected into the
+   container at runtime. Copy the template and set only the two Bitwarden values:
 
    ```bash
-   cp .env.sample .env
+   cp .env.example .env
+   #   BWS_ACCESS_TOKEN=<machine-account access token>
+   #   BWS_PROJECT_ID=<id from `bws project list`>
    ```
 
-   - Make sure to set `kubernetes_cluster_type` to either `k3s` or `kubeadm`.
+   - Follow [docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md) to install `bws`,
+     create the secrets (including `kubernetes_cluster_type` = `k3s` or `kubeadm`), and verify.
    - Note that `minikube` can be provisioned but failed to work with the current setup.
 
 2. Ensure that you have an SSH key file ready for use with Ubuntu (e.g., `~/.ssh/id_rsa.pub`).
@@ -178,22 +182,16 @@ homelab-infrastructure/
 
 ## Configuration Management
 
-**Environment Variables (.env file):**
+**Secrets & configuration (Bitwarden Secrets Manager):**
 
-```bash
-# Kubernetes cluster configuration
-kubernetes_cluster_type=kubeadm    # kubeadm, k3s, or minikube
-server_ssh_host=192.168.1.100      # Target server IP
-server_ssh_user=ubuntu             # SSH username
-server_ssh_port=2222               # SSH port (must not be 22)
+All secrets and configuration values (e.g. `kubernetes_cluster_type`, `server_ssh_host`,
+`host_machine_architecture`, `docker_default_data_path`, and every `TF_VAR_*`) are stored as secrets in
+a Bitwarden Secrets Manager project. The container's `.bashrc` runs `bws run` on entry and injects them
+as environment variables, so Terraform and Ansible pick them up unchanged.
 
-# Architecture support
-host_machine_architecture=amd64    # amd64 or arm64
-
-# Additional configuration
-docker_default_data_path=/var/lib/docker
-etc_hosts_json=[]                  # Custom host entries
-```
+The local `.env` holds only `BWS_ACCESS_TOKEN` and `BWS_PROJECT_ID`. Values are stored **flattened**
+(no `${...}` interpolation). Full walkthrough and the per-variable reference:
+[docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md).
 
 **Terraform Variables:**
 

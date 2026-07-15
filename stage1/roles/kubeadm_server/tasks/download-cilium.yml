@@ -35,7 +35,7 @@
 
 - name: Debug cilium installed version
   ansible.builtin.debug:
-    msg: "Cilium installed version: {{ kubeadm_server_cilium_installed_version }}"
+    msg: "Cilium installed version: {{ kubeadm_server_cilium_installed_version | default('Not installed') }}"
 
 - name: Display cilium version information
   ansible.builtin.debug:

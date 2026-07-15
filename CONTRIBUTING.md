@@ -136,8 +136,8 @@ The following hooks are configured:
 
 ## Security Guidelines
 
-- **Never commit secrets** - Use Terraform Cloud variables or `.env` files (gitignored)
-- **Never commit `.env` files** - They contain sensitive configuration
+- **Never commit secrets** - Store them in Bitwarden Secrets Manager (see [docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md)); the container injects them at runtime
+- **Never commit `.env` files** - The gitignored `.env` holds only `BWS_ACCESS_TOKEN` / `BWS_PROJECT_ID`
 - **Use SSH keys** - Never commit private keys
 - **Pin versions** - Always pin tool and chart versions
 

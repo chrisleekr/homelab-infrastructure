@@ -19,7 +19,7 @@ flowchart TD
     Flash["Raspberry Pi only: flash Ubuntu Server arm64<br/>Imager, no customisation"]:::step
     Seed["Raspberry Pi only: copy user-data and<br/>network-config onto system-boot"]:::step
     Boot["First boot: hostname, static IP or wifi,<br/>SSH key, passwordless sudo"]:::step
-    Env["Append the node to worker_hosts_json in .env"]:::step
+    Env["Add the node to the worker_hosts_json secret in Bitwarden"]:::step
     Play["task stage1:ansible:playbook:worker"]:::run
     Ready["Node Ready, tainted, opt-in only"]:::done
 
@@ -117,7 +117,7 @@ network, and restarts `ssh.socket` on the new port.
 Confirm you can reach it (use `wlan0` instead of `eth0` if you configured wifi):
 
 ```bash
-ssh ubuntu@192.168.1.203 'hostname; ip -4 addr | grep inet; sudo -n true && echo "passwordless sudo OK"'
+ssh ubuntu@192.168.1.102 'hostname; ip -4 addr | grep inet; sudo -n true && echo "passwordless sudo OK"'
 ```
 
 Expect the hostname you set, the static address, and `passwordless sudo OK`. All three
@@ -130,10 +130,11 @@ This is the only manual touch in the process.
 
 ## 4. Declare the node
 
-Add the node to `worker_hosts_json` in `.env`. One JSON object per worker:
+Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escaping needed — `bws run`
+injects it natively). One JSON object per worker:
 
-```bash
-worker_hosts_json=[{"name":"worker-01","host":"192.168.1.203","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
+```json
+[{"name":"worker-01","host":"192.168.1.102","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
 | Key | Required | Default | Notes |
@@ -197,7 +198,7 @@ Three ways to change the policy, in increasing order of scope:
 
 - **One schedulable worker**: give that node `"taints": []` in `worker_hosts_json`.
 - **A different taint for one node**: give that node its own `taints` list, e.g. a GPU key.
-- **A different fleet-wide default**: set `worker_default_taints` in `.env`.
+- **A different fleet-wide default**: set the `worker_default_taints` secret in Bitwarden.
 
 ## Harden the worker after join
 
@@ -206,7 +207,7 @@ Once the node has joined and key-based SSH is confirmed working, close that hatc
 
 ```bash
 # confirm key auth works first — this must succeed WITHOUT prompting for a password:
-ssh -o PasswordAuthentication=no ubuntu@192.168.1.203 true && echo "key auth OK"
+ssh -o PasswordAuthentication=no ubuntu@192.168.1.102 true && echo "key auth OK"
 
 # then disable password auth and lock the password
 sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config.d/*.conf 2>/dev/null
@@ -236,7 +237,7 @@ printf '[Socket]\nListenStream=\nListenStream=2222\n' | sudo tee /etc/systemd/sy
 sudo systemctl daemon-reload && sudo systemctl restart ssh.socket
 
 # 3. from ANOTHER terminal, confirm the new port works BEFORE closing the old session:
-ssh -p 2222 ubuntu@192.168.1.203 true && echo "2222 OK"
+ssh -p 2222 ubuntu@192.168.1.102 true && echo "2222 OK"
 ```
 
 Then set `"port": "2222"` for this node in `worker_hosts_json` and open it in the firewall.
