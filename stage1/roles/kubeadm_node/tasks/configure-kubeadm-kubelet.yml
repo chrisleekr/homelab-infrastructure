@@ -11,7 +11,9 @@
   failed_when: false
 
 - name: Set kubeadm installed version
-  when: kubeadm_node_version_output.rc == 0
+  when:
+    - kubeadm_node_version_output.rc == 0
+    - kubeadm_node_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
     kubeadm_node_installed_version: "{{ kubeadm_node_version_output.stdout | regex_replace('^v(.*)$', '\\1') }}"
 
