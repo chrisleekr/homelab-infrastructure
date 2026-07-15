@@ -75,7 +75,7 @@
       ansible.builtin.file:
         path: /etc/systemd/system/kubelet.service.d
         state: directory
-        mode: "0644"
+        mode: "0755" # a dir needs the traversal bit; 0644 blocks reading the drop-in
 
     - name: Download 10-kubeadm.conf
       vars:
@@ -103,11 +103,14 @@
       ansible.builtin.systemd:
         daemon_reload: true
 
-    - name: Enable and start kubelet service
-      ansible.builtin.systemd:
-        name: kubelet
-        enabled: true
-        state: started
+# Outside the install block so a re-run heals a stopped or disabled kubelet even when the
+# binary is already current (the block above is skipped in that case). systemd state is
+# idempotent, so this is a no-op when kubelet is already enabled and running.
+- name: Ensure kubelet is enabled and started
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
 
 # Cluster upgrade (`kubeadm upgrade apply`) is control-plane only and lives in
 # kubeadm_server/tasks/upgrade-control-plane.yml. Workers need `kubeadm upgrade node`.

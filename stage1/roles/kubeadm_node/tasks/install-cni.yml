@@ -67,8 +67,9 @@
 
     - name: Display CNI post download version
       ansible.builtin.debug:
-        msg: "{{ kubeadm_node_cni_post_download_version.stdout }}"
+        # macvlan --version writes to stderr, matching the fact-gathering above.
+        msg: "{{ kubeadm_node_cni_post_download_version.stderr }}"
 
     - name: Display downloaded CNI version
       ansible.builtin.debug:
-        msg: "Downloaded CNI version: {{ (kubeadm_node_cni_post_download_version.stdout | regex_replace('^CNI macvlan plugin v([0-9.]+).*$', '\\1')) }}"
+        msg: "Downloaded CNI version: {{ (kubeadm_node_cni_post_download_version.stderr_lines[0] | regex_replace('^CNI macvlan plugin v([0-9.]+).*$', '\\1')) }}"

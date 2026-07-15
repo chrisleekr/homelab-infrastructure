@@ -62,5 +62,5 @@
 
     - name: Display downloaded runc version
       ansible.builtin.debug:
-        msg: "Downloaded runc version: {{ (kubeadm_node_runc_post_download_version.stdout | regex_replace('^runc version (.*)$', '\\1')) }}"
+        msg: "Downloaded runc version: {{ (kubeadm_node_runc_post_download_version.stdout_lines[0] | regex_replace('^runc version (.*)$', '\\1')) }}"
         verbosity: 2
