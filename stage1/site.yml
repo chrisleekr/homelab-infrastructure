@@ -1,6 +1,33 @@
 ---
+# Workers come from worker_hosts_json rather than static inventory entries, so the fleet
+# scales by editing .env alone. An unset or empty list adds no hosts, leaving the `agent`
+# group empty and every worker play a no-op: that is the single-node cluster.
+- name: Register worker hosts from environment
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tags: [always]
+  tasks:
+    - name: Add worker hosts to agent group
+      ansible.builtin.add_host:
+        name: "{{ item.name }}"
+        groups: agent
+        ansible_host: "{{ item.host }}"
+        ansible_user: "{{ item.user | default('ubuntu') }}"
+        ansible_port: "{{ item.port | default(22) }}"
+        # Extra keys become host vars. default() without its boolean arg substitutes only
+        # when the key is absent, so an explicit "taints": [] survives and means
+        # "schedulable". Passing `true` here would treat the empty list as falsey and
+        # silently reimpose the default, making an untainted worker inexpressible.
+        node_taints: "{{ item.taints | default(worker_default_taints) }}"
+        node_labels: "{{ item.labels | default({}) }}"
+      loop: "{{ worker_hosts_json }}"
+      loop_control:
+        label: "{{ item.name }}"
+      changed_when: false
+
 - name: Server setup on cluster, not related with kubernetes
-  hosts: server
+  hosts: cluster
   become: true
   roles:
     - role: host_setup
@@ -12,6 +39,14 @@
     - name: APT Cache handlers
       ansible.builtin.import_tasks:
         file: handlers/apt-cache.yml
+    - name: Reboot handlers
+      ansible.builtin.import_tasks:
+        file: handlers/reboot.yml
+  # Handlers flush at end of play, so a kernel cmdline change (memory cgroups) reboots
+  # here, before the kubeadm plays below need a working kubelet.
+  post_tasks:
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
 
 - name: Kubernetes setup
   hosts: server
@@ -60,6 +95,33 @@
     - name: Minikube handlers
       ansible.builtin.import_tasks:
         file: handlers/minikube.yml
+
+# Runs after the control plane is initialised, so the join target exists. Skipped entirely
+# when the agent group is empty ("skipping: no hosts matched").
+- name: Kubernetes worker setup
+  hosts: agent
+  become: true
+  pre_tasks:
+    - name: Gather service state information as fact data
+      ansible.builtin.service_facts:
+  tasks:
+    - name: Setup kubeadm worker
+      when: kubernetes_cluster_type == 'kubeadm'
+      tags: [kubeadm_agent]
+      block:
+        - name: Include kubeadm worker preparation
+          ansible.builtin.include_role:
+            name: kubeadm_pre_setup
+        - name: Include kubeadm worker join
+          ansible.builtin.include_role:
+            name: kubeadm_agent
+  handlers:
+    - name: Sysctl handlers
+      ansible.builtin.import_tasks:
+        file: handlers/sysctl.yml
+    - name: Systemd handlers
+      ansible.builtin.import_tasks:
+        file: handlers/systemd.yml
 
 - name: Post setup on local
   hosts: localhost

@@ -6,11 +6,11 @@
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.2-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> Provisioning a single-node Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
+> Provisioning a Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
 
 ## Overview
 
-A comprehensive two-stage infrastructure-as-code solution for provisioning single-node Kubernetes clusters with enterprise-grade applications. Uses Ansible for server setup and Kubernetes cluster bootstrap, followed by Terraform for deploying a complete application stack including GitLab, monitoring, storage, VPN, and CI/CD tools.
+A comprehensive two-stage infrastructure-as-code solution for provisioning Kubernetes clusters with enterprise-grade applications. Uses Ansible for server setup and Kubernetes cluster bootstrap, followed by Terraform for deploying a complete application stack including GitLab, monitoring, storage, VPN, and CI/CD tools.
 
 **Core Architecture:**
 
@@ -20,9 +20,10 @@ A comprehensive two-stage infrastructure-as-code solution for provisioning singl
 
 **Supported Platforms:**
 
-- **Target**: Ubuntu AMD64 servers (GitLab limitation)
+- **Control plane**: Ubuntu AMD64 (GitLab has no ARM64 image)
+- **Workers**: optional, AMD64 or ARM64 (e.g. a Raspberry Pi). Architecture is detected per host. See [Adding a worker node](docs/adding-a-worker-node.md).
 - **Kubernetes Options**: kubeadm (recommended), k3s (alternative), minikube (experimental)
-- **Infrastructure**: Single-node clusters optimized for homelab environments
+- **Infrastructure**: Single control-plane node, optimized for homelab environments
 
 ## Project Structure
 

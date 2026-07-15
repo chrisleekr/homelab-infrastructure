@@ -1,0 +1,7 @@
+---
+# Kernel command line changes (memory cgroups on ARM SBC images) only take effect after a
+# reboot. Reconnects on the host's own ansible_port.
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+    msg: "Rebooting to apply kernel command line changes"

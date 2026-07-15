@@ -1,0 +1,38 @@
+---
+# Node-level setup shared by the control plane (kubeadm_server) and workers
+# (kubeadm_agent). Both roles pull this in via a meta dependency, so container
+# runtime and kubelet stay identical across the cluster.
+- name: Assert the node architecture is supported
+  # node_architecture (inventory) is a bare dict lookup on ansible_facts['architecture'];
+  # an unsupported value (a 32-bit armv7l flash is the usual cause) would otherwise fail
+  # with a cryptic KeyError the first time it is templated into a download URL.
+  ansible.builtin.assert:
+    that: ansible_facts['architecture'] in ['x86_64', 'aarch64']
+    fail_msg: >-
+      Unsupported architecture '{{ ansible_facts['architecture'] }}'. Only x86_64 (amd64)
+      and aarch64 (arm64) are supported; re-flash with 64-bit Ubuntu Server.
+    quiet: true
+
+- name: Install runc
+  ansible.builtin.include_tasks: install-runc.yml
+  tags: [container_runtime]
+
+- name: Install cni
+  ansible.builtin.include_tasks: install-cni.yml
+  tags: [container_runtime]
+
+- name: Configure containerd
+  ansible.builtin.include_tasks: configure-containerd.yml
+  tags: [container_runtime]
+
+- name: Install nerdctl
+  ansible.builtin.include_tasks: install-nerdctl.yml
+  tags: [container_tools]
+
+- name: Install crictl
+  ansible.builtin.include_tasks: install-crictl.yml
+  tags: [container_tools]
+
+- name: Configure kubeadm and kubelet
+  ansible.builtin.include_tasks: configure-kubeadm-kubelet.yml
+  tags: [k8s_install]
