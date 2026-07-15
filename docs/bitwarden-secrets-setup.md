@@ -31,12 +31,10 @@ in place — no need to exit the container:
 bws-load        # clears the guard and re-execs bash, pulling the latest secrets
 ```
 
-For a one-off command with secrets injected (host or CI, non-interactive), use `bws run` directly or the
-Taskfile wrapper:
+For a one-off command with secrets injected (host or CI, non-interactive), wrap it with `bws run`:
 
 ```bash
-task bws:run -- terraform -chdir=stage2 plan
-# equivalent to: bws run --project-id <id> -- terraform -chdir=stage2 plan
+bws run --project-id <id> -- terraform -chdir=stage2 plan
 ```
 
 > **Important:** Bitwarden **cloud** is required. Vaultwarden does **not** implement Secrets Manager.
