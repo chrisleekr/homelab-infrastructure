@@ -68,6 +68,12 @@ tasks:
     cmds:
       - ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml
 
+  stage1:ansible:playbook:worker:
+    desc: Provision and join worker nodes only, leaving the control plane untouched
+    dir: stage1
+    cmds:
+      - ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml --limit 'localhost:agent' --skip-tags post_setup
+
   stage2:terraform:init:
     desc: Initialize Terraform
     dir: stage2

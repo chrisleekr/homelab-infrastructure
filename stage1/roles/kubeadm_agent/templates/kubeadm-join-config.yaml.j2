@@ -1,0 +1,16 @@
+#jinja2: trim_blocks:True, lstrip_blocks:True
+# Managed by Ansible (stage1/roles/kubeadm_agent). Contains a bootstrap token.
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    token: "{{ kubeadm_agent_token }}"
+    apiServerEndpoint: "{{ api_endpoint }}:6443"
+    caCertHashes:
+      - "sha256:{{ kubeadm_agent_ca_hash }}"
+nodeRegistration:
+  name: "{{ inventory_hostname }}"
+  criSocket: "{{ kubeadm_agent_cri_socket }}"
+  # Taints are applied by kubelet at registration, so there is no window in which a pod
+  # can be scheduled here before the node is tainted. An empty list means schedulable.
+  taints: {{ kubeadm_agent_taints | to_json }}

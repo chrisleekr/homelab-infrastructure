@@ -30,3 +30,7 @@
 - name: Disable swap
   ansible.builtin.include_tasks: disable-swap.yml
   tags: [system]
+
+- name: Enable memory cgroup
+  ansible.builtin.include_tasks: enable-memory-cgroup.yml
+  tags: [system]

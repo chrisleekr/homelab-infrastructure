@@ -1,0 +1,55 @@
+---
+# Enable the memory cgroup controller only where it is genuinely missing. cgroup v2 (the
+# default on every Ubuntu since 21.10, so 22.04/24.04/26.04) puts the memory controller on
+# the unified hierarchy and enables it by default, so this is a no-op there. Only legacy
+# cgroup v1 images, notably older Raspberry Pi / ARM SBC builds, ship it off, and kubelet
+# then dies with "missing cgroups: memory".
+#
+# Gate on the controller actually being absent, not on hardware or on a cmdline file
+# existing. cmdline.txt exists on every Pi image regardless of cgroup version, so gating on
+# it would edit and reboot on every run under cgroup v2 while changing nothing. Worse, the
+# Ubuntu 26.04 A/B piboot-try layout regenerates current/cmdline.txt from its own source on
+# kernel updates, so the edit would not even persist.
+- name: Detect whether the memory cgroup controller is already available
+  # cgroup.controllers exists only under cgroup v2 and lists the enabled controllers. It is
+  # absent on cgroup v1, where the kernel command line edit below is the fallback.
+  ansible.builtin.slurp:
+    src: /sys/fs/cgroup/cgroup.controllers
+  register: host_setup_cgroup_controllers
+  failed_when: false
+
+- name: Enable the memory cgroup controller on the kernel command line (cgroup v1 only)
+  when: >-
+    'memory' not in (host_setup_cgroup_controllers.content | default('') | b64decode).split()
+  block:
+    - name: Locate the kernel command line
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: host_setup_cmdline_candidates
+      loop: "{{ host_setup_boot_cmdline_paths }}"
+
+    - name: Select the kernel command line
+      ansible.builtin.set_fact:
+        host_setup_boot_cmdline_path: >-
+          {{ host_setup_cmdline_candidates.results
+             | selectattr('stat.exists')
+             | map(attribute='stat.path')
+             | first | default('') }}
+
+    - name: Report the kernel command line in use
+      ansible.builtin.debug:
+        msg: >-
+          {{ host_setup_boot_cmdline_path | default('', true) | ternary(
+               'Kernel command line: ' ~ host_setup_boot_cmdline_path,
+               'No boot firmware command line found; skipping memory cgroup setup.') }}
+
+    - name: Enable memory and cpuset cgroups on the kernel command line
+      when: host_setup_boot_cmdline_path | length > 0
+      ansible.builtin.replace:
+        path: "{{ host_setup_boot_cmdline_path }}"
+        # cmdline.txt is a single line of space-separated args. Append only what is absent:
+        # the negative lookahead makes the match fail once the flag is present.
+        regexp: '^(?!.*\b{{ item | regex_escape }}\b)(.+)$'
+        replace: '\1 {{ item }}'
+      loop: "{{ host_setup_cgroup_kernel_args }}"
+      notify: Reboot host

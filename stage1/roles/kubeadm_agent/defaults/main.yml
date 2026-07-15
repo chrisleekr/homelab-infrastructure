@@ -1,0 +1,10 @@
+---
+# Bootstrap tokens are short-lived by design: they are only needed for the join handshake.
+kubeadm_agent_token_ttl: 30m
+kubeadm_agent_join_config_path: /etc/kubernetes/kubeadm-join-config.yaml
+kubeadm_agent_cri_socket: unix:///run/containerd/containerd.sock
+
+# Per-node taints/labels are set as host vars by the add_host play in site.yml.
+# Defaulted here so the role still works against a statically declared host.
+kubeadm_agent_taints: "{{ node_taints | default([]) }}"
+kubeadm_agent_labels: "{{ node_labels | default({}) }}"

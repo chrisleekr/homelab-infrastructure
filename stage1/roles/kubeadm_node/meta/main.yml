@@ -1,0 +1,4 @@
+---
+# Container runtime and kubelet, shared by the control plane (kubeadm_server) and
+# workers (kubeadm_agent).
+dependencies: []
