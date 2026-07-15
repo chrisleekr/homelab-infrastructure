@@ -10,4 +10,4 @@ kubernetes==36.0.1
 urllib3>=2.7.0
 # Pin cryptography to fix CVE-2026-26007 (HIGH) - Subgroup Attack on SECT Curves
 # Reference: https://seclists.org/oss-sec/2026/q1/161
-cryptography>=46.0.5
+cryptography>=48.0.0
