@@ -1,0 +1,116 @@
+---
+- name: Check if kubelet exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/kubelet.service
+  register: kubeadm_node_kubelet_stat
+
+- name: Get kubeadm installed version
+  ansible.builtin.command: kubeadm version --output=short
+  register: kubeadm_node_version_output
+  changed_when: false
+  failed_when: false
+
+- name: Set kubeadm installed version
+  when: kubeadm_node_version_output.rc == 0
+  ansible.builtin.set_fact:
+    kubeadm_node_installed_version: "{{ kubeadm_node_version_output.stdout | regex_replace('^v(.*)$', '\\1') }}"
+
+- name: Display version information
+  ansible.builtin.debug:
+    msg: |
+      Current kubeadm version: {{ kubeadm_node_installed_version | default('Not installed') }}
+      Target kubeadm version: {{ kubeadm_version }}
+      Upgrade needed: {{ (kubeadm_node_installed_version is defined and kubeadm_node_installed_version is version(kubeadm_version, '<')) | default(true) }}
+
+- name: Download kubeadm and kubelet
+  when: >
+    not kubeadm_node_kubelet_stat.stat.exists or
+    (kubeadm_node_version_output.rc != 0) or
+    (kubeadm_node_installed_version is defined and kubeadm_node_installed_version is version(kubeadm_version, '<'))
+  block:
+    # Using loop instead of with_items per Ansible best practices:
+    # https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html
+    - name: Download kubeadm and kubelet
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ node_architecture }}/{{ item }}"
+        dest: /usr/local/bin/{{ item }}
+        mode: "0755"
+        force: true
+      loop:
+        - kubeadm
+        - kubelet
+
+    - name: Verify kubeadm binary version after download
+      ansible.builtin.command: /usr/local/bin/kubeadm version --output=short
+      register: kubeadm_node_kubeadm_post_download_version
+      changed_when: false
+
+    - name: Display downloaded kubeadm version
+      ansible.builtin.debug:
+        msg: "Downloaded kubeadm version: {{ kubeadm_node_kubeadm_post_download_version.stdout }}"
+
+    - name: Download kubelet.service file
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubelet/kubelet.service"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/kubelet.service
+        mode: "0644"
+
+    - name: Replace /usr/bin with /usr/local/bin in kubelet.service file
+      ansible.builtin.replace:
+        path: /tmp/kubelet.service
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy kubelet.service file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/kubelet.service
+        dest: /etc/systemd/system/kubelet.service
+        remote_src: true
+        mode: "0644"
+
+    - name: Create /etc/systemd/system/kubelet.service.d directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/kubelet.service.d
+        state: directory
+        mode: "0755" # a dir needs the traversal bit; 0644 blocks reading the drop-in
+
+    - name: Download 10-kubeadm.conf
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubeadm/10-kubeadm.conf"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/10-kubeadm.conf
+        mode: "0644"
+
+    - name: Replace /usr/bin with /usr/local/bin in 10-kubeadm.conf file
+      ansible.builtin.replace:
+        path: /tmp/10-kubeadm.conf
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy 10-kubeadm.conf file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/10-kubeadm.conf
+        dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        remote_src: true
+        mode: "0644"
+
+    - name: Reload systemd daemon after binary update
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+# Outside the install block so a re-run heals a stopped or disabled kubelet even when the
+# binary is already current (the block above is skipped in that case). systemd state is
+# idempotent, so this is a no-op when kubelet is already enabled and running.
+- name: Ensure kubelet is enabled and started
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
+
+# Cluster upgrade (`kubeadm upgrade apply`) is control-plane only and lives in
+# kubeadm_server/tasks/upgrade-control-plane.yml. Workers need `kubeadm upgrade node`.

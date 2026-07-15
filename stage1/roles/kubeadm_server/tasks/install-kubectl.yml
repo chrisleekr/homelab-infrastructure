@@ -33,7 +33,7 @@
   block:
     - name: Download kubectl
       ansible.builtin.get_url:
-        url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/{{ host_machine_architecture }}/kubectl"
+        url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/{{ node_architecture }}/kubectl"
         dest: /usr/local/sbin/kubectl
         mode: "0755"
         force: true

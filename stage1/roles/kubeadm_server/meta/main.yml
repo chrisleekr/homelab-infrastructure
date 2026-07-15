@@ -1,0 +1,4 @@
+---
+dependencies:
+  # Container runtime and kubelet. Runs before this role's own tasks.
+  - role: kubeadm_node

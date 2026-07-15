@@ -4,47 +4,47 @@
 
 - name: Get containerd installed version
   ansible.builtin.command: /usr/local/bin/containerd --version
-  register: kubeadm_server_containerd_version_output
+  register: kubeadm_node_containerd_version_output
   changed_when: false
   failed_when: false
 
 # - name: Debug containerd installed version
 #   ansible.builtin.debug:
 #     msg: |
-#       Containerd version output: {{ kubeadm_server_containerd_version_output.stdout }}
-#       Containerd version output lines: {{ kubeadm_server_containerd_version_output.stdout_lines }}
-#       Containerd version output stderr lines: {{ kubeadm_server_containerd_version_output.stderr_lines }}
-#       Containerd version output stderr: {{ kubeadm_server_containerd_version_output.stderr }}
-#       Containerd version output rc: {{ kubeadm_server_containerd_version_output.rc }}
+#       Containerd version output: {{ kubeadm_node_containerd_version_output.stdout }}
+#       Containerd version output lines: {{ kubeadm_node_containerd_version_output.stdout_lines }}
+#       Containerd version output stderr lines: {{ kubeadm_node_containerd_version_output.stderr_lines }}
+#       Containerd version output stderr: {{ kubeadm_node_containerd_version_output.stderr }}
+#       Containerd version output rc: {{ kubeadm_node_containerd_version_output.rc }}
 
 - name: Set containerd installed version
   when:
-    - kubeadm_server_containerd_version_output.rc == 0
-    - kubeadm_server_containerd_version_output.stdout_lines | length > 0
+    - kubeadm_node_containerd_version_output.rc == 0
+    - kubeadm_node_containerd_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
-    kubeadm_server_containerd_installed_version: "{{ kubeadm_server_containerd_version_output.stdout_lines[0] | regex_replace('^containerd .* v([0-9.]+).*$', '\\1') }}"
+    kubeadm_node_containerd_installed_version: "{{ kubeadm_node_containerd_version_output.stdout_lines[0] | regex_replace('^containerd .* v([0-9.]+).*$', '\\1') }}"
 
 - name: Debug containerd installed version
   ansible.builtin.debug:
-    msg: "Containerd installed version: {{ kubeadm_server_containerd_installed_version }}"
+    msg: "Containerd installed version: {{ kubeadm_node_containerd_installed_version | default('Not installed') }}"
 
 - name: Display containerd version information
   ansible.builtin.debug:
     msg: |
-      Current containerd version: {{ kubeadm_server_containerd_installed_version | default('Not installed') }}
+      Current containerd version: {{ kubeadm_node_containerd_installed_version | default('Not installed') }}
       Target containerd version: {{ containerd_version }}
-      Upgrade needed: {{ (kubeadm_server_containerd_installed_version is defined and kubeadm_server_containerd_installed_version is version(containerd_version, '<')) | default(true) }}
+      Upgrade needed: {{ (kubeadm_node_containerd_installed_version is defined and kubeadm_node_containerd_installed_version is version(containerd_version, '<')) | default(true) }}
 
 - name: Install containerd
   when: >
     'containerd.service' not in ansible_facts.services or ansible_facts.services['containerd.service'].state != 'running' or
-    (kubeadm_server_containerd_version_output.rc != 0) or
-    (kubeadm_server_containerd_installed_version is defined and kubeadm_server_containerd_installed_version is version(containerd_version, '<'))
+    (kubeadm_node_containerd_version_output.rc != 0) or
+    (kubeadm_node_containerd_installed_version is defined and kubeadm_node_containerd_installed_version is version(containerd_version, '<'))
   block:
     - name: Download containerd tarball
       vars:
         base_url: "https://github.com/containerd/containerd/releases/download"
-        path: "containerd-{{ containerd_version }}-linux-{{ host_machine_architecture }}.tar.gz"
+        path: "containerd-{{ containerd_version }}-linux-{{ node_architecture }}.tar.gz"
       ansible.builtin.get_url:
         url: "{{ base_url }}/v{{ containerd_version }}/{{ path }}"
         dest: "/tmp/{{ path }}"
@@ -53,7 +53,7 @@
 
     - name: Extract containerd tarball to /usr/local
       ansible.builtin.unarchive:
-        src: "/tmp/containerd-{{ containerd_version }}-linux-{{ host_machine_architecture }}.tar.gz"
+        src: "/tmp/containerd-{{ containerd_version }}-linux-{{ node_architecture }}.tar.gz"
         dest: /usr/local
         remote_src: true
 
@@ -78,12 +78,12 @@
 
     - name: Generate default containerd config
       ansible.builtin.command: containerd config default
-      register: kubeadm_server_containerd_default_config
+      register: kubeadm_node_containerd_default_config
       changed_when: false
 
     - name: Write containerd config.toml with SystemdCgroup enabled
       ansible.builtin.copy:
-        content: "{{ kubeadm_server_containerd_default_config.stdout
+        content: "{{ kubeadm_node_containerd_default_config.stdout
                      | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
         dest: /etc/containerd/config.toml
         mode: "0644"

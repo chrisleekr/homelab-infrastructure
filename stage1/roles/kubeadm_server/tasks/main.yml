@@ -1,26 +1,7 @@
 ---
-- name: Install runc
-  ansible.builtin.include_tasks: install-runc.yml
-  tags: [container_runtime]
-
-- name: Install cni
-  ansible.builtin.include_tasks: install-cni.yml
-  tags: [container_runtime]
-
-- name: Configure containerd
-  ansible.builtin.include_tasks: configure-containerd.yml
-  tags: [container_runtime]
-
-- name: Install nerdctl
-  ansible.builtin.include_tasks: install-nerdctl.yml
-  tags: [container_tools]
-
-- name: Install crictl
-  ansible.builtin.include_tasks: install-crictl.yml
-  tags: [container_tools]
-
-- name: Configure kubeadm and kubelet
-  ansible.builtin.include_tasks: configure-kubeadm-kubelet.yml
+# Container runtime and kubelet come from the kubeadm_node role (meta dependency).
+- name: Upgrade kubeadm control plane
+  ansible.builtin.include_tasks: upgrade-control-plane.yml
   tags: [k8s_install]
 
 - name: Install kubectl
