@@ -36,7 +36,7 @@ resource "kubernetes_secret_v1" "frontend_basic_auth" {
 # and Longhorn only evaluates it the first time it detects a node. Labelling here keeps the
 # storage topology reproducible: without it a rebuilt control plane gets no disk and every
 # PVC stays Pending, with nothing failing at apply time to signal why.
-data "kubernetes_nodes" "control_plane" {
+data "kubernetes_nodes" "longhorn_control_plane" {
   metadata {
     labels = {
       "node-role.kubernetes.io/control-plane" = ""
@@ -60,7 +60,7 @@ resource "kubernetes_labels" "longhorn_default_disk" {
   kind        = "Node"
 
   metadata {
-    name = data.kubernetes_nodes.control_plane.nodes[0].metadata[0].name
+    name = data.kubernetes_nodes.longhorn_control_plane.nodes[0].metadata[0].name
   }
 
   labels = {
