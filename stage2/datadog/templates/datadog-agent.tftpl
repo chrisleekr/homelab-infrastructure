@@ -29,8 +29,10 @@ spec:
     liveProcessCollection:
       enabled: true
 
+    # NPM has never emitted network.*/dns.* metrics or flows on this cluster, yet Datadog
+    # bills an NPM host monthly. system-probe still runs regardless, required by oomKill below.
     npm:
-      enabled: true
+      enabled: false
 
     # Enables Misconfigurations
     cspm:
@@ -66,3 +68,12 @@ spec:
     # https://docs.datadoghq.com/integrations/helm/?tab=operatorv150#configuration
     helmCheck:
       enabled: true
+
+  override:
+    nodeAgent:
+      # Exists on the bare key tolerates any node.homelab/class value, so the agent covers
+      # current and future tainted workers instead of the control plane alone.
+      tolerations:
+        - key: node.homelab/class
+          operator: Exists
+          effect: NoSchedule

@@ -137,6 +137,7 @@ terraform apply
 | APM | Distributed tracing (requires app instrumentation) |
 | Cluster Agent | Kubernetes events and metadata |
 | Admission Controller | Auto-injection of tracing libraries |
+| NPM | **Disabled** - see Cost Considerations |
 
 ## Datadog Sites
 
@@ -161,6 +162,10 @@ For homelab use, consider:
 - Free tier: 5 hosts, limited retention
 - Reducing log volume with filtering
 - Disabling APM if not needed
+
+NPM (`features.npm`) is disabled. It bills a per-host NPM charge monthly, and this cluster
+never emitted the `network.*`/`dns.*` data to justify it. Disabling it does not remove the
+`system-probe` container, which `features.oomKill` requires independently.
 
 ## References
 
