@@ -170,11 +170,21 @@ kubectl get pods -A -o wide --field-selector spec.nodeName=worker-01
 ```
 
 Expect the node `Ready` with the architecture of the machine you added (`ARCH=arm64` for a
-Pi, `amd64` for an x86 box), carrying the `node.homelab/class=low-power:NoSchedule`
-taint, and running **only** `cilium`, `kube-proxy` and `node-exporter`.
+Pi, `amd64` for an x86 box), carrying its `node.homelab/class:NoSchedule` taint, and running
+only the components that deliberately tolerate it:
+
+| Component | Why it tolerates the taint |
+|-----------|----------------------------|
+| `cilium`, `kube-proxy` | CNI and service proxy, required on every node |
+| `node-exporter` | Node metrics |
+| `longhorn-manager`, `longhorn-csi-plugin`, `instance-manager`, `engine-image` | Let pods here mount Longhorn volumes. Replicas do **not** land on the worker: it has no `node.longhorn.io/create-default-disk=true` label, so Longhorn gives it no disk |
+| `datadog-agent` | Node metrics, logs and OOM-kill events |
 
 Anything else running there tolerates the taint unexpectedly and should be pinned back to
 the control plane with a `nodeSelector` in stage2.
+
+The Longhorn and Datadog tolerations match on the taint key alone (`operator: Exists`), so
+they cover any `node.homelab/class` value rather than one specific class.
 
 ## Scheduling onto the worker
 

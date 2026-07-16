@@ -20,6 +20,27 @@ defaultSettings:
   defaultReplicaCount: 1
   backupCompressionMethod: "gzip"
   snapshotMaxCount: 3
+  # Covers system-managed components only (CSI driver, instance-manager, engine-image).
+  # Omitting the value means operator Exists, which is deliberate: taint values vary per
+  # worker (worker_hosts_json sets them per node, e.g. worker-low-power), so matching on the
+  # key alone covers every worker without edits here.
+  # Danger Zone setting: Longhorn will not reconcile it into a component that has running
+  # engines or replicas, so this Setting CR can read APPLIED=false indefinitely while newly
+  # joined nodes still receive the toleration. See README.md "Applying toleration changes".
+  taintToleration: "node.homelab/class:NoSchedule"
+  # Keeps workers compute-only: Longhorn provisions a default disk only on nodes carrying
+  # node.longhorn.io/create-default-disk=true, so replicas never land on worker disks.
+  createDefaultDiskLabeledNodes: true
+
+# defaultSettings.taintToleration covers system-managed components only. longhorn-manager is
+# the one user-deployed component that must run wherever volumes mount, so it needs a
+# Helm-level toleration. The driver-deployer and UI are Deployments with no reason to sit on
+# a worker, and a toleration would only make them eligible for one.
+longhornManager:
+  tolerations:
+    - key: node.homelab/class
+      operator: Exists
+      effect: NoSchedule
 
 ingress:
   enabled: true
