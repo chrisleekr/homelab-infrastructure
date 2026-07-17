@@ -84,13 +84,14 @@ resource "helm_release" "gitlab" {
 
         persistence_storage_class_name = var.gitlab_persistence_storage_class_name
 
-        toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
-        toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
+        toolbox_backups_cron_persistence_size   = var.gitlab_toolbox_backups_cron_persistence_size
+        toolbox_backups_cron_storage_class_name = kubernetes_storage_class_v1.gitlab_backup_ephemeral.metadata[0].name
+        toolbox_persistence_size                = var.gitlab_toolbox_persistence_size
 
         postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
 
         redis_master_persistence_size = var.gitlab_redis_master_persistence_size
-        gitlay_persistence_size       = var.gitlab_gitlay_persistence_size
+        gitaly_persistence_size       = var.gitlab_gitaly_persistence_size
 
         # Auth0 configuration
         auth0_provider_secret = kubernetes_secret_v1.gitlab_auth0_provider.metadata[0].name

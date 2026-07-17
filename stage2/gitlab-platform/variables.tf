@@ -114,10 +114,12 @@ variable "gitlab_redis_master_persistence_size" {
   default     = "20Gi"
 }
 
-variable "gitlab_gitlay_persistence_size" {
-  description = "The size of the gitlay persistence"
+variable "gitlab_gitaly_persistence_size" {
+  description = "The size of the gitaly persistence"
   type        = string
-  default     = "20Gi"
+  # Backs a StatefulSet volumeClaimTemplate, which cannot be updated. Must match gitaly's existing
+  # volume, which is 50Gi because the misspelled "gitlay" key left the chart default in force.
+  default = "50Gi"
 }
 
 variable "gitlab_runner_authentication_token" {

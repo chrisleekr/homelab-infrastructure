@@ -201,8 +201,9 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_gitlab_certmanager_issuer_email` | | `chris@chrislee.local` | Issuer email |
 | `TF_VAR_gitlab_postgresql_primary_persistence_size` | | `20Gi` | Postgres volume |
 | `TF_VAR_gitlab_redis_master_persistence_size` | | `20Gi` | Redis volume |
-| `TF_VAR_gitlab_gitlay_persistence_size` | | `20Gi` | Gitaly volume |
-| `TF_VAR_gitlab_toolbox_persistence_size` | | `40Gi` | Toolbox/backup volume |
+| `TF_VAR_gitlab_gitaly_persistence_size` | | `50Gi` | Gitaly volume. Backs a StatefulSet claim template, which is immutable, so this must match the existing volume |
+| `TF_VAR_gitlab_toolbox_persistence_size` | | `20Gi` | Toolbox volume |
+| `TF_VAR_gitlab_toolbox_backups_cron_persistence_size` | | `30Gi` | Backup staging volume |
 | `TF_VAR_gitlab_runner_authentication_token` | 🔑 | GitLab → Admin → CI/CD → Runners → New instance runner (allow untagged) | Registers the CI runner |
 | `TF_VAR_gitlab_minio_host` | | `minio.chrislee.local` | Object storage host |
 | `TF_VAR_gitlab_minio_endpoint` | | `https://minio.chrislee.local` | Object storage endpoint |

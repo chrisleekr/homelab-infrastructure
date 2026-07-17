@@ -306,16 +306,18 @@ variable "gitlab_redis_master_persistence_size" {
   }
 }
 
-variable "gitlab_gitlay_persistence_size" {
-  description = "The size of the gitlay persistence"
+variable "gitlab_gitaly_persistence_size" {
+  description = "The size of the gitaly persistence"
   type        = string
-  default     = "20Gi"
+  # Backs a StatefulSet volumeClaimTemplate, which cannot be updated. Must match gitaly's existing
+  # volume, which is 50Gi because the misspelled "gitlay" key left the chart default in force.
+  default = "50Gi"
 
   # Validate Kubernetes storage size format per Kubernetes quantity spec
   # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_gitlay_persistence_size))
-    error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_gitaly_persistence_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 50Gi, 1.5Ti, 500Mi)"
   }
 }
 

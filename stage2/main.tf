@@ -118,7 +118,7 @@ module "gitlab_platform" {
 
   gitlab_postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
   gitlab_redis_master_persistence_size       = var.gitlab_redis_master_persistence_size
-  gitlab_gitlay_persistence_size             = var.gitlab_gitlay_persistence_size
+  gitlab_gitaly_persistence_size             = var.gitlab_gitaly_persistence_size
 
   gitlab_runner_authentication_token = var.gitlab_runner_authentication_token
 

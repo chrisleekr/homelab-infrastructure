@@ -9,6 +9,9 @@ controller:
   addHeaders:
     Referrer-Policy: strict-origin-when-cross-origin
   config:
+    # Defaults to "auto", one worker per host core, each holding its own memory. That scales with
+    # the node rather than with the traffic, which for a homelab-sized ingress load is waste.
+    worker-processes: "2"
     annotation-value-word-blocklist: "load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount,{,},',\""
     hsts: "true"
     hsts-include-subdomains: "false"
