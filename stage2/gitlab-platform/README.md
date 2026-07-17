@@ -115,6 +115,10 @@ sequenceDiagram
 - `kubernetes_secret.gitlab_toolbox_s3cmd` - Backup toolbox config
 - `kubernetes_secret.gitlab_auth0_provider` - Auth0 OIDC config
 
+### Storage
+
+- `kubernetes_storage_class_v1.gitlab_backup_ephemeral` - `Delete`-reclaim class for the nightly backup's ephemeral volume
+
 ### Helm Release
 
 - `helm_release.gitlab` - GitLab Helm chart
@@ -129,6 +133,7 @@ sequenceDiagram
 | `gitlab_global_hosts_host_suffix` | Subdomain suffix | `""` |
 | `gitlab_global_hosts_https` | Use HTTPS | `true` |
 | `gitlab_global_hosts_external_ip` | External LoadBalancer IP | `""` |
+| `gitlab_time_zone` | GitLab application timezone | `Australia/Melbourne` |
 
 ### Ingress Configuration
 
@@ -154,11 +159,11 @@ sequenceDiagram
 | Name | Description | Default |
 |------|-------------|---------|
 | `gitlab_persistence_storage_class_name` | Storage class | `longhorn` |
-| `gitlab_toolbox_backups_cron_persistence_size` | Backup PVC size | `20Gi` |
+| `gitlab_toolbox_backups_cron_persistence_size` | Backup staging volume size, per-pod ephemeral | `30Gi` |
 | `gitlab_toolbox_persistence_size` | Toolbox PVC size | `20Gi` |
 | `gitlab_postgresql_primary_persistence_size` | PostgreSQL PVC size | `20Gi` |
 | `gitlab_redis_master_persistence_size` | Redis PVC size | `20Gi` |
-| `gitlab_gitlay_persistence_size` | Gitaly PVC size | `20Gi` |
+| `gitlab_gitaly_persistence_size` | Gitaly PVC size | `50Gi` |
 
 ### CI/CD Runner
 
@@ -257,6 +262,14 @@ kubectl -n gitlab exec -it $(kubectl -n gitlab get pod -l app=toolbox -o name) -
 ### Scheduled Backups
 
 Backups are configured to run via CronJob and stored in MinIO `gitlab-backups` bucket.
+
+Each run stages its tarball on its own generic ephemeral volume, garbage-collected with the pod, so
+no shared claim can wedge the schedule. That volume uses a dedicated `Delete`-reclaim StorageClass
+(`backup-storageclass.tf`); the shared `longhorn` class is `Retain` and would strand a volume nightly.
+
+Jobs are capped at 3h (`activeDeadlineSeconds: 10800`), generous against a healthy run. Without a
+deadline a stuck backup runs indefinitely, and `concurrencyPolicy: Replace` then deletes it on the
+next schedule, leaving no failed job behind to notice.
 
 ## Troubleshooting
 

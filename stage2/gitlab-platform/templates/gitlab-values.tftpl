@@ -432,7 +432,12 @@ certmanager-issuer:
 
 ## Installation & configuration of jetstack/cert-manager
 ## See requirements.yaml for current version
-## Note: install and rbac properties removed in GitLab chart 9.x - using external cert-manager
+## The cluster already runs cert-manager in its own namespace, so the bundled copy is not wanted.
+## chart 9.x renamed `certmanager.install` to the top-level `installCertmanager` (Chart.yaml gates
+## the dependency on it). Leaving it unset kept the default of true, so a second, redundant
+## cert-manager ran here in leader-election standby.
+installCertmanager: false
+
 certmanager:
   installCRDs: false
 
@@ -785,6 +790,22 @@ gitlab-runner:
           namespace = "{{.Release.Namespace}}"
           image = "docker:stable"
           privileged = true
+          # Without these, job pods are BestEffort and invisible to the scheduler: it cannot
+          # account for them, so concurrent jobs overcommit the node. Requests sit near the typical
+          # job and limits well above it, so they bound a runaway rather than throttle normal
+          # builds. Re-derive both from actual job usage before changing them.
+          cpu_request = "200m"
+          cpu_limit = "2"
+          memory_request = "512Mi"
+          memory_limit = "5Gi"
+          helper_cpu_request = "50m"
+          helper_cpu_limit = "500m"
+          helper_memory_request = "128Mi"
+          helper_memory_limit = "3Gi"
+          service_cpu_request = "50m"
+          service_cpu_limit = "1"
+          service_memory_request = "128Mi"
+          service_memory_limit = "2Gi"
           [runners.cache]
             Type = "s3"
             Path = "gitlab-runner"
@@ -820,16 +841,22 @@ traefik:
 ## Settings for individual sub-charts under GitLab
 ## Note: Many of these settings are configurable via globals
 gitlab:
-  gitlay:
-    enabled: true
+  # Was misspelled "gitlay" since the initial commit. The chart has no such key, so Helm silently
+  # discarded this whole block: gitaly kept the chart default 50Gi and was never scraped.
+  # Do not add `enabled` here. Chart 9.11.3 removed `gitlab.gitaly.enabled` and its removal check
+  # fires on the key existing at all, at any value, failing the upgrade. It lives at
+  # `global.gitaly.enabled` instead, which is already set above.
+  gitaly:
     persistence:
-      size: ${gitlay_persistence_size}
+      # Backs a StatefulSet volumeClaimTemplate, which Kubernetes forbids updating, so this must
+      # match the volume gitaly already has.
+      size: ${gitaly_persistence_size}
     metrics:
       enabled: true
       port: 9236
       path: /metrics
       serviceMonitor:
-        enabled: truie
+        enabled: true
         additionalLabels:
           release: kube-prometheus-stack
         endpointConfig: {}
@@ -843,7 +870,15 @@ gitlab:
         concurrencyPolicy: Replace
         failedJobsHistoryLimit: 1
         schedule: "0 1 * * *"
-        successfulJobsHistoryLimit: 3
+        # Each retained pod owns its own ephemeral volume (see useGenericEphemeralVolume below) and
+        # holds it until the pod is deleted, not until the job finishes. Peak demand is therefore
+        # this limit + failedJobsHistoryLimit + the running job, so 1 here keeps the worst case at
+        # 3x the volume size rather than 5x.
+        successfulJobsHistoryLimit: 1
+        # Bound a stuck job. Without a deadline a Pending backup runs indefinitely, and
+        # concurrencyPolicy Replace then deletes it nightly, leaving no failed job behind to notice.
+        # Generous against a healthy run, which finishes well inside this.
+        activeDeadlineSeconds: 10800
         extraArgs: "--skip registry --skip artifacts"
         suspend: false
         backoffLimit: 6
@@ -856,8 +891,13 @@ gitlab:
         persistence:
           enabled: true
           accessMode: ReadWriteOnce
-          storageClass: ${persistence_storage_class_name}
-          useGenericEphemeralVolume: false
+          # Not the shared `longhorn` class: that one is reclaimPolicy Retain, which would leave a
+          # Released PV holding a backup tarball every night once the pod's ephemeral PVC is GC'd.
+          storageClass: ${toolbox_backups_cron_storage_class_name}
+          # A single ReadWriteOnce PVC would be shared by every backup pod, so one stuck pod holds
+          # it and every replacement stays Pending, wedging the schedule indefinitely. Giving each
+          # pod its own volume removes the shared claim, so no one pod can wedge the next run.
+          useGenericEphemeralVolume: true
           size: ${toolbox_backups_cron_persistence_size}
       objectStorage:
         backend: s3
@@ -875,6 +915,13 @@ gitlab:
   webservice:
     enabled: true
     minReplicas: 1
+    # The chart disables the puma worker killer by default, so workers grow until the cgroup
+    # OOM-kills the pod. Re-enabling it with a per-worker cap restarts a worker gracefully instead,
+    # which both removes the OOM and lowers steady-state memory. Keep workerProcesses x
+    # workerMaxMemory, plus the primary, under limits.memory below.
+    puma:
+      disableWorkerKiller: false
+      workerMaxMemory: 900
     resources:
       requests:
         memory: 500Mi
@@ -894,12 +941,19 @@ gitlab:
     %{ endif }
   sidekiq:
     enabled: true
+    # maxRss must stay below limits.memory or the memory killer can never fire. GitLab converts this
+    # with Rails .kilobytes, so 1 KB is 1024 B: the chart default of 2000000 KB is ~1953Mi, above the
+    # 1.5Gi limit, so the cgroup OOM always won and the graceful restart was unreachable.
+    # 1200000 KB (~1172Mi) leaves room for memory to grow during graceTime while the process drains
+    # in-flight jobs.
+    memoryKiller:
+      maxRss: 1200000
     resources:
       requests:
-        memory: 750Mi      # Increased for GitLab 18.8.x baseline usage
+        memory: 750Mi
         cpu: 0
       limits:
-        memory: 1.5Gi      # Increased from 1Gi to prevent OOM kills
+        memory: 1.5Gi
         cpu: 1
     metrics:
       enabled: true

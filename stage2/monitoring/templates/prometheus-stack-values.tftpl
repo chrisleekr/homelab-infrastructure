@@ -22,6 +22,15 @@ crds:
 ##
 alertmanager:
   enabled: true
+  alertmanagerSpec:
+    ## Chart default is resources: {}, so this runs unaccounted. Sized from actual usage on a
+    ## small single-cluster install; re-derive before reusing elsewhere.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 192Mi
   ## Alertmanager configuration directives
   ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
   ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
@@ -131,6 +140,22 @@ grafana:
   enabled: true
   defaultDashboardsTimezone: Australia/Melbourne
   adminPassword: ${grafana_admin_password}
+  ## Chart default is resources: {}, so this runs unaccounted. Sized from actual usage on a
+  ## small single-cluster install; re-derive before reusing elsewhere.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 192Mi
+    limits:
+      memory: 320Mi
+  ## One shared key covers both the dashboard and datasource sidecars.
+  sidecar:
+    resources:
+      requests:
+        cpu: 5m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
   datasources: {}
   dashboardProviders:
     dashboardproviders.yaml:
@@ -205,6 +230,27 @@ grafana:
 prometheus:
   enabled: true
   prometheusSpec:
+    ## The chart ships resources: {} so this runs unaccounted. Sized from actual usage on a small
+    ## single-cluster install; re-derive before reusing elsewhere. Note there is no storageSpec
+    ## below, so Prometheus runs on emptyDir and every redeploy resets its history regardless of
+    ## the retention setting: any sizing window has to be captured externally while it lasts.
+    ## No CPU limit: scrape and rule evaluation are latency-sensitive and throttling them
+    ## silently produces gaps in the very data used to size everything else.
+    resources:
+      requests:
+        cpu: 100m
+        ## Deliberately above steady-state usage. The kubelet evicts Burstable pods that exceed
+        ## their request first, ranked by how far over they are, so a request set under normal
+        ## usage puts Prometheus at the front of the queue under node pressure. On emptyDir that
+        ## costs every sample it holds.
+        memory: 1750Mi
+      limits:
+        ## Well clear of steady state, not a snug fit. WAL replay after a restart allocates above
+        ## steady state, so a limit near the normal peak can OOM during replay and crashloop
+        ## instead of recovering. A crashlooping Prometheus evaluates no rules, so nothing alerts
+        ## on it. Refs prometheus/prometheus#6934.
+        memory: 3Gi
+
     ## ServiceMonitors to be selected for target discovery.
     ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
     ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
