@@ -1008,6 +1008,13 @@ variable "omniroute_storage_size" {
   description = "Storage size for the OmniRoute SQLite persistent volume"
   type        = string
   default     = "5Gi"
+
+  # Validate Kubernetes storage size format per Kubernetes quantity spec
+  # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+  validation {
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.omniroute_storage_size))
+    error_message = "Must be a valid Kubernetes storage size (e.g., 5Gi, 1.5Ti, 500Mi)"
+  }
 }
 
 variable "omniroute_initial_password" {

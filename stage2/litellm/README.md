@@ -156,6 +156,7 @@ curl -sS https://$DOMAIN/v1/models -H "Authorization: Bearer $MASTER_KEY"
   kubectl -n litellm exec -it litellm-postgres-0 -- \
     psql -U litellm -d litellm -c "ALTER USER litellm WITH PASSWORD '<new>';"
   ```
+
 - **TLS on a `.local` domain never issues.** `letsencrypt-prod` cannot complete an HTTP-01
   challenge for `litellm.chrislee.local`. Certificates only issue once a real public domain is set.
   This is the repo-wide pattern, not specific to this module.

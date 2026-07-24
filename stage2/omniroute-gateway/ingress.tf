@@ -88,6 +88,16 @@ resource "kubernetes_ingress_v1" "ui" {
 
   depends_on = [kubernetes_ingress_v1.api]
 
+  # Empty host renders auth-url as https:///oauth2/auth. ingress-nginx rejects that location and
+  # returns 503, so the dashboard fails closed rather than open, but the gate is broken either way.
+  # Caught at plan time here rather than in a variable validation, which cannot see omniroute_enable.
+  lifecycle {
+    precondition {
+      condition     = trimspace(var.auth_oauth2_proxy_host) != ""
+      error_message = "auth_oauth2_proxy_host must be set when omniroute_enable is true: it is interpolated into the oauth2-proxy annotations guarding the dashboard."
+    }
+  }
+
   metadata {
     name      = "omniroute-ui"
     namespace = local.omniroute_namespace
