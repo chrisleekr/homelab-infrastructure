@@ -303,19 +303,54 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_datadog_api_key` | 🔑 | Datadog → Org Settings → API Keys | Agent ingestion |
 | `TF_VAR_datadog_app_key` | 🔑 | Datadog → Org Settings → Application Keys | API/app-scoped access |
 
-### Stage 2 — LLM Gateway (gate: `TF_VAR_llmgateway_enable`)
+### Stage 2 — LiteLLM (gate: `TF_VAR_litellm_enable`)
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
-| `TF_VAR_llmgateway_enable` | | `false` | Enable LLM Gateway |
-| `TF_VAR_llmgateway_domain` | | `llm.chrislee.local` | Gateway host |
-| `TF_VAR_llmgateway_ingress_class_name` | | `nginx` | Ingress class |
-| `TF_VAR_llmgateway_storage_size` | | `10Gi` | Storage size |
-| `TF_VAR_llmgateway_storage_class_name` | | `longhorn` | Storage class |
-| `TF_VAR_llmgateway_auth_secret` | 🔑 | `openssl rand -hex 32` | Session/auth signing secret |
-| `TF_VAR_llmgateway_image_tag` | | `latest` | Image tag |
-| `TF_VAR_llmgateway_replicas` | | `1` | Replica count |
-| `TF_VAR_llmgateway_admin_emails` | | `chris@chrislee.local` | Admin emails |
+| `TF_VAR_litellm_enable` | | `false` | Enable LiteLLM |
+| `TF_VAR_litellm_domain` | | `litellm.chrislee.local` | Proxy host, serves both `/v1` and `/ui` |
+| `TF_VAR_litellm_ingress_class_name` | | `nginx` | Ingress class |
+| `TF_VAR_litellm_storage_size` | | `10Gi` | Postgres volume size |
+| `TF_VAR_litellm_storage_class_name` | | `longhorn` | Storage class |
+| `TF_VAR_litellm_ui_paths` | | `["/ui","/sso","/litellm-asset-prefix","/fallback/login","/login","/docs","/redoc","/openapi.json","/routes","/config/yaml","/public"]` | Paths routed behind oauth2-proxy. Anything omitted is served unauthenticated |
+| `TF_VAR_litellm_chart_version` | | `1.89.2` | `litellm-helm` chart pin. Bump together with the image tag |
+| `TF_VAR_litellm_image_tag` | | `1.89.2` | `ghcr.io/berriai/litellm-database` pin |
+| `TF_VAR_litellm_postgres_image_tag` | | `18.4-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
+| `TF_VAR_litellm_replicas` | | `1` | Replica count |
+| `TF_VAR_litellm_master_key` | 🔑 | `echo "sk-$(openssl rand -hex 24)"` | Admin and API superuser key |
+| `TF_VAR_litellm_salt_key` | 🔑 | `echo "sk-$(openssl rand -hex 24)"` | Encrypts DB-stored provider credentials. **Write once, never rotate** |
+| `TF_VAR_litellm_db_password` | 🔑 | `openssl rand -hex 16` | Postgres password, min 16 chars, only `A-Z a-z 0-9 _ . ~ -`. It is interpolated into a `postgresql://` URI, so reserved characters would corrupt the connection string |
+| `TF_VAR_litellm_provider_secrets` | 🔑 | JSON object, e.g. `{"OPENAI_API_KEY":"sk-…","ANTHROPIC_API_KEY":"sk-ant-…"}` | Provider keys exported to the pod as env vars |
+
+Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` makes every stored
+provider credential permanently unreadable. Treat it as write-once.
+
+### Stage 2 — OmniRoute (gate: `TF_VAR_omniroute_enable`)
+
+| Variable | | Value / how to obtain | Purpose |
+|---|---|---|---|
+| `TF_VAR_omniroute_enable` | | `false` | Enable OmniRoute |
+| `TF_VAR_omniroute_domain` | | `omniroute.chrislee.local` | Host serving both `/api/v1` and the dashboard |
+| `TF_VAR_omniroute_ingress_class_name` | | `nginx` | Ingress class for both ingresses |
+| `TF_VAR_omniroute_storage_size` | | `5Gi` | SQLite volume size |
+| `TF_VAR_omniroute_storage_class_name` | | `longhorn` | Storage class |
+| `TF_VAR_omniroute_chart_version` | | `0.1.1` | `omniroute` chart pin. Bump together with the image tag |
+| `TF_VAR_omniroute_image_tag` | | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
+| `TF_VAR_omniroute_public_paths` | | `["/api/v1"]` | Paths routed to the open API ingress. Anything omitted is gated by oauth2-proxy |
+| `TF_VAR_omniroute_gated_api_paths` | | `["/api/v1/management", "/api/v1/agents", "/api/v1/accounts", "/api/v1/registered-keys"]` | Admin subpaths under `/api/v1` pulled back behind oauth2-proxy |
+| `TF_VAR_omniroute_initial_password` | 🔑 | `openssl rand -base64 24` | First-boot dashboard password, min 12 chars |
+| `TF_VAR_omniroute_jwt_secret` | 🔑 | `openssl rand -hex 32` | Signs dashboard sessions, min 32 chars. Rotatable |
+| `TF_VAR_omniroute_api_key_secret` | 🔑 | `openssl rand -hex 32` | Encrypts stored provider keys, min 32 chars. **Write once, never rotate** |
+| `TF_VAR_omniroute_storage_encryption_key` | 🔑 | `openssl rand -hex 32` | Encrypts the database at rest, min 32 chars. **Write once, never rotate** |
+
+The four credential variables populate the `omniroute-auth` Kubernetes Secret, mounted into the pod
+with `envFrom` as the keys `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, and
+`STORAGE_ENCRYPTION_KEY`.
+
+Rotating `TF_VAR_omniroute_api_key_secret` (`API_KEY_SECRET`) or
+`TF_VAR_omniroute_storage_encryption_key` (`STORAGE_ENCRYPTION_KEY`) after providers have been added
+makes every stored credential permanently unreadable. Treat both as write-once.
+`TF_VAR_omniroute_jwt_secret` only signs sessions and may be rotated (it logs everyone out).
 
 ### Stage 2 — Cloudflare Tunnel (gate: `TF_VAR_cloudflare_tunnel_enable`)
 

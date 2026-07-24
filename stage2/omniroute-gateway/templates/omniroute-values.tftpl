@@ -1,0 +1,46 @@
+# Helm values for the omniroute chart. Overrides ONLY what the module must own; every other key
+# keeps its chart 0.1.1 default. Each key below was confirmed against a `helm template` render of
+# chart 0.1.1. Rendered by templatefile() from omniroute.tf.
+
+# Pins the Service/Deployment name so the Ingress backends and the module outputs reference a single
+# local instead of inheriting whatever the Helm release happens to be called.
+fullnameOverride: omniroute
+
+image:
+  repository: diegosouzapw/omniroute
+  # Empty defaults to the chart appVersion. For web-cookie providers (gemini-web, claude-web,
+  # claude-turnstile) use the "-web" flavor, e.g. "3.8.48-web". Quoted so an empty tag stays a
+  # string rather than YAML null.
+  tag: "${image_tag}"
+
+# All 4 auth keys live in a module-owned Secret (secrets.tf). A non-empty existingSecret keeps every
+# credential out of the Helm values string and makes the chart skip its own secret.yaml, which would
+# otherwise mint fresh JWT_SECRET / API_KEY_SECRET on every client-side render.
+auth:
+  existingSecret: ${auth_secret_name}
+
+# The /api/v1 edge Ingress is unauthenticated, so require an API key on proxy calls. extraConfig
+# merges over config, so this wins over the chart default REQUIRE_API_KEY "false".
+#
+# STORAGE_ENCRYPTION_KEY_VERSION is the version label OmniRoute pairs with STORAGE_ENCRYPTION_KEY.
+# It defaults to unset, which forces the app's first-boot bootstrap to persist the marker to
+# {DATA_DIR}/server.env. Supplying it here keeps config fully external (the PVC then holds only the
+# SQLite DB) and suppresses the misleading "zero-config mode" dashboard banner, which fires whenever
+# bootstrap persists anything, not only when it auto-generates keys. Bump to "v2" only if
+# omniroute_storage_encryption_key is ever rotated.
+extraConfig:
+  REQUIRE_API_KEY: "true"
+  STORAGE_ENCRYPTION_KEY_VERSION: "v1"
+
+# SQLite is a single-writer store on this PVC. The chart hard-pins a single replica and a Recreate
+# update mode for that reason, and the module deliberately leaves both at the chart default: two
+# pods sharing one PVC would corrupt the database. Do not add a replica or update-mode override here.
+persistence:
+  enabled: true
+  size: ${storage_size}
+  storageClass: ${storage_class}
+
+# Ingress is module-owned (ingress.tf): the dashboard sits behind oauth2-proxy while /api/v1 stays
+# open to key-authenticated clients. Disable the chart's own single Ingress.
+ingress:
+  enabled: false
