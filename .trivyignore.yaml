@@ -88,6 +88,15 @@ vulnerabilities:
     statement: oras-go blob upload vulnerable to credential forwarding via unvalidated Location header
     expired_at: 2026-08-15
 
+  # google.golang.org/grpc HIGH advisory vendored by go-task (grpc v1.82.0), terraform (v1.80.0),
+  # tflint (v1.81.1) and trivy (v1.81.0). Fixed in grpc 1.82.1. Published 2026-07-21, after every
+  # tool's current pinned release, so no version bump clears it yet; unblocks as each upstream
+  # rebuilds with grpc >= 1.82.1. Not reachable here: none of these CLIs runs an xDS control plane
+  # or serves gRPC, they are one-shot binaries invoked by CI and the operator shell.
+  - id: GHSA-hrxh-6v49-42gf
+    statement: gRPC-Go xDS RBAC and HTTP/2 vulnerabilities (task/terraform/tflint/trivy) - waiting for upstream rebuild with grpc >= 1.82.1
+    expired_at: 2026-08-15
+
 misconfigurations:
   # Dockerfile checks - acceptable for this use case
   - id: DS-0002

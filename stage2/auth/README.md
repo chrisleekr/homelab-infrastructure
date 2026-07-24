@@ -145,7 +145,8 @@ The following services use OAuth2 Proxy for authentication:
 | ArgoCD | argocd.chrislee.local |
 | MinIO Console | minio-console.chrislee.local |
 | Kubecost | cost.chrislee.local |
-| LLM Gateway | llm.chrislee.local |
+| LiteLLM admin UI | litellm.chrislee.local/ui |
+| OmniRoute dashboard | omniroute.chrislee.local (every path except `/api/v1`) |
 
 ## References
 

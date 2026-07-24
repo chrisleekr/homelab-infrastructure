@@ -282,22 +282,51 @@ module "sealed_secrets" {
   sealed_secrets_key_renewal_period = var.sealed_secrets_key_renewal_period
 }
 
-# LLM Gateway - Unified API gateway for multiple LLM providers
-# Reference: https://docs.llmgateway.io/self-host
-module "llmgateway" {
-  count      = var.llmgateway_enable ? 1 : 0
+# LiteLLM - self-hosted OpenAI-compatible proxy across multiple LLM providers
+# Reference: https://docs.litellm.ai/docs/proxy/deploy
+module "litellm" {
+  count      = var.litellm_enable ? 1 : 0
   depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage]
-  source     = "./llmgateway"
+  source     = "./litellm"
 
-  llmgateway_enable             = var.llmgateway_enable
-  llmgateway_domain             = var.llmgateway_domain
-  llmgateway_ingress_class_name = var.llmgateway_ingress_class_name
-  llmgateway_ingress_enable_tls = var.ingress_enable_tls
-  llmgateway_storage_size       = var.llmgateway_storage_size
-  llmgateway_storage_class_name = var.llmgateway_storage_class_name
-  llmgateway_auth_secret        = var.llmgateway_auth_secret
-  llmgateway_image_tag          = var.llmgateway_image_tag
-  llmgateway_replicas           = var.llmgateway_replicas
-  llmgateway_admin_emails       = var.llmgateway_admin_emails
-  auth_oauth2_proxy_host        = var.auth_oauth2_proxy_host
+  litellm_enable             = var.litellm_enable
+  litellm_domain             = var.litellm_domain
+  litellm_ingress_class_name = var.litellm_ingress_class_name
+  litellm_ingress_enable_tls = var.ingress_enable_tls
+  litellm_ui_paths           = var.litellm_ui_paths
+  litellm_chart_version      = var.litellm_chart_version
+  litellm_image_tag          = var.litellm_image_tag
+  litellm_postgres_image_tag = var.litellm_postgres_image_tag
+  litellm_replicas           = var.litellm_replicas
+  litellm_storage_class_name = var.litellm_storage_class_name
+  litellm_storage_size       = var.litellm_storage_size
+  litellm_master_key         = var.litellm_master_key
+  litellm_salt_key           = var.litellm_salt_key
+  litellm_db_password        = var.litellm_db_password
+  litellm_provider_secrets   = var.litellm_provider_secrets
+  auth_oauth2_proxy_host     = var.auth_oauth2_proxy_host
+}
+
+# OmniRoute - self-hostable AI gateway. Independent of litellm; both can run at once.
+# Reference: https://github.com/diegosouzapw/OmniRoute
+module "omniroute" {
+  count      = var.omniroute_enable ? 1 : 0
+  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage]
+  source     = "./omniroute-gateway"
+
+  omniroute_enable                 = var.omniroute_enable
+  omniroute_domain                 = var.omniroute_domain
+  omniroute_ingress_class_name     = var.omniroute_ingress_class_name
+  omniroute_ingress_enable_tls     = var.ingress_enable_tls
+  omniroute_public_paths           = var.omniroute_public_paths
+  omniroute_gated_api_paths        = var.omniroute_gated_api_paths
+  omniroute_chart_version          = var.omniroute_chart_version
+  omniroute_image_tag              = var.omniroute_image_tag
+  omniroute_storage_class_name     = var.omniroute_storage_class_name
+  omniroute_storage_size           = var.omniroute_storage_size
+  omniroute_initial_password       = var.omniroute_initial_password
+  omniroute_jwt_secret             = var.omniroute_jwt_secret
+  omniroute_api_key_secret         = var.omniroute_api_key_secret
+  omniroute_storage_encryption_key = var.omniroute_storage_encryption_key
+  auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
 }

@@ -1,0 +1,111 @@
+# Helm values for litellm-helm. Every key below was confirmed against the pinned chart's rendered
+# output. Rendered by templatefile() from litellm.tf.
+
+# Pins the Service/Deployment name so the Ingress backends and the module output can reference a
+# single local instead of inheriting whatever the Helm release happens to be called.
+fullnameOverride: ${service_name}
+
+replicaCount: ${replicas}
+
+image:
+  repository: ghcr.io/berriai/litellm-database
+  tag: "${image_tag}"
+  pullPolicy: IfNotPresent
+
+# Chart injects this secret as env PROXY_MASTER_KEY (templates/deployment.yaml).
+masterkeySecretName: ${masterkey_secret_name}
+masterkeySecretKey: masterkey
+
+# Exported to the pod with envFrom. Supplies LITELLM_SALT_KEY and every provider API key, which
+# proxy_config then references as os.environ/<KEY>.
+environmentSecrets:
+  - ${env_secret_name}
+
+# Module-owned Postgres, not the Bitnami subchart. See postgres.tf for why.
+# The $(VAR) references are expanded by Kubernetes from the container env, not by Terraform:
+# templatefile() only treats dollar-brace and percent-brace as introducers, not dollar-paren.
+# Quoted defensively so YAML never
+# tries to interpret the scheme separator.
+db:
+  deployStandalone: false
+  useExisting: true
+  endpoint: ${postgres_service_name}
+  database: ${db_name}
+  url: "postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST):5432/$(DATABASE_NAME)"
+  secret:
+    name: ${db_secret_name}
+    usernameKey: username
+    passwordKey: password
+
+redis:
+  enabled: false
+
+# Prisma schema migrations run in a dedicated Job; the proxy starts with DISABLE_SCHEMA_UPDATE=true
+# so replicas never race each other against the same database.
+migrationJob:
+  enabled: true
+  # Chart default is 120s, which deletes the Job and its pod logs before an operator can read them.
+  # An hour is long enough for a post-mortem; the before-hook-creation policy reaps it on the next
+  # install or upgrade regardless.
+  ttlSecondsAfterFinished: 3600
+  hooks:
+    # This release is driven by Terraform/Helm, not ArgoCD sync. Chart default is true.
+    argocd:
+      enabled: false
+    # Chart default is false, which leaves the Job as a plain Helm-managed resource. A Job's
+    # spec.template is immutable, so bumping litellm_chart_version + litellm_image_tag would fail
+    # the upgrade with "field is immutable". As a hook it carries before-hook-creation, so the Job
+    # is recreated on every install and upgrade, and pre-install/pre-upgrade ordering guarantees
+    # migrations finish before the proxy rolls.
+    helm:
+      enabled: true
+
+# The memory request sits just above idle RSS (roughly 1Gi at rest). requests != limits makes this
+# pod Burstable either way; what the headroom buys is eviction ordering WITHIN that class, which the
+# kubelet ranks by usage relative to request. A pod permanently above its own request is reclaimed
+# first under node memory pressure, so a request at or below idle would put it in that bucket the
+# moment it started. Re-check idle usage with `kubectl top pod` and adjust if it drifts.
+#
+# CPU request stays minimal: the proxy is IO-bound on upstream provider APIs.
+resources:
+  requests:
+    cpu: "50m"
+    memory: "1200Mi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+# LiteLLM serves a fixed allow-list of unauthenticated routes under /. NO_DOCS only removes the
+# /docs UI: /openapi.json still returns the full schema and /redoc still renders it. So NO_DOCS is
+# defence in depth, and litellm_ui_paths does the actual gating of those introspection routes.
+envVars:
+  NO_DOCS: "True"
+
+# Ingress is owned by the module, not the chart, so the admin UI can sit behind oauth2-proxy while
+# the API stays open to key-authenticated clients. See ingress.tf.
+ingress:
+  enabled: false
+
+proxy_config:
+  # model_list must be explicitly nulled, not merely omitted. The chart's own values.yaml ships an
+  # example model_list (gpt-3.5-turbo with a placeholder api_key) and Helm coalesces maps, so
+  # omitting the key would render that example straight into the deployed ConfigMap.
+  #
+  # Models are added at runtime through /ui and persisted in Postgres by store_model_in_db.
+  # The proxy starts healthy with no models configured; /v1/models simply returns an empty list
+  # until models are added. To promote a runtime-added model into git, replace the null below with
+  # a list, keeping API keys as os.environ references and never inline:
+  #
+  #   model_list:
+  #     - model_name: gpt-4o
+  #       litellm_params:
+  #         model: openai/gpt-4o
+  #         api_key: os.environ/OPENAI_API_KEY
+  model_list: null
+
+  general_settings:
+    master_key: os.environ/PROXY_MASTER_KEY
+    store_model_in_db: true
+
+  litellm_settings:
+    drop_params: true

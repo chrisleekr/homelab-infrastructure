@@ -785,82 +785,136 @@ variable "datadog_app_key" {
   sensitive   = true
 }
 
-# LLM Gateway variables
-# Reference: https://docs.llmgateway.io/self-host
+# LiteLLM variables
+# Reference: https://docs.litellm.ai/docs/proxy/deploy
 
-variable "llmgateway_enable" {
-  description = "Enable LLM Gateway deployment"
+variable "litellm_enable" {
+  description = "Enable the LiteLLM proxy deployment"
   type        = bool
   default     = false
 }
 
-variable "llmgateway_domain" {
-  description = "Domain name for LLM Gateway ingress"
+variable "litellm_domain" {
+  description = "Domain name for the LiteLLM ingress. Both the API and the admin UI are served from this single host"
   type        = string
-  default     = "llm.chrislee.local"
+  default     = "litellm.chrislee.local"
 }
 
-variable "llmgateway_ingress_class_name" {
-  description = "Ingress class name for LLM Gateway"
+variable "litellm_ingress_class_name" {
+  description = "Ingress class name for the LiteLLM ingresses"
   type        = string
   default     = "nginx"
 }
 
-variable "llmgateway_storage_size" {
-  description = "Storage size for LLM Gateway PostgreSQL data persistence"
+variable "litellm_ui_paths" {
+  description = "URL path prefixes routed to the oauth2-proxy protected ingress. /litellm-asset-prefix serves the console JS and CSS, and /fallback/login plus /login are the console's login page and its credential POST target. /docs, /redoc, /openapi.json, /routes, /config/yaml and /public are introspection surfaces no API client needs. Anything omitted here falls through to the unauthenticated API ingress"
+  type        = list(string)
+  default = [
+    "/ui", "/sso", "/litellm-asset-prefix",
+    "/fallback/login", "/login",
+    "/docs", "/redoc", "/openapi.json", "/routes",
+    "/config/yaml", "/public",
+  ]
+}
+
+variable "litellm_chart_version" {
+  description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
+  type        = string
+  default     = "1.89.2"
+}
+
+variable "litellm_image_tag" {
+  description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
+  type        = string
+  default     = "1.89.2"
+}
+
+variable "litellm_postgres_image_tag" {
+  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid. Prisma migrations verified against 18.4-alpine"
+  type        = string
+  default     = "18.4-alpine"
+
+  validation {
+    condition     = var.litellm_postgres_image_tag != "latest" && endswith(var.litellm_postgres_image_tag, "-alpine")
+    error_message = "litellm_postgres_image_tag must be a pinned -alpine tag: the StatefulSet sets fs_group = 70, the alpine postgres gid (Debian images use 999)"
+  }
+}
+
+variable "litellm_replicas" {
+  description = "Number of LiteLLM proxy replicas"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.litellm_replicas >= 1
+    error_message = "litellm_replicas must be at least 1"
+  }
+}
+
+variable "litellm_storage_class_name" {
+  description = "Storage class name for the LiteLLM Postgres persistent volume"
+  type        = string
+  default     = "longhorn"
+}
+
+variable "litellm_storage_size" {
+  description = "Storage size for the LiteLLM Postgres persistent volume"
   type        = string
   default     = "10Gi"
 
   # Validate Kubernetes storage size format per Kubernetes quantity spec
   # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.llmgateway_storage_size))
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.litellm_storage_size))
     error_message = "Must be a valid Kubernetes storage size (e.g., 10Gi, 1.5Ti, 500Mi)"
   }
 }
 
-variable "llmgateway_storage_class_name" {
-  description = "Storage class name for LLM Gateway persistent volume"
-  type        = string
-  default     = "longhorn"
-}
-
-variable "llmgateway_auth_secret" {
-  description = "AUTH_SECRET for LLM Gateway session management. Generate with: openssl rand -hex 32"
+variable "litellm_master_key" {
+  description = "LiteLLM admin and API superuser key, injected as PROXY_MASTER_KEY. Generate with: echo \"sk-$(openssl rand -hex 24)\""
   type        = string
   sensitive   = true
   default     = ""
 
-  # Validate auth_secret length when provided
-  # Fail fast at plan time rather than discovering issues post-deployment
+  # Fail fast at plan time rather than discovering a rejected key post-deployment
   validation {
-    condition     = var.llmgateway_auth_secret == "" || length(var.llmgateway_auth_secret) >= 32
-    error_message = "llmgateway_auth_secret must be at least 32 characters. Generate with: openssl rand -hex 32"
+    condition     = var.litellm_master_key == "" || startswith(var.litellm_master_key, "sk-")
+    error_message = "litellm_master_key must start with 'sk-'"
   }
 }
 
-variable "llmgateway_image_tag" {
-  description = "Docker image tag for LLM Gateway. Use specific version from https://github.com/theopenco/llmgateway/releases"
-  type        = string
-  default     = "latest"
-}
-
-variable "llmgateway_replicas" {
-  description = "Number of LLM Gateway replicas. Note: Multiple replicas require ReadWriteMany storage or separate PVCs"
-  type        = number
-  default     = 1
-
-  validation {
-    condition     = var.llmgateway_replicas >= 1
-    error_message = "llmgateway_replicas must be at least 1"
-  }
-}
-
-variable "llmgateway_admin_emails" {
-  description = "Comma-separated list of email addresses that have admin access to LLM Gateway admin dashboard. Reference: https://github.com/theopenco/llmgateway/blob/main/apps/api/src/routes/user.ts"
+variable "litellm_salt_key" {
+  description = "Encrypts provider credentials stored in the database. WRITE ONCE: rotating it makes every stored credential permanently unreadable. Generate with: echo \"sk-$(openssl rand -hex 24)\""
   type        = string
   sensitive   = true
   default     = ""
+
+  validation {
+    condition     = var.litellm_salt_key == "" || startswith(var.litellm_salt_key, "sk-")
+    error_message = "litellm_salt_key must start with 'sk-'"
+  }
+}
+
+variable "litellm_db_password" {
+  description = "Password for the module-owned LiteLLM Postgres. Restricted to URI-safe characters: the chart builds db.url as postgresql://user:password@host/db, and a reserved character would silently corrupt it. Generate with: openssl rand -hex 16"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition = var.litellm_db_password == "" || (
+      length(var.litellm_db_password) >= 16 &&
+      can(regex("^[A-Za-z0-9_.~-]+$", var.litellm_db_password))
+    )
+    error_message = "litellm_db_password must be at least 16 characters using only A-Z a-z 0-9 _ . ~ - (it is interpolated into a postgresql:// URI). Generate with: openssl rand -hex 16"
+  }
+}
+
+variable "litellm_provider_secrets" {
+  description = "Upstream provider API keys, delivered as one JSON object and exported to the pod as environment variables. proxy_config references them as os.environ/<KEY>. Adding a provider needs no Terraform change"
+  type        = map(string)
+  sensitive   = true
+  default     = {}
 }
 
 variable "cloudflare_tunnel_enable" {
@@ -892,4 +946,94 @@ variable "cloudflare_tunnel_replica_count" {
   description = "Number of cloudflared replicas. HA only; do not autoscale (downscaling breaks live connections)."
   type        = number
   default     = 2
+}
+
+# OmniRoute variables
+# Reference: https://github.com/diegosouzapw/OmniRoute
+
+variable "omniroute_enable" {
+  description = "Enable the OmniRoute AI gateway deployment"
+  type        = bool
+  default     = false
+}
+
+variable "omniroute_domain" {
+  description = "Domain name for the OmniRoute ingress. Both the open /api/v1 surface and the gated dashboard are served from this single host"
+  type        = string
+  default     = "omniroute.chrislee.local"
+}
+
+variable "omniroute_ingress_class_name" {
+  description = "Ingress class name for the OmniRoute ingresses"
+  type        = string
+  default     = "nginx"
+}
+
+variable "omniroute_public_paths" {
+  description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else, the dashboard at / plus any /api path omitted here, falls through to the oauth2-proxy-gated ingress. Default is the OpenAI-compatible base path only. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions; re-verify the exact set against a running container"
+  type        = list(string)
+  default     = ["/api/v1"]
+}
+
+variable "omniroute_gated_api_paths" {
+  description = "Admin subpaths under the open /api/v1 prefix pulled back behind oauth2-proxy as defense in depth (management, agents, accounts, registered-keys). OpenAI-compatible clients never call these, so gating them costs model traffic nothing. Set to [] to disable"
+  type        = list(string)
+  default = [
+    "/api/v1/management",
+    "/api/v1/agents",
+    "/api/v1/accounts",
+    "/api/v1/registered-keys",
+  ]
+}
+
+variable "omniroute_chart_version" {
+  description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
+  type        = string
+  default     = "0.1.1"
+}
+
+variable "omniroute_image_tag" {
+  description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.48-web) for web-cookie providers like gemini-web or claude-web"
+  type        = string
+  default     = ""
+}
+
+variable "omniroute_storage_class_name" {
+  description = "Storage class name for the OmniRoute SQLite persistent volume"
+  type        = string
+  default     = "longhorn"
+}
+
+variable "omniroute_storage_size" {
+  description = "Storage size for the OmniRoute SQLite persistent volume"
+  type        = string
+  default     = "5Gi"
+}
+
+variable "omniroute_initial_password" {
+  description = "Initial dashboard admin password, injected as INITIAL_PASSWORD. Only used on first boot; change it from the dashboard afterwards. Generate with: openssl rand -base64 24"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "omniroute_jwt_secret" {
+  description = "Signs dashboard session tokens, injected as JWT_SECRET. Rotatable: rotating only logs users out. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "omniroute_api_key_secret" {
+  description = "Encrypts stored provider API keys, injected as API_KEY_SECRET. WRITE ONCE: rotating it makes every stored provider key permanently unreadable. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "omniroute_storage_encryption_key" {
+  description = "Encrypts the OmniRoute database at rest, injected as STORAGE_ENCRYPTION_KEY. WRITE ONCE: rotating it makes an already-encrypted database unreadable. Generate with: openssl rand -hex 32"
+  type        = string
+  sensitive   = true
+  default     = ""
 }

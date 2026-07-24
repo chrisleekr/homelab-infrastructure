@@ -222,7 +222,8 @@ flowchart TD
     argocd[argocd]
     datadog[datadog]
     reloader[reloader]
-    llmgateway[llmgateway]
+    litellm[litellm]
+    omniroute[omniroute]
 
     kubernetes --> nginx
     nginx --> cert_manager
@@ -240,8 +241,10 @@ flowchart TD
     logging --> argocd
     kubernetes --> vpn
     kubernetes --> reloader
-    cert_manager --> llmgateway
-    longhorn --> llmgateway
+    cert_manager --> litellm
+    longhorn --> litellm
+    cert_manager --> omniroute
+    longhorn --> omniroute
 ```
 
 **Core Kubernetes Stack:**
@@ -276,7 +279,8 @@ Each module has its own README with detailed configuration options:
 | [VPN](stage2/vpn/README.md) | Tailscale and WireGuard |
 | [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
 | [Stakater Reloader](stage2/stakater-reloader/README.md) | Auto-restart on Secret/ConfigMap changes |
-| [LLM Gateway](stage2/llmgateway/README.md) | Unified LLM API (optional) |
+| [LiteLLM](stage2/litellm/README.md) | Self-hosted OpenAI-compatible LLM proxy (optional) |
+| [OmniRoute](stage2/omniroute-gateway/README.md) | Self-hosted OpenAI-compatible AI gateway with a dashboard (optional) |
 | [Cloudflare Tunnel](stage2/cloudflare-tunnel/README.md) | cloudflared connector, exposes services via Cloudflare (optional) |
 
 ## Optional Modules
@@ -290,7 +294,8 @@ Modules controlled by enable flags in Terraform variables:
 | Datadog | `datadog_enable` | `false` |
 | Tailscale | `tailscale_enable` | `false` |
 | WireGuard | `wireguard_enable` | `false` |
-| LLM Gateway | `llmgateway_enable` | `false` |
+| LiteLLM | `litellm_enable` | `false` |
+| OmniRoute | `omniroute_enable` | `false` |
 | Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
 | ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
 
