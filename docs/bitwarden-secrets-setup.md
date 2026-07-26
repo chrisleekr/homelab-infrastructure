@@ -330,14 +330,14 @@ provider credential permanently unreadable. Treat it as write-once.
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_omniroute_enable` | | `false` | Enable OmniRoute |
-| `TF_VAR_omniroute_domain` | | `omniroute.chrislee.local` | Host serving both `/api/v1` and the dashboard |
+| `TF_VAR_omniroute_domain` | | `omniroute.chrislee.local` | Host serving both the open API prefixes (`/v1`, `/api/v1`) and the dashboard |
 | `TF_VAR_omniroute_ingress_class_name` | | `nginx` | Ingress class for both ingresses |
 | `TF_VAR_omniroute_storage_size` | | `5Gi` | SQLite volume size |
 | `TF_VAR_omniroute_storage_class_name` | | `longhorn` | Storage class |
 | `TF_VAR_omniroute_chart_version` | | `0.1.1` | `omniroute` chart pin. Bump together with the image tag |
 | `TF_VAR_omniroute_image_tag` | | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
-| `TF_VAR_omniroute_public_paths` | | `["/api/v1"]` | Paths routed to the open API ingress. Anything omitted is gated by oauth2-proxy |
-| `TF_VAR_omniroute_gated_api_paths` | | `["/api/v1/management", "/api/v1/agents", "/api/v1/accounts", "/api/v1/registered-keys"]` | Admin subpaths under `/api/v1` pulled back behind oauth2-proxy |
+| `TF_VAR_omniroute_public_paths` | | `["/api/v1", "/v1"]` | Paths routed to the open API ingress. Anything omitted is gated by oauth2-proxy |
+| `TF_VAR_omniroute_gated_admin_suffixes` | | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every public path prefix |
 | `TF_VAR_omniroute_initial_password` | 🔑 | `openssl rand -base64 24` | First-boot dashboard password, min 12 chars |
 | `TF_VAR_omniroute_jwt_secret` | 🔑 | `openssl rand -hex 32` | Signs dashboard sessions, min 32 chars. Rotatable |
 | `TF_VAR_omniroute_api_key_secret` | 🔑 | `openssl rand -hex 32` | Encrypts stored provider keys, min 32 chars. **Write once, never rotate** |

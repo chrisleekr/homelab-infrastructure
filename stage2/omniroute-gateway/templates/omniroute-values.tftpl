@@ -19,7 +19,8 @@ image:
 auth:
   existingSecret: ${auth_secret_name}
 
-# The /api/v1 edge Ingress is unauthenticated, so require an API key on proxy calls. extraConfig
+# The open API edge Ingress (/v1 and /api/v1) is unauthenticated, so require an API key on proxy
+# calls. extraConfig
 # merges over config, so this wins over the chart default REQUIRE_API_KEY "false".
 #
 # STORAGE_ENCRYPTION_KEY_VERSION is the version label OmniRoute pairs with STORAGE_ENCRYPTION_KEY.
@@ -28,9 +29,29 @@ auth:
 # SQLite DB) and suppresses the misleading "zero-config mode" dashboard banner, which fires whenever
 # bootstrap persists anything, not only when it auto-generates keys. Bump to "v2" only if
 # omniroute_storage_encryption_key is ever rotated.
+#
+# OMNIROUTE_MEMORY_MB is the V8 old-space ceiling dev/run-standalone.mjs appends to NODE_OPTIONS.
+# The chart default 384 aborts this gateway with "Reached heap limit", and the abort reaches
+# Kubernetes as exit 0 / reason Completed, so no reason-based alert catches it. At least 215 MiB of
+# runtime, native SQLite and off-heap stream buffers lives outside the cap and grows with concurrent
+# streams, so limits.memory below must clear the cap by several hundred MiB.
 extraConfig:
   REQUIRE_API_KEY: "true"
   STORAGE_ENCRYPTION_KEY_VERSION: "v1"
+  OMNIROUTE_MEMORY_MB: "1024"
+
+# Kept in lockstep with the heap cap above: raise both or neither. memory request == limit stops
+# usage ever exceeding the request, which is what puts the pod in the kubelet's last-evicted tier
+# under node memory pressure. QoS stays Burstable because the CPU pair differs, deliberately: a
+# full-core reservation is not justified by measured usage, and 250m is only there to restore
+# scheduling weight for mark-compact, which the chart's 50m leaves at near-minimum.
+resources:
+  requests:
+    cpu: 250m
+    memory: 1536Mi
+  limits:
+    cpu: "1"
+    memory: 1536Mi
 
 # SQLite is a single-writer store on this PVC. The chart hard-pins a single replica and a Recreate
 # update mode for that reason, and the module deliberately leaves both at the chart default: two
@@ -40,7 +61,7 @@ persistence:
   size: ${storage_size}
   storageClass: ${storage_class}
 
-# Ingress is module-owned (ingress.tf): the dashboard sits behind oauth2-proxy while /api/v1 stays
-# open to key-authenticated clients. Disable the chart's own single Ingress.
+# Ingress is module-owned (ingress.tf): the dashboard sits behind oauth2-proxy while the API prefixes
+# (/v1 and /api/v1) stay open to key-authenticated clients. Disable the chart's own single Ingress.
 ingress:
   enabled: false

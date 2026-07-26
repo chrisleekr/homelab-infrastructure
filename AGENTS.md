@@ -36,6 +36,25 @@ For full documentation, see [README.md](README.md).
 - **Resources**: Use consistent prefixes (e.g., `gitlab_`, `prometheus_`, `minio_`)
 - **Files**: kebab-case for playbooks, snake_case for variables
 
+## Docs & Comments
+
+Default to terse. Comments and docs explain WHY; the code already shows WHAT. Prefer the shortest
+version that keeps a future reader from reintroducing the bug.
+
+- **State the rule, not the investigation.** Keep the invariant and the non-obvious trap. Drop the
+  reasoning walkthrough that led there.
+- **No evidence transcripts in files.** Probe output, HTTP codes, "verified live", and before/after
+  comparisons belong in the MR description, not in `.tf` or README prose. Git blame links the two.
+- **Say it once.** Each fact gets one home: `.tf` comments explain the mechanism for whoever edits
+  that code; the module README covers operator-facing behavior (what is exposed, how to verify).
+  Cross-reference instead of restating.
+- **No changelogs in docs.** Docs describe current state. Rename a variable and just rewrite the
+  table; git history is the changelog. (Precedent: the llmgateway to litellm swap left no migration
+  note.)
+- **Variable descriptions are one or two sentences.** Longer rationale goes in a comment above the
+  block.
+- **Skip caveats about caveats.** If a cited doc needs walking back, cite a better source instead.
+
 ## Version Sources of Truth
 
 | Type | Location |

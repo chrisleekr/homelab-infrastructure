@@ -102,6 +102,7 @@
     "traefik",
     "trivy",
     "trivyignores",
+    "Untaint",
     "venv"
   ],
   "yaml.format.enable": true,

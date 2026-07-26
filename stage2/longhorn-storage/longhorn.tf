@@ -81,7 +81,7 @@ resource "helm_release" "longhorn" {
   repository = "https://charts.longhorn.io"
   chart      = "longhorn"
   namespace  = kubernetes_namespace_v1.longhorn.metadata[0].name
-  version    = "1.10.1"
+  version    = "1.11.0"
   wait       = true
   timeout    = 300
 

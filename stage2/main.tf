@@ -319,7 +319,7 @@ module "omniroute" {
   omniroute_ingress_class_name     = var.omniroute_ingress_class_name
   omniroute_ingress_enable_tls     = var.ingress_enable_tls
   omniroute_public_paths           = var.omniroute_public_paths
-  omniroute_gated_api_paths        = var.omniroute_gated_api_paths
+  omniroute_gated_admin_suffixes   = var.omniroute_gated_admin_suffixes
   omniroute_chart_version          = var.omniroute_chart_version
   omniroute_image_tag              = var.omniroute_image_tag
   omniroute_storage_class_name     = var.omniroute_storage_class_name

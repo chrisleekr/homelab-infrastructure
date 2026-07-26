@@ -22,6 +22,23 @@ locals {
   # Module-owned Secret holding the 4 auth keys, referenced by the chart via auth.existingSecret.
   omniroute_auth_secret_name = "omniroute-auth"
 
+  # Every prefix that reaches /api/v1 handlers with an arbitrary trailing path, read from the image's
+  # next.config.mjs rewrites(). NOT var.omniroute_public_paths: the app aliases more prefixes than
+  # the Ingress opens.
+  #
+  # /v1/v1 is the trap: not opened by the API Ingress, so nginx has no location for it and its
+  # longest match is the OPEN /v1/ location. Ungated admin routes unless listed here. Re-read
+  # rewrites() on every image bump.
+  omniroute_api_alias_prefixes = ["/api/v1", "/v1", "/v1/v1"]
+
+  # Crossed rather than listed literally so a suffix cannot be added for one alias and missed on
+  # another.
+  omniroute_gated_admin_paths = distinct(flatten([
+    for prefix in local.omniroute_api_alias_prefixes : [
+      for suffix in var.omniroute_gated_admin_suffixes : "${prefix}${suffix}"
+    ]
+  ]))
+
   # Request-size and timeout annotations both Ingresses need. Held here so the two cannot drift
   # apart; the security-bearing annotations stay inline at each resource where they are audited.
   omniroute_ingress_base_annotations = {

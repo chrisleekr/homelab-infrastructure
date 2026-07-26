@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: omniroute
+    role: alert-rules
+    release: kube-prometheus-stack
+  name: prometheus-omniroute-rules
+  namespace: ${namespace}
+spec:
+  groups:
+  - name: omniroute.rules
+    rules:
+    # One replica on a single-writer SQLite PVC, so any restart is full downtime. Stock
+    # KubePodCrashLooping keys on the CrashLoopBackOff waiting reason, which a pod that runs for
+    # hours between aborts never reaches. Restart count is the only surviving signal: do not narrow
+    # this by termination reason, which reads "Completed" even for a heap abort.
+    - alert: OmniRouteContainerRestarted
+      annotations:
+        description: The OmniRoute container in pod {{$labels.pod}} restarted {{$value | printf "%.0f"}}
+          time(s) in the last hour. Check `kubectl logs -n omniroute {{$labels.pod}} --previous` for
+          a "Reached heap limit" abort before assuming a clean shutdown.
+        summary: OmniRoute restarted, which is full gateway downtime at one replica.
+      expr: increase(kube_pod_container_status_restarts_total{namespace="omniroute",container="omniroute"}[1h]) > 0
+      for: 5m
+      labels:
+        issue: OmniRoute container {{$labels.pod}} restarted and the termination reason is not trustworthy.
+        severity: critical
+    # Leading indicator for the abort above: must fire while heap headroom remains. The percentage
+    # encodes the gap between OMNIROUTE_MEMORY_MB and limits.memory, so retune it when either moves.
+    - alert: OmniRouteMemoryNearHeapCeiling
+      annotations:
+        description: The OmniRoute container in pod {{$labels.pod}} is at {{$value | printf "%.1f"}}%
+          of its memory limit. The V8 old-space cap is normally reached first, so expect a
+          "Reached heap limit" abort, though an off-heap buffer burst can OOMKill instead.
+        summary: OmniRoute is approaching the V8 heap ceiling and will abort if it keeps climbing.
+      expr: container_memory_working_set_bytes{namespace="omniroute",container="omniroute"} / on(namespace,pod,container) kube_pod_container_resource_limits{namespace="omniroute",container="omniroute",resource="memory"} * 100 > 70
+      for: 10m
+      labels:
+        issue: OmniRoute memory working set on {{$labels.pod}} is high relative to its limit.
+        severity: warning
+    # Recreate briefly drops availability to zero on apply; `for` rides that out so only real
+    # outages page.
+    - alert: OmniRouteDown
+      annotations:
+        description: The OmniRoute deployment has had no available replica for more than 5 minutes,
+          so every gateway client is failing.
+        summary: OmniRoute has no available replica.
+      expr: kube_deployment_status_replicas_available{namespace="omniroute",deployment="omniroute"} == 0
+      for: 5m
+      labels:
+        issue: OmniRoute has no available replica and the AI gateway is unreachable.
+        severity: critical

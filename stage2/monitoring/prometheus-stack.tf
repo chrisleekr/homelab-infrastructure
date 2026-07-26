@@ -51,7 +51,7 @@ resource "helm_release" "prometheus_operator" {
   name       = "kube-prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  version    = "80.13.3"
+  version    = "87.19.1"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   timeout    = 360 # 6 minutes — extended for CRD installation and Prometheus/Grafana startup
   wait       = true

@@ -146,7 +146,7 @@ The following services use OAuth2 Proxy for authentication:
 | MinIO Console | minio-console.chrislee.local |
 | Kubecost | cost.chrislee.local |
 | LiteLLM admin UI | litellm.chrislee.local/ui |
-| OmniRoute dashboard | omniroute.chrislee.local (all non-public paths, including the `/api/v1/management`, `/api/v1/agents`, `/api/v1/accounts` and `/api/v1/registered-keys` admin subpaths) |
+| OmniRoute dashboard | omniroute.chrislee.local (all non-public paths, plus the `omniroute_gated_admin_suffixes` applied to every API alias prefix, e.g. `/v1/management`, `/api/v1/management` and `/v1/v1/management`) |
 
 ## References
 

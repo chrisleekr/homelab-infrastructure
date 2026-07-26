@@ -958,7 +958,7 @@ variable "omniroute_enable" {
 }
 
 variable "omniroute_domain" {
-  description = "Domain name for the OmniRoute ingress. Both the open /api/v1 surface and the gated dashboard are served from this single host"
+  description = "Domain name for the OmniRoute ingress. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
   type        = string
   default     = "omniroute.chrislee.local"
 }
@@ -970,19 +970,19 @@ variable "omniroute_ingress_class_name" {
 }
 
 variable "omniroute_public_paths" {
-  description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else, the dashboard at / plus any /api path omitted here, falls through to the oauth2-proxy-gated ingress. Default is the OpenAI-compatible base path only. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions; re-verify the exact set against a running container"
+  description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else falls through to the oauth2-proxy-gated ingress. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions"
   type        = list(string)
-  default     = ["/api/v1"]
+  default     = ["/api/v1", "/v1"]
 }
 
-variable "omniroute_gated_api_paths" {
-  description = "Admin subpaths under the open /api/v1 prefix pulled back behind oauth2-proxy as defense in depth (management, agents, accounts, registered-keys). OpenAI-compatible clients never call these, so gating them costs model traffic nothing. Set to [] to disable"
+variable "omniroute_gated_admin_suffixes" {
+  description = "Admin route suffixes pulled back behind oauth2-proxy as defense in depth, applied to every API alias prefix (see the module's locals.tf). Suffixes rather than full paths because every alias rewrites onto the same handlers, so gating a subset gates nothing. Set to [] to disable"
   type        = list(string)
   default = [
-    "/api/v1/management",
-    "/api/v1/agents",
-    "/api/v1/accounts",
-    "/api/v1/registered-keys",
+    "/management",
+    "/agents",
+    "/accounts",
+    "/registered-keys",
   ]
 }
 

@@ -30,6 +30,7 @@ flowchart TB
 
             subgraph rules [PrometheusRules]
                 LonghornRules[Longhorn Rules]
+                OmniRouteRules[OmniRoute Rules]
                 PostgresRules[PostgreSQL Rules]
                 RedisRules[Redis Rules]
             end
@@ -163,6 +164,7 @@ Custom alerting rules are defined in `prometheus-rules/`:
 | File | Purpose |
 |------|---------|
 | `longhorn-rules.tftpl` | Longhorn storage alerts |
+| `omniroute-rules.tftpl` | OmniRoute AI gateway alerts |
 | `postgres-rules.tftpl` | PostgreSQL database alerts |
 | `redis-rules.tftpl` | Redis cache alerts |
 

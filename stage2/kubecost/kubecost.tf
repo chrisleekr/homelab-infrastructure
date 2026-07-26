@@ -49,6 +49,7 @@ resource "helm_release" "kubecost" {
     templatefile(
       "${path.module}/templates/kubecost-values.tftpl",
       {
+        cluster_id             = "homelab"
         auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
         kubecost_token         = var.kubecost_token
 
