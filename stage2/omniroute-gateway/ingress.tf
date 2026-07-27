@@ -1,23 +1,24 @@
-# Two Ingresses on the SAME host. nginx merges rules per host and matches the longest path first,
-# so var.omniroute_public_paths (default /api/v1) hit the open API Ingress while "/" and everything
-# else fall through to the oauth2-proxy-gated UI Ingress. /api/v1 is longer than /, so API clients
-# always land on the open Ingress.
+# Two Ingresses on the SAME host, because auth-url/auth-signin are per-Ingress-object annotations:
+# a single Ingress cannot gate some of its paths and not others.
+# Ref: https://kubernetes.github.io/ingress-nginx/examples/auth/oauth-external-auth/ ("Key Detail")
 #
-# The match is a longest LITERAL STRING prefix, not the element-wise prefix the Ingress spec
-# describes: ingress-nginx renders pathType Prefix as a plain nginx prefix location. "/api/v1"
-# therefore also opens "/api/v1beta" and "/api/v1-anything", not only true "/api/v1/" children. No
-# such sibling route exists in the pinned appVersion, but a future upstream route named that way
-# would land on the OPEN Ingress. Recheck this list on every image bump.
+# nginx merges rules per host and matches the longest path first, so var.omniroute_public_paths hit
+# the open API Ingress while "/" and everything else fall through to the oauth2-proxy-gated UI
+# Ingress. The admin paths in locals.tf are longer still, so they route back to the gated Ingress.
+# This is the INVERSE of the litellm split, where "/" is the open API and listed paths are gated.
+#
+# Matching is ELEMENT-WISE: "/foo/bar matches /foo/bar/baz, but does not match /foo/barbaz", so a
+# sibling like /v1beta does NOT match the open /v1 and stays gated. That holds only while no Ingress
+# on this host sets use-regex or rewrite-target: either forces regex locations onto ALL paths for the
+# host, switching to longest-literal matching, and /v1 would then swallow /v1beta.
+# Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/ingress-v1/ (pathType)
 # Ref: https://kubernetes.github.io/ingress-nginx/user-guide/ingress-path-matching/
 #
-# This is the INVERSE of the litellm split: there "/" is the open API and listed paths are gated;
-# here "/" is the gated dashboard and listed paths are the open API.
-#
-# Both Ingresses keep the same host and the same TLS secret. cert-manager only adds SANs for the
-# Ingress it is annotated on, and only ONE of the two carries the cluster-issuer annotation (the
-# UI). Two annotated Ingresses sharing one TLS secret would create competing Certificates.
+# Both Ingresses keep the same host and the same TLS secret, and only the UI carries the
+# cluster-issuer annotation. Two annotated Ingresses sharing one TLS secret would create competing
+# Certificates.
 
-# Open API surface. No oauth2-proxy: OmniRoute enforces REQUIRE_API_KEY on /api/v1 itself (forced in
+# Open API surface. No oauth2-proxy: OmniRoute enforces REQUIRE_API_KEY on the API itself (forced in
 # the values template), and an HTTP redirect to an SSO login page would break SDK clients streaming
 # SSE.
 resource "kubernetes_ingress_v1" "api" {
@@ -132,15 +133,12 @@ resource "kubernetes_ingress_v1" "ui" {
       host = var.omniroute_domain
 
       http {
-        # Specific /api/v1 admin subpaths pulled back behind oauth2 as defense in depth over
-        # REQUIRE_API_KEY. These sit under the open /api/v1 prefix but carry management-grade
-        # functions (proxy config, agent credentials, accounts, registered keys), so the open
-        # ingress alone would rest their protection entirely on OmniRoute's in-app API-key authz.
-        # nginx matches the longest prefix, and these are longer than the open ingress's /api/v1,
-        # so they route here and require an oauth2 session. The dashboard's own browser calls to
-        # them still pass: the browser already holds the oauth2 cookie.
+        # Management-grade routes pulled back behind oauth2 as defense in depth over REQUIRE_API_KEY,
+        # which would otherwise be their only protection. Longer than the open prefixes, so they
+        # route here. Dashboard browser calls still pass, carrying the oauth2 cookie.
+        # Derived in locals.tf; see the alias-prefix comment there for why a subset gates nothing.
         dynamic "path" {
-          for_each = var.omniroute_gated_api_paths
+          for_each = local.omniroute_gated_admin_paths
 
           content {
             path      = path.value

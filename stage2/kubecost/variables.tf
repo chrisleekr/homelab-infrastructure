@@ -10,6 +10,19 @@ variable "kubecost_token" {
   sensitive   = true
 }
 
+# Stamped onto every cost record Kubecost writes, so changing it on a live install orphans the
+# existing ETL history under the old identity.
+variable "kubecost_cluster_id" {
+  description = "Unique identifier for this cluster in Kubecost. Must be distinct per cluster reporting into the same Kubecost."
+  type        = string
+  default     = "homelab"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$", var.kubecost_cluster_id))
+    error_message = "kubecost_cluster_id must be lowercase alphanumeric, optionally separated by \"-\" or \"_\"."
+  }
+}
+
 variable "kubecost_ingress_enable_tls" {
   description = "Enable TLS for the kubecost ingress"
   type        = bool

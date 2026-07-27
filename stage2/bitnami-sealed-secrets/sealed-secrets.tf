@@ -6,7 +6,7 @@ resource "helm_release" "sealed_secrets" {
   name       = "sealed-secrets"
   repository = "https://bitnami.github.io/sealed-secrets"
   chart      = "sealed-secrets"
-  version    = "2.18.1" # app version 0.35.0, released 2026-02-12
+  version    = "2.19.1"
   namespace  = kubernetes_namespace_v1.sealed_secrets_namespace.metadata[0].name
   wait       = true
   timeout    = 300

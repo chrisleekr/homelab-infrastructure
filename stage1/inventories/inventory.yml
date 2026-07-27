@@ -51,18 +51,18 @@ cluster:
 
     ########################
     # Start: Kubeadm
-    runc_version: "1.4.0" # https://github.com/opencontainers/runc/releases
-    cni_version: "1.8.0" # https://github.com/containernetworking/plugins/releases
-    crictl_version: "1.35.0" # https://github.com/kubernetes-sigs/cri-tools/releases
-    containerd_version: "2.2.1" # https://github.com/containerd/containerd/releases
-    nerdctl_version: "2.2.0" # https://github.com/containerd/nerdctl/releases
-    kubeadm_version: "1.33.7" # https://kubernetes.io/releases/
-    kubectl_version: "1.33.7" # https://kubernetes.io/releases/
-    kubelet_service_version: "0.18.0" # https://github.com/kubernetes/release/releases
+    runc_version: "1.5.1" # https://github.com/opencontainers/runc/releases
+    cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
+    crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
+    containerd_version: "2.3.3" # https://github.com/containerd/containerd/releases
+    nerdctl_version: "2.3.5" # https://github.com/containerd/nerdctl/releases
+    kubeadm_version: "1.36.3" # https://kubernetes.io/releases/
+    kubectl_version: "1.36.3" # https://kubernetes.io/releases/
+    kubelet_service_version: "0.21.1" # https://github.com/kubernetes/release/releases
     # https://github.com/cilium/cilium-cli/releases
     # $ /usr/local/bin/cilium version
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_cli_version: "0.18.9"
+    cilium_cli_version: "0.19.6"
 
     # Upgrade instructions
     #  https://v1-32.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/

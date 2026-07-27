@@ -1,7 +1,21 @@
 # https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml
 global:
   # Required for finopsagent subchart in 2.9.x
-  clusterId: "homelab"
+  clusterId: "${cluster_id}"
+  federatedStorage:
+    config: ""
+    # A federated storage config can be provided via an existingSecret or via a string in helm values.
+    # If both are provided, the string in helm values take precedence.
+    # Example:
+    #   config: |-
+    #     type: S3
+    #     config:
+    #       bucket: ibm-kubecost-unified-agent-demo-data
+    #       endpoint: s3.amazonaws.com
+    #       region: us-west-2
+    #       access_key: xxx
+    #       secret_key: xxx
+    existingSecret: ""
   # zone: cluster.local (use only if your DNS server doesn't live in the same zone as kubecost)
   prometheus:
     enabled: false  # Kubecost depends on Prometheus data, it is not optional. When enabled: false, Prometheus will not be installed and you must configure your own Prometheus to scrape kubecost as well as provide the fqdn below. -- Warning: Before changing this setting, please read to understand the risks https://docs.kubecost.com/install-and-configure/install/custom-prom
@@ -159,6 +173,10 @@ global:
       enabled: false  # Set to true when using affected CI/CD tools for access to the below configuration options.
       skipSanityChecks: false  # If true, skip all sanity/existence checks for resources like Secrets.
 
+# No top-level `prometheus:` block here. That key configures the chart's bundled Prometheus subchart,
+# which global.prometheus.enabled: false above disables, so anything set under it is inert. Kubecost
+# reads the external kube-prometheus-stack at the fqdn above and takes its cluster identity from
+# global.clusterId.
 
 # generated at http://kubecost.com/install, used for alerts tracking and free trials
 kubecostToken: "${kubecost_token}"

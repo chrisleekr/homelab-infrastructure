@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM alpine:3.21
+FROM --platform=$BUILDPLATFORM alpine:3.21.7
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG BUILDARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.36.2
+ARG KUBECTL_VERSION=1.36.3
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.2.3
 # https://developer.hashicorp.com/terraform/install
@@ -16,7 +16,7 @@ ARG TASKFILE_VERSION=3.52.0
 # https://github.com/aquasecurity/trivy/releases
 ARG TRIVY_VERSION=0.72.0
 # https://github.com/terraform-linters/tflint/releases
-ARG TFLINT_VERSION=v0.63.1
+ARG TFLINT_VERSION=v0.64.0
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 
