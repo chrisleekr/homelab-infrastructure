@@ -1,28 +1,22 @@
-# Two Ingresses on the SAME host. This is the documented way to mix authenticated and open paths
-# on one host: auth-url/auth-signin are per-Ingress-object annotations, so there is no per-path auth
-# toggle within a single Ingress.
+# Two Ingresses on the SAME host, because auth-url/auth-signin are per-Ingress-object annotations:
+# a single Ingress cannot gate some of its paths and not others.
 # Ref: https://kubernetes.github.io/ingress-nginx/examples/auth/oauth-external-auth/ ("Key Detail")
 #
 # nginx merges rules per host and matches the longest path first, so var.omniroute_public_paths hit
 # the open API Ingress while "/" and everything else fall through to the oauth2-proxy-gated UI
 # Ingress. The admin paths in locals.tf are longer still, so they route back to the gated Ingress.
+# This is the INVERSE of the litellm split, where "/" is the open API and listed paths are gated.
 #
-# Matching is ELEMENT-WISE: "/foo/bar matches /foo/bar/baz, but does not match /foo/barbaz". A
-# sibling like /v1beta therefore does NOT match the open /v1 and stays gated; opening it would mean
-# adding it to var.omniroute_public_paths explicitly.
+# Matching is ELEMENT-WISE: "/foo/bar matches /foo/bar/baz, but does not match /foo/barbaz", so a
+# sibling like /v1beta does NOT match the open /v1 and stays gated. That holds only while no Ingress
+# on this host sets use-regex or rewrite-target: either forces regex locations onto ALL paths for the
+# host, switching to longest-literal matching, and /v1 would then swallow /v1beta.
 # Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/ingress-v1/ (pathType)
-#
-# That holds only while no Ingress on this host sets use-regex or rewrite-target. Either annotation
-# forces regex locations onto ALL paths for the host, switching to longest-literal matching, and
-# /v1 would then swallow /v1beta.
 # Ref: https://kubernetes.github.io/ingress-nginx/user-guide/ingress-path-matching/
 #
-# This is the INVERSE of the litellm split: there "/" is the open API and listed paths are gated;
-# here "/" is the gated dashboard and listed paths are the open API.
-#
-# Both Ingresses keep the same host and the same TLS secret. cert-manager only adds SANs for the
-# Ingress it is annotated on, and only ONE of the two carries the cluster-issuer annotation (the
-# UI). Two annotated Ingresses sharing one TLS secret would create competing Certificates.
+# Both Ingresses keep the same host and the same TLS secret, and only the UI carries the
+# cluster-issuer annotation. Two annotated Ingresses sharing one TLS secret would create competing
+# Certificates.
 
 # Open API surface. No oauth2-proxy: OmniRoute enforces REQUIRE_API_KEY on the API itself (forced in
 # the values template), and an HTTP redirect to an SSO login page would break SDK clients streaming

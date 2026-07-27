@@ -41,24 +41,13 @@ Ingress is disabled and the module writes two on the same host:
 - `omniroute-ui` — the catch-all `/`, behind oauth2-proxy. It also captures any `/api` path not in
   `omniroute_public_paths`, so provider callbacks and management routes stay gated.
 
-Deploying multiple Ingress objects per host is the documented way to mix open and authenticated
-paths: `auth-url`/`auth-signin` are per-Ingress-object annotations, so a single Ingress cannot gate
-some of its paths and not others
-([ingress-nginx external OAUTH](https://kubernetes.github.io/ingress-nginx/examples/auth/oauth-external-auth/)).
-nginx matches the longest prefix first, so `/api/v1` and `/v1` beat `/` and API clients always reach
-the open Ingress. This is the mirror image of the litellm module, where `/` is the open API and
-listed paths are gated.
+Splitting across two Ingress objects is what makes the mix possible at all, and nginx's longest-prefix
+match is what routes each request to the right one. `ingress.tf` documents the mechanism and the
+conditions under which it stops holding.
 
-Matching is element-wise, per the
-[Ingress spec](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/ingress-v1/):
-"`/foo/bar` matches `/foo/bar/baz`, but does not match `/foo/barbaz`". So `/v1beta` does **not**
-match the open `/v1`; it stays gated, and opening it means adding it to `omniroute_public_paths`
-explicitly. This holds only while neither Ingress sets `use-regex` or `rewrite-target`: either one
-forces regex locations onto **all** paths for the host and `/v1` would then swallow `/v1beta`.
-
-`/v1` and `/api/v1` are both open because they are the same handler (the image rewrites one onto the
-other). `/v1` is the canonical one the dashboard emits, so opening only `/api/v1` leaves the
-dashboard handing out URLs that redirect to the login page.
+`/v1` and `/api/v1` are both open because they are the same handler. `/v1` is the canonical one the
+dashboard emits, so opening only `/api/v1` leaves the dashboard handing out URLs that redirect to the
+login page.
 
 Because the API prefixes are unauthenticated at the edge, the module forces
 `extraConfig.REQUIRE_API_KEY: "true"` so OmniRoute requires an API key on every proxy call.
@@ -71,11 +60,10 @@ call. `var.omniroute_gated_admin_suffixes` pulls them back onto the gated Ingres
 oauth2 session on top of the API key while model calls stay open. Dashboard browser calls still
 pass, carrying the cookie. Set the variable to `[]` to disable.
 
-The gated set is `locals.tf`'s alias prefixes crossed with these suffixes. **Every alias must be
-covered**: the app aliases more prefixes onto `/api/v1` than the Ingress opens, and an alias the
-Ingress does not open has no location of its own, so it falls to the open prefix and reaches the
-handler ungated. `/v1/v1` is the live example. Both lists are app-version dependent; re-verify
-against a running container on every image bump.
+**Every alias must be gated, not just the ones the Ingress opens.** The gated set is `locals.tf`'s
+alias prefixes crossed with these suffixes, because an alias with no Ingress location of its own
+falls through to the open prefix and reaches the handler ungated. Both lists are app-version
+dependent; re-verify against a running container on every image bump.
 
 Both Ingresses share one host and one TLS secret, and only `omniroute-ui` carries
 `cert-manager.io/cluster-issuer`. Annotating both would create competing Certificates for the same
@@ -153,11 +141,16 @@ curl -sS http://127.0.0.1:20128/api/monitoring/health
 # The open API surface, reachable from outside with an API key:
 curl -sS https://$DOMAIN/v1/models -H "Authorization: Bearer $API_KEY"
 
-# Admin suffixes must stay gated on every alias. Anything but a 302 means the request reached the
-# app and the gate was bypassed. Re-run after every image bump.
+# Admin suffixes must stay gated on every alias. 302 is the oauth2-proxy login redirect, so only it
+# proves the gate held. Transport, TLS and ingress failures also return non-302 without reaching the
+# app, so they are an inconclusive check rather than a bypass. Re-run after every image bump.
 for p in /v1/management /api/v1/management /v1/v1/management; do
   code=$(curl -so /dev/null -w '%{http_code}' "https://$DOMAIN$p")
-  [ "$code" = "302" ] || echo "GATE BYPASS: $p returned $code"
+  case "$code" in
+    302)         echo "OK: $p gated" ;;
+    000|5??)     echo "INCONCLUSIVE: $p returned $code, request never reached the app" ;;
+    *)           echo "GATE BYPASS: $p returned $code" ;;
+  esac
 done
 ```
 

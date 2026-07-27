@@ -188,6 +188,7 @@ module "kubecost" {
 
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
   kubecost_token                   = var.kubecost_token
+  kubecost_cluster_id              = var.kubecost_cluster_id
   kubecost_ingress_host            = var.kubecost_ingress_host
   kubecost_ingress_enable_tls      = var.ingress_enable_tls
   kubecost_ingress_class_name      = var.kubecost_ingress_class_name

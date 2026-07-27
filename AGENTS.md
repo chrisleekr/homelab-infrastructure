@@ -49,8 +49,7 @@ version that keeps a future reader from reintroducing the bug.
   that code; the module README covers operator-facing behavior (what is exposed, how to verify).
   Cross-reference instead of restating.
 - **No changelogs in docs.** Docs describe current state. Rename a variable and just rewrite the
-  table; git history is the changelog. (Precedent: the llmgateway to litellm swap left no migration
-  note.)
+  table; git history is the changelog.
 - **Variable descriptions are one or two sentences.** Longer rationale goes in a comment above the
   block.
 - **Skip caveats about caveats.** If a cited doc needs walking back, cite a better source instead.

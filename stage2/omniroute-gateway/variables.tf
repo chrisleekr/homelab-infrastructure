@@ -38,9 +38,8 @@ variable "omniroute_public_paths" {
     error_message = "omniroute_public_paths must contain at least one path"
   }
 
-  # Concatenated with the admin suffixes in locals.tf. A malformed prefix yields a gate location no
-  # request can ever match, which fails open silently. Caught at plan time because the open Ingress
-  # applies first: a late failure widens the open surface while leaving the gate unchanged.
+  # These are concatenated with the admin suffixes in locals.tf, so a malformed prefix produces a
+  # gate location nothing matches and the admin routes silently serve open.
   validation {
     condition = alltrue([
       for path in var.omniroute_public_paths :

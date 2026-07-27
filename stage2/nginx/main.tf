@@ -22,10 +22,13 @@ resource "helm_release" "nginx" {
   name       = "nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
-  version    = "4.15.1"
-  namespace  = "nginx"
-  timeout    = 300
-  wait       = true
+  # Terminal release: kubernetes/ingress-nginx was archived in March 2026, so 4.15.1 is the last
+  # chart and no further CVE fixes will ship. Staying put is not safer than taking it. Replacing the
+  # controller (InGate or another Gateway API implementation) is its own migration.
+  version   = "4.15.1"
+  namespace = "nginx"
+  timeout   = 300
+  wait      = true
 
   values = [
     templatefile(

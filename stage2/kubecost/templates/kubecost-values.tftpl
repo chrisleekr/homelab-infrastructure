@@ -173,29 +173,10 @@ global:
       enabled: false  # Set to true when using affected CI/CD tools for access to the below configuration options.
       skipSanityChecks: false  # If true, skip all sanity/existence checks for resources like Secrets.
 
-
-prometheus:
-  rbac:
-    create: true  # Create the RBAC resources for Prometheus.
-
-  serviceAccounts:
-    alertmanager:
-      create: true
-      name:
-    nodeExporter:
-      create: true
-      name:
-    server:
-      create: true
-      name:
-      ## Prometheus server ServiceAccount annotations.
-      ## Can be used for AWS IRSA annotations when using Remote Write mode with Amazon Managed Prometheus.
-      annotations: {}
-
-  server:
-    global:
-      external_labels:
-        cluster_id: "${cluster_id}"
+# No top-level `prometheus:` block here. That key configures the chart's bundled Prometheus subchart,
+# which global.prometheus.enabled: false above disables, so anything set under it is inert. Kubecost
+# reads the external kube-prometheus-stack at the fqdn above and takes its cluster identity from
+# global.clusterId.
 
 # generated at http://kubecost.com/install, used for alerts tracking and free trials
 kubecostToken: "${kubecost_token}"
@@ -362,8 +343,6 @@ persistentVolume:
   # Enables a separate PV specifically for ETL data. This should be avoided, but
   # is kept for legacy compatibility.
   dbPVEnabled: false
-
-
 
 service:
   type: ClusterIP

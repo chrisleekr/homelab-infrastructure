@@ -504,6 +504,19 @@ variable "kubecost_token" {
 }
 
 
+# Stamped onto every cost record Kubecost writes, so changing it on a live install orphans the
+# existing ETL history under the old identity.
+variable "kubecost_cluster_id" {
+  description = "Unique identifier for this cluster in Kubecost. Must be distinct per cluster reporting into the same Kubecost."
+  type        = string
+  default     = "homelab"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$", var.kubecost_cluster_id))
+    error_message = "kubecost_cluster_id must be lowercase alphanumeric, optionally separated by \"-\" or \"_\"."
+  }
+}
+
 variable "kubecost_ingress_host" {
   description = "The host for the kubecost ingress"
   type        = string
@@ -973,6 +986,22 @@ variable "omniroute_public_paths" {
   description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else falls through to the oauth2-proxy-gated ingress. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions"
   type        = list(string)
   default     = ["/api/v1", "/v1"]
+
+  # Mirrors the module's validation. Repeated here because the module is behind count, so with
+  # omniroute_enable = false its validations never run and a malformed TF_VAR_ value would sit
+  # accepted until the day the module is turned on.
+  validation {
+    condition     = length(var.omniroute_public_paths) > 0
+    error_message = "omniroute_public_paths must contain at least one path"
+  }
+
+  validation {
+    condition = alltrue([
+      for path in var.omniroute_public_paths :
+      startswith(path, "/") && !endswith(path, "/") && !strcontains(path, "//")
+    ])
+    error_message = "Every omniroute_public_paths entry must start with \"/\", must not end with \"/\", and must not contain \"//\"."
+  }
 }
 
 variable "omniroute_gated_admin_suffixes" {
@@ -984,6 +1013,14 @@ variable "omniroute_gated_admin_suffixes" {
     "/accounts",
     "/registered-keys",
   ]
+
+  validation {
+    condition = alltrue([
+      for suffix in var.omniroute_gated_admin_suffixes :
+      startswith(suffix, "/") && !endswith(suffix, "/") && length(suffix) > 1 && !strcontains(suffix, "//")
+    ])
+    error_message = "Every omniroute_gated_admin_suffixes entry must start with \"/\", must not end with \"/\", must not contain \"//\", and must be longer than \"/\": suffixes are concatenated onto each API alias prefix."
+  }
 }
 
 variable "omniroute_chart_version" {
