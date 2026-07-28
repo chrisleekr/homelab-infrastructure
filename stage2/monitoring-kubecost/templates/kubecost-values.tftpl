@@ -9,6 +9,9 @@ global:
   clusterId: "${cluster_id}"
   federatedStorage:
     existingSecret: "${federated_store_secret_name}"
+  # Covers the aggregator, localStore and finopsagent claims unless one overrides it. Pinned rather
+  # than left to the cluster default so the claims do not move if that default ever changes.
+  defaultStorageClass: "${storage_class_name}"
 
 # Basic Kubecost ingress, more examples available at https://docs.kubecost.com/install-and-configure/install/ingress-examples
 ingress:

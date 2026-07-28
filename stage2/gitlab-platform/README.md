@@ -151,7 +151,7 @@ username authenticates as the `default` ACL user.
 Defined in `postgres-cluster.tf`, which carries the rationale for the `monolith` import type and the
 pinned `imageName`. `bootstrap.initdb.import` runs only once, at bootstrap: re-importing means
 deleting the Cluster and its PVC first. `externalClusters` is consulted only during that import and
-is inert afterwards.
+is inert afterward.
 
 `postImportApplicationSQL` is unsupported with `monolith`, so extensions must be added by hand after
 an import.

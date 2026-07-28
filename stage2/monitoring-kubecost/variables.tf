@@ -1,9 +1,3 @@
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
-
 # Stamped inside every cost record Kubecost writes, not just its path in the federated store, so
 # changing it on a live install orphans the existing ETL history under the old identity and no
 # amount of re-pathing recovers it. Kept at kubecost's stock default because the existing ETL is
@@ -17,6 +11,12 @@ variable "kubecost_cluster_id" {
     condition     = can(regex("^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$", var.kubecost_cluster_id))
     error_message = "kubecost_cluster_id must be lowercase alphanumeric, optionally separated by \"-\" or \"_\"."
   }
+}
+
+variable "kubecost_storage_class_name" {
+  description = "Storage class for the Kubecost aggregator, localStore and finops-agent volumes."
+  type        = string
+  default     = "longhorn"
 }
 
 variable "kubecost_ingress_enable_tls" {

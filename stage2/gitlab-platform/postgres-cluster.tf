@@ -11,6 +11,21 @@ resource "kubectl_manifest" "gitlab_postgres" {
     kubernetes_secret_v1.postgresql_password
   ]
 
+  # The provider's built-in wait covers Deployment/DaemonSet/StatefulSet/APIService rollouts only,
+  # so a Cluster returns as soon as the API server accepts it. Ready flips true after the import
+  # finishes, which is what GitLab's migrations need. Provider default timeout is 10m; pg_dump and
+  # pg_restore of both databases can outrun that.
+  wait_for {
+    condition {
+      type   = "Ready"
+      status = "True"
+    }
+  }
+
+  timeouts {
+    create = "45m"
+  }
+
   yaml_body = <<-EOF
   apiVersion: postgresql.cnpg.io/v1
   kind: Cluster

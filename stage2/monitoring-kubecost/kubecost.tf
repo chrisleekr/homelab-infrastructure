@@ -15,23 +15,6 @@ resource "kubernetes_namespace_v1" "kubecost" {
 }
 
 
-resource "kubernetes_secret_v1" "frontend_basic_auth" {
-  metadata {
-    name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace_v1.kubecost.metadata[0].name
-  }
-
-  data = {
-    auth = base64decode(var.nginx_frontend_basic_auth_base64)
-  }
-
-  type = "Opaque"
-
-  lifecycle {
-    ignore_changes = [metadata[0].labels]
-  }
-}
-
 resource "kubernetes_secret_v1" "federated_store" {
   depends_on = [kubernetes_namespace_v1.kubecost]
 
@@ -85,6 +68,7 @@ resource "helm_release" "kubecost" {
       {
         cluster_id             = var.kubecost_cluster_id
         auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
+        storage_class_name     = var.kubecost_storage_class_name
 
         ingress_enable_tls = var.kubecost_ingress_enable_tls
         ingress_class_name = var.kubecost_ingress_class_name

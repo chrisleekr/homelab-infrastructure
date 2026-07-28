@@ -202,7 +202,7 @@ spec:
 
     - name: CloudNativePG
       rules:
-        - alert: PostgresqlDown
+        - alert: CnpgPostgresqlDown
           expr: "cnpg_collector_up == 0"
           for: 1m
           labels:
@@ -211,7 +211,7 @@ spec:
             summary: PostgreSQL down (pod {{ $labels.pod }})
             description: "CNPG collector cannot reach PostgreSQL\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlCollectorError
+        - alert: CnpgPostgresqlCollectorError
           expr: "cnpg_collector_last_collection_error > 0"
           for: 5m
           labels:
@@ -220,7 +220,7 @@ spec:
             summary: PostgreSQL metrics collection failing (pod {{ $labels.pod }})
             description: "CNPG collector is erroring, so the alerts below are running blind\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlRestarted
+        - alert: CnpgPostgresqlRestarted
           expr: "time() - cnpg_pg_postmaster_start_time < 60"
           for: 0m
           labels:
@@ -229,7 +229,7 @@ spec:
             summary: PostgreSQL restarted (pod {{ $labels.pod }})
             description: "Postmaster started less than a minute ago\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlTooManyConnections
+        - alert: CnpgPostgresqlTooManyConnections
           expr: |
             sum by (namespace, pod) (cnpg_backends_total)
               > on (namespace, pod)
@@ -241,7 +241,7 @@ spec:
             summary: PostgreSQL too many connections (pod {{ $labels.pod }})
             description: "Backends above 80% of max_connections\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlDeadLocks
+        - alert: CnpgPostgresqlDeadLocks
           expr: 'increase(cnpg_pg_stat_database_deadlocks{datname!~"template.*|postgres"}[5m]) > 5'
           for: 0m
           labels:
@@ -250,7 +250,7 @@ spec:
             summary: PostgreSQL deadlocks (database {{ $labels.datname }})
             description: "More than 5 deadlocks in 5 minutes\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlHighRollbackRate
+        - alert: CnpgPostgresqlHighRollbackRate
           # clamp_min guards the idle case, where commits and rollbacks are both zero.
           expr: |
             sum by (namespace, datname) (rate(cnpg_pg_stat_database_xact_rollback{datname!~"template.*|postgres"}[5m]))
@@ -270,7 +270,7 @@ spec:
 
         # Wraparound leaves no margin once it arrives: PostgreSQL refuses writes at 2^31. Default
         # autovacuum_freeze_max_age is 200M, so 300M means autovacuum is not keeping up.
-        - alert: PostgresqlTransactionIdWraparound
+        - alert: CnpgPostgresqlTransactionIdWraparound
           expr: "max by (namespace, datname) (cnpg_pg_database_xid_age) > 300000000"
           for: 10m
           labels:
@@ -279,7 +279,7 @@ spec:
             summary: PostgreSQL transaction ID age high (database {{ $labels.datname }})
             description: "XID age past autovacuum_freeze_max_age; wraparound shuts down writes at ~2.1B\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlMultixactWraparound
+        - alert: CnpgPostgresqlMultixactWraparound
           expr: "max by (namespace, datname) (cnpg_pg_database_mxid_age) > 300000000"
           for: 10m
           labels:
@@ -288,7 +288,7 @@ spec:
             summary: PostgreSQL multixact ID age high (database {{ $labels.datname }})
             description: "Multixact age past the freeze threshold\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
-        - alert: PostgresqlLongRunningTransaction
+        - alert: CnpgPostgresqlLongRunningTransaction
           expr: "max by (namespace, datname) (cnpg_backends_max_tx_duration_seconds) > 3600"
           for: 5m
           labels:

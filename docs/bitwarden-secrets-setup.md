@@ -242,6 +242,7 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_kubecost_ingress_host` | | `cost.chrislee.local` | Kubecost host |
 | `TF_VAR_kubecost_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_kubecost_cluster_id` | | `cluster-one` | Stamped into every ETL record. Changing it on a live install orphans the cost history |
+| `TF_VAR_kubecost_storage_class_name` | | `longhorn` | Storage class for the Kubecost volumes |
 
 ### Stage 2 — Tailscale (gate: `TF_VAR_tailscale_enable`)
 

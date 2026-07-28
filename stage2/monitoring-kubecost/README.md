@@ -51,20 +51,18 @@ flowchart TB
 
 - `kubernetes_namespace_v1.kubecost` - Dedicated namespace
 - `kubernetes_secret_v1.federated_store` - S3 credentials for the federated store bucket
-- `kubernetes_secret_v1.frontend_basic_auth` - Basic auth credentials. Currently unconsumed: the
-  ingress authenticates via oauth2-proxy, not basic auth
 - `helm_release.kubecost` - Kubecost Helm chart deployment
 
 ## Variables
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `nginx_frontend_basic_auth_base64` | Base64 encoded basic auth credentials | (required, sensitive) |
 | `minio_endpoint` | In-cluster S3 endpoint for MinIO | (required) |
 | `minio_access_key` | MinIO tenant user access key | (required) |
 | `minio_secret_key` | MinIO tenant user secret key | (required, sensitive) |
 | `minio_bucket_name` | Bucket holding federated ETL data | `kubecost-federated-store` |
 | `kubecost_cluster_id` | Identity stamped on this cluster's ETL records | `cluster-one` |
+| `kubecost_storage_class_name` | Storage class for the Kubecost volumes | `longhorn` |
 | `kubecost_ingress_enable_tls` | Enable TLS for ingress | `true` |
 | `kubecost_ingress_class_name` | Ingress class name | `nginx` |
 | `kubecost_ingress_host` | Ingress hostname | `cost.chrislee.local` |

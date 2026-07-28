@@ -532,6 +532,12 @@ variable "kubecost_ingress_class_name" {
   default     = "nginx"
 }
 
+variable "kubecost_storage_class_name" {
+  description = "The storage class name for the kubecost persistence storage"
+  type        = string
+  default     = "longhorn"
+}
+
 variable "tailscale_enable" {
   description = "Enable the tailscale"
   type        = bool
