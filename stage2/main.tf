@@ -116,9 +116,9 @@ module "gitlab_platform" {
   gitlab_toolbox_backups_cron_persistence_size = var.gitlab_toolbox_backups_cron_persistence_size
   gitlab_toolbox_persistence_size              = var.gitlab_toolbox_persistence_size
 
-  gitlab_postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
-  gitlab_redis_master_persistence_size       = var.gitlab_redis_master_persistence_size
-  gitlab_gitaly_persistence_size             = var.gitlab_gitaly_persistence_size
+  gitlab_gitaly_persistence_size = var.gitlab_gitaly_persistence_size
+  gitlab_valkey_persistence_size = var.gitlab_valkey_persistence_size
+  gitlab_postgres_storage_size   = var.gitlab_postgres_storage_size
 
   gitlab_runner_authentication_token = var.gitlab_runner_authentication_token
 
@@ -183,16 +183,23 @@ module "monitoring" {
 
 
 module "kubecost" {
-  depends_on = [module.cert_manager_letsencrypt]
-  source     = "./kubecost"
+  # minio_object_storage is named explicitly: the only value consumed from it resolves to a
+  # random_password, so the implicit edge does not reach the tenant or its buckets.
+  depends_on = [module.cert_manager_letsencrypt, module.minio_object_storage]
+  # Not "./kubecost": helm resolves a chart name to a local path before consulting the repo, so a
+  # directory matching the chart name shadows the remote chart.
+  source = "./monitoring-kubecost"
 
   nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-  kubecost_token                   = var.kubecost_token
   kubecost_cluster_id              = var.kubecost_cluster_id
   kubecost_ingress_host            = var.kubecost_ingress_host
   kubecost_ingress_enable_tls      = var.ingress_enable_tls
   kubecost_ingress_class_name      = var.kubecost_ingress_class_name
   auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
+
+  minio_endpoint   = var.minio_internal_endpoint
+  minio_access_key = var.minio_tenant_user_access_key
+  minio_secret_key = module.minio_object_storage.minio_tenant_user_secret_key
 }
 
 module "vpn" {

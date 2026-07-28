@@ -188,6 +188,7 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_minio_tenant_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_minio_tenant_ingress_api_host` | | `minio.chrislee.local` | S3 API host |
 | `TF_VAR_minio_tenant_ingress_console_host` | | `minio-console.chrislee.local` | Console host |
+| `TF_VAR_minio_internal_endpoint` | | `minio.minio-tenant.svc.cluster.local:80` | In-cluster S3 endpoint. Must be the `minio` ClusterIP service on port 80 |
 
 ### Stage 2 — GitLab
 
@@ -199,8 +200,8 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_gitlab_global_ingress_class` | | `nginx` | Ingress class |
 | `TF_VAR_gitlab_global_ingress_provider` | | `nginx` | Ingress provider |
 | `TF_VAR_gitlab_certmanager_issuer_email` | | `chris@chrislee.local` | Issuer email |
-| `TF_VAR_gitlab_postgresql_primary_persistence_size` | | `20Gi` | Postgres volume |
-| `TF_VAR_gitlab_redis_master_persistence_size` | | `20Gi` | Redis volume |
+| `TF_VAR_gitlab_postgres_storage_size` | | `20Gi` | CloudNativePG volume |
+| `TF_VAR_gitlab_valkey_persistence_size` | | `2Gi` | Valkey volume |
 | `TF_VAR_gitlab_gitaly_persistence_size` | | `50Gi` | Gitaly volume. Backs a StatefulSet claim template, which is immutable, so this must match the existing volume |
 | `TF_VAR_gitlab_toolbox_persistence_size` | | `20Gi` | Toolbox volume |
 | `TF_VAR_gitlab_toolbox_backups_cron_persistence_size` | | `30Gi` | Backup staging volume |
@@ -240,7 +241,7 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 |---|---|---|---|
 | `TF_VAR_kubecost_ingress_host` | | `cost.chrislee.local` | Kubecost host |
 | `TF_VAR_kubecost_ingress_class_name` | | `nginx` | Ingress class |
-| `TF_VAR_kubecost_token` | 🔑 | generated at kubecost.com/install | Alerts / trial features |
+| `TF_VAR_kubecost_cluster_id` | | `cluster-one` | Stamped into every ETL record. Changing it on a live install orphans the cost history |
 
 ### Stage 2 — Tailscale (gate: `TF_VAR_tailscale_enable`)
 

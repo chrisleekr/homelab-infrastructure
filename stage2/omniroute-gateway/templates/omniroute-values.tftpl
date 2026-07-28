@@ -39,6 +39,7 @@ extraConfig:
   REQUIRE_API_KEY: "true"
   STORAGE_ENCRYPTION_KEY_VERSION: "v1"
   OMNIROUTE_MEMORY_MB: "1024"
+  CREDENTIAL_REDACTION_ENABLED: "true"
 
 # Kept in lockstep with the heap cap above: raise both or neither. memory request == limit stops
 # usage ever exceeding the request, which is what puts the pod in the kubelet's last-evicted tier

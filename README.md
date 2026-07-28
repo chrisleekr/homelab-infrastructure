@@ -275,7 +275,7 @@ Each module has its own README with detailed configuration options:
 | [Auth](stage2/auth/README.md) | OAuth2 proxy with Auth0 |
 | [ArgoCD](stage2/argocd/README.md) | GitOps continuous deployment |
 | [ArgoCD Image Updater](stage2/argocd-updater/README.md) | Resolves mutable image tags to digests and commits them back to the GitOps repo |
-| [Kubecost](stage2/kubecost/README.md) | Cost monitoring |
+| [Kubecost](stage2/monitoring-kubecost/README.md) | Cost monitoring |
 | [VPN](stage2/vpn/README.md) | Tailscale and WireGuard |
 | [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
 | [Stakater Reloader](stage2/stakater-reloader/README.md) | Auto-restart on Secret/ConfigMap changes |

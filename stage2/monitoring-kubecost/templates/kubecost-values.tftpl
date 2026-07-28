@@ -1,0 +1,56 @@
+# https://github.com/kubecost/kubecost/blob/develop/kubecost/values.yaml
+#
+# Overrides only; everything else takes the chart default. Kubecost 3.x dropped Prometheus and
+# Grafana entirely: metrics come from the bundled localStore, and finops-agent pushes ETL to the
+# MinIO federated store, which the aggregator reads back.
+global:
+  # Stamped onto every ETL file the agent writes. The aggregator matches on it to attribute data
+  # back to this cluster, so changing it orphans everything already in the federated store.
+  clusterId: "${cluster_id}"
+  federatedStorage:
+    existingSecret: "${federated_store_secret_name}"
+
+# Basic Kubecost ingress, more examples available at https://docs.kubecost.com/install-and-configure/install/ingress-examples
+ingress:
+  enabled: true
+  className: ${ingress_class_name}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
+  paths: ["/"]  # There's no need to route specifically to the pods-- we have an nginx deployed that handles routing
+  pathType: ImplementationSpecific
+  hosts:
+    - ${kubecost_ingress_host}
+  %{ if ingress_enable_tls }
+  tls:
+    - secretName: kubecost-tls
+      hosts:
+      - ${kubecost_ingress_host}
+  %{ endif }
+
+# Chart default is enabled. The hostNetwork DaemonSet only refines egress attribution, which is
+# meaningless on a single-node homelab.
+networkCosts:
+  enabled: false
+
+# Chart default is enabled, which binds a ClusterRole granting cluster-wide `namespaces: delete`
+# and patch on every workload kind. Only the Actions feature consumes it, and that stays off.
+clusterController:
+  enabled: false
+
+aggregator:
+  aggregatorDbStorage:
+    # Chart default 128Gi is sized for multi-cluster enterprise federation.
+    storageRequest: 32Gi
+  # Chart default 91 would trim the backfilled ETL, which starts 2024-10-05, down to a rolling
+  # quarter. Only daily resolution is worth keeping this long; retention1h and retention10m stay at
+  # their defaults because the agent's hourly files age out within two days anyway.
+  retention1d: 700
+
+finopsagent:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi

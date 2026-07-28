@@ -29,16 +29,21 @@ resource "helm_release" "gitlab" {
     kubernetes_secret_v1.gitlab_object_store_connection,
     kubernetes_secret_v1.gitlab_registry_httpsecret,
     kubernetes_secret_v1.gitlab_registry_storage_secret,
-    kubernetes_secret_v1.gitlab_registry_database_password
+    kubernetes_secret_v1.gitlab_registry_database_password,
+    kubectl_manifest.gitlab_postgres,
+    helm_release.valkey
   ]
 
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "9.11.3"
+  version    = "10.0.4"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
-  timeout    = 600 # 10 minutes
-  wait       = true
+  # A major-version upgrade pulls every image fresh, and 1800 was not enough for 19.0: the release
+  # timed out mid-apply, which does not roll back. It leaves resources behind that the next upgrade
+  # does not reap, so err high.
+  timeout = 2700 # 45 minutes
+  wait    = true
 
   values = [
     templatefile(
@@ -54,9 +59,12 @@ resource "helm_release" "gitlab" {
         global_ingress_enable_tls = var.gitlab_global_ingress_enable_tls
 
         global_initial_root_password_secret = kubernetes_secret_v1.initial_root_password.metadata[0].name
-        global_redis_secret                 = kubernetes_secret_v1.redis_password.metadata[0].name
+        global_redis_secret                 = kubernetes_secret_v1.valkey_password.metadata[0].name
         global_postgresql_password_secret   = kubernetes_secret_v1.postgresql_password.metadata[0].name
         global_rails_secrets                = kubernetes_secret_v1.rails_secret.metadata[0].name
+
+        postgres_host = local.postgres_rw_host
+        valkey_host   = local.valkey_host
 
         global_shell_auth_token_secret  = kubernetes_secret_v1.gitlab_shell_secret.metadata[0].name
         global_shell_host_keys_secret   = kubernetes_secret_v1.gitlab_shell_host_keys.metadata[0].name
@@ -88,10 +96,7 @@ resource "helm_release" "gitlab" {
         toolbox_backups_cron_storage_class_name = kubernetes_storage_class_v1.gitlab_backup_ephemeral.metadata[0].name
         toolbox_persistence_size                = var.gitlab_toolbox_persistence_size
 
-        postgresql_primary_persistence_size = var.gitlab_postgresql_primary_persistence_size
-
-        redis_master_persistence_size = var.gitlab_redis_master_persistence_size
-        gitaly_persistence_size       = var.gitlab_gitaly_persistence_size
+        gitaly_persistence_size = var.gitlab_gitaly_persistence_size
 
         # Auth0 configuration
         auth0_provider_secret = kubernetes_secret_v1.gitlab_auth0_provider.metadata[0].name

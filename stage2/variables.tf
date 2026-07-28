@@ -183,7 +183,8 @@ variable "minio_tenant_default_buckets" {
     "gitlab-dependency-proxy",
     "gitlab-pages",
     "gitlab-tmp-backups",
-    "gitlab-registry-storage"
+    "gitlab-registry-storage",
+    "kubecost-federated-store",
   ]
 }
 
@@ -209,6 +210,15 @@ variable "minio_tenant_ingress_console_host" {
   description = "The hostname of the minio tenant console"
   type        = string
   default     = "minio-console.chrislee.local"
+}
+
+# Must be the `minio` ClusterIP service on port 80. The tenant runs with bucketDNS enabled, so MinIO
+# parses any other hostname label as a virtual-host-style bucket name and every request 404s with
+# "the specified bucket does not exist" - including against the headless `minio-tenant-hl` service.
+variable "minio_internal_endpoint" {
+  description = "Internal S3 endpoint for in-cluster MinIO access."
+  type        = string
+  default     = "minio.minio-tenant.svc.cluster.local:80"
 }
 
 variable "gitlab_global_hosts_domain" {
@@ -280,28 +290,29 @@ variable "gitlab_toolbox_persistence_size" {
   }
 }
 
-variable "gitlab_postgresql_primary_persistence_size" {
-  description = "The size of the postgresql primary persistence"
+
+variable "gitlab_valkey_persistence_size" {
+  description = "The size of the Valkey data volume."
   type        = string
-  default     = "20Gi"
+  default     = "2Gi"
 
   # Validate Kubernetes storage size format per Kubernetes quantity spec
   # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_postgresql_primary_persistence_size))
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_valkey_persistence_size))
     error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
   }
 }
 
-variable "gitlab_redis_master_persistence_size" {
-  description = "The size of the redis master persistence"
+variable "gitlab_postgres_storage_size" {
+  description = "The size of the CloudNativePG cluster data volume."
   type        = string
   default     = "20Gi"
 
   # Validate Kubernetes storage size format per Kubernetes quantity spec
   # Ref: https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
   validation {
-    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_redis_master_persistence_size))
+    condition     = can(regex("^([0-9]+(\\.[0-9]+)?)(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K)$", var.gitlab_postgres_storage_size))
     error_message = "Must be a valid Kubernetes storage size (e.g., 20Gi, 1.5Ti, 500Mi)"
   }
 }
@@ -497,19 +508,11 @@ variable "kibana_domain" {
   default     = "kibana.chrislee.local"
 }
 
-variable "kubecost_token" {
-  description = "Kubecost token - retrieved from https://www.kubecost.com/install.html#show-instructions"
-  type        = string
-  sensitive   = true
-}
-
-
-# Stamped onto every cost record Kubecost writes, so changing it on a live install orphans the
-# existing ETL history under the old identity.
+# Changing this on a live install orphans the existing ETL history. See monitoring-kubecost/variables.tf.
 variable "kubecost_cluster_id" {
   description = "Unique identifier for this cluster in Kubecost. Must be distinct per cluster reporting into the same Kubecost."
   type        = string
-  default     = "homelab"
+  default     = "cluster-one"
 
   validation {
     condition     = can(regex("^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$", var.kubecost_cluster_id))

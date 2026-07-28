@@ -40,6 +40,17 @@ global:
       secret: ${registry_http_secret}
       key: secret
 
+  ## Chart 10.0 added Gateway API support and defaults it on, rendering GatewayClass, Gateway,
+  ## HTTPRoute, TCPRoute and Envoy Gateway policies. This cluster has neither the Gateway API nor
+  ## the Envoy CRDs and routes through nginx, so leaving this enabled fails the upgrade at resource
+  ## mapping. Note chart 10.0 also flipped global.ingress.enabled to default false.
+  gatewayApi:
+    enabled: false
+    # Separate key, and separately defaulted on: Chart.yaml gates the envoy-gateway subchart on
+    # `global.gatewayApi.installEnvoy`, not on `enabled`. Leaving it true installs Envoy Gateway
+    # even with the Gateway resources disabled.
+    installEnvoy: false
+
   ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
   ingress:
     enabled: true
@@ -68,6 +79,12 @@ global:
     key: password
   ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
   psql:
+    # CloudNativePG cluster, see postgres-cluster.tf. The gitlab role and its password came across
+    # in the logical import, hashes intact, so the existing secret still authenticates.
+    host: ${postgres_host}
+    port: 5432
+    database: gitlabhq_production
+    username: gitlab
     connectTimeout:
     keepalives:
     keepalivesIdle:
@@ -83,12 +100,15 @@ global:
     ci: {}
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
-  ## https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
   redis:
+    # Valkey, see valkey.tf. AUTH with only a password authenticates as the ACL "default" user,
+    # so the secret key is the username rather than the literal "password".
+    host: ${valkey_host}
+    port: 6379
     auth:
       enabled: true
       secret: ${global_redis_secret}
-      key: password
+      key: default
     sentinelAuth:
       enabled: false
 
@@ -364,6 +384,9 @@ registry:
   database:
     configure: true
     enabled: true # Enable metadata database. This is an experimental feature and must not be used in production environments.
+    # Not covered by backup-utility: Rails' database.yml defines only the main and ci connections,
+    # so gitlab-backup never sees this database. Dump it separately before any migration.
+    host: ${postgres_host}
     name: registry  # must match the database name you created above
     user: registry  # must match the database username you created above
     password:
@@ -650,94 +673,10 @@ prometheus:
             - source_labels: [__meta_kubernetes_service_name]
               target_label: kubernetes_name
 
-## Configuration of Redis
-## https://docs.gitlab.com/charts/architecture/decisions#redis
-## https://docs.gitlab.com/charts/installation/deployment.html#redis
-# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
-redis:
-  install: true
-  image:
-    tag: 7.2.5-debian-12-r2
-  auth:
-    existingSecret: gitlab-redis-secret
-    existingSecretKey: redis-password
-    usePasswordFiles: false
-  architecture: standalone
-  cluster:
-    enabled: false
-  master:
-    count: 1
-    persistence:
-      size: ${redis_master_persistence_size}
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-      additionalLabels:
-        release: kube-prometheus-stack
-      endpointConfig: {}
-
-## Installation & configuration of stable/postgresql
-## See requirements.yaml for current version
-# https://github.com/bitnami/charts/blob/main/bitnami/postgresql/values.yaml
-postgresql:
-  install: true
-  auth:
-    ## These need to be set, for the sake of bitnami/postgresql upgrade patterns.
-    ## They are overridden by use of `existingSecret`
-    password: bogus-satisfy-upgrade
-    postgresPassword: bogus-satisfy-upgrade
-    ##
-    usePasswordFiles: false
-    existingSecret: '{{ include "gitlab.psql.password.secret" . }}'
-    secretKeys:
-      adminPasswordKey: postgresql-postgres-password
-      userPasswordKey: '{{ include "gitlab.psql.password.key" $ }}'
-  image:
-    tag: 16.6.0
-  primary:
-    initdb:
-      scriptsConfigMap: '{{ include "gitlab.psql.initdbscripts" $}}'
-    extraVolumeMounts:
-      - name: custom-init-scripts
-        mountPath: /docker-entrypoint-preinitdb.d/init_revision.sh
-        subPath: init_revision.sh
-    podAnnotations:
-      postgresql.gitlab/init-revision: "1"
-    persistence:
-      enabled: true
-      size: ${postgresql_primary_persistence_size}
-    extendedConfiguration: |
-      # Connection settings
-      max_connections = 300
-
-      # Autovacuum settings
-      autovacuum = on
-      autovacuum_max_workers = 6
-      autovacuum_naptime = 1min
-      autovacuum_vacuum_threshold = 50
-      autovacuum_analyze_threshold = 50
-      autovacuum_vacuum_scale_factor = 0.01
-      autovacuum_analyze_scale_factor = 0.1
-      autovacuum_vacuum_cost_delay = 20ms
-      autovacuum_vacuum_cost_limit = 3000
-      log_autovacuum_min_duration = 0
-  metrics:
-    enabled: true
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9187"
-        gitlab.com/prometheus_scrape: "true"
-        gitlab.com/prometheus_port: "9187"
-    serviceMonitor:
-      enabled: true
-      additionalLabels:
-        release: kube-prometheus-stack
-      endpointConfig: {}
-
-    ## Optionally define additional custom metrics
-    ## ref: https://github.com/wrouesnel/postgres_exporter#adding-new-metrics-via-a-config-file
+## Bundled Redis and PostgreSQL were removed in chart 10.0. Both are now external: Valkey in
+## valkey.tf, CloudNativePG in cloudnative-pg.tf and postgres-cluster.tf. The chart aborts in
+## _removal_charts.tpl if `redis.install` or `postgresql.install` is merely present and truthy,
+## so these blocks are deleted rather than set to false.
 
 ## Automatic shared secret generation
 ## https://docs.gitlab.com/charts/installation/secrets

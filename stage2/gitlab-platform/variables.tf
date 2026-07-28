@@ -102,14 +102,14 @@ variable "gitlab_toolbox_persistence_size" {
   default     = "20Gi"
 }
 
-variable "gitlab_postgresql_primary_persistence_size" {
-  description = "The size of the postgresql primary persistence"
+variable "gitlab_valkey_persistence_size" {
+  description = "The size of the Valkey data volume."
   type        = string
-  default     = "20Gi"
+  default     = "2Gi"
 }
 
-variable "gitlab_redis_master_persistence_size" {
-  description = "The size of the redis master persistence"
+variable "gitlab_postgres_storage_size" {
+  description = "The size of the CloudNativePG cluster data volume."
   type        = string
   default     = "20Gi"
 }
