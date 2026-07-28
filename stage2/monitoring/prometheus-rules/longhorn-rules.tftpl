@@ -70,6 +70,8 @@ spec:
       labels:
         issue: There are {{$value}} Longhorn nodes are offline
         severity: critical
+    # The denominator is guaranteedInstanceManagerCPU from the longhorn-storage module, so lowering
+    # that setting raises this ratio for unchanged usage. Re-derive the threshold if it moves again.
     - alert: LonghornInstanceManagerCPUUsageWarning
       annotations:
         description: Longhorn instance manager {{$labels.instance_manager}} on {{$labels.node}} has CPU Usage / CPU request is {{$value}}% for
