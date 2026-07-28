@@ -42,10 +42,10 @@ flowchart TB
             end
 
             subgraph data [Data Stores]
-                PostgreSQL[(PostgreSQL)]
-                Redis[(Redis)]
+                PostgreSQL[(CloudNativePG - PostgreSQL 17)]
+                Valkey[(Valkey)]
                 PGSQLPVC[(PostgreSQL PVC)]
-                RedisPVC[(Redis PVC)]
+                ValkeyPVC[(Valkey PVC)]
             end
 
             Shell[GitLab Shell]
@@ -63,10 +63,11 @@ flowchart TB
     User -->|SSH| Shell
 
     WebUI --> PostgreSQL
-    WebUI --> Redis
+    WebUI --> Valkey
     WebUI --> Gitaly
     Sidekiq --> PostgreSQL
-    Sidekiq --> Redis
+    Sidekiq --> Valkey
+    Registry --> PostgreSQL
 
     Registry --> MinIO
     Toolbox -->|backups| MinIO
@@ -102,7 +103,7 @@ sequenceDiagram
 
 - `kubernetes_namespace.gitlab` - Dedicated namespace
 - `kubernetes_secret.initial_root_password` - Root admin password
-- `kubernetes_secret.redis_password` - Redis authentication
+- `kubernetes_secret.valkey_password` - Valkey authentication, key named `default` per the ACL user
 - `kubernetes_secret.postgresql_password` - PostgreSQL credentials
 - `kubernetes_secret.rails_secret` - Rails encryption keys
 - `kubernetes_secret.gitlab_shell_secret` - Shell authentication
@@ -122,6 +123,58 @@ sequenceDiagram
 ### Helm Release
 
 - `helm_release.gitlab` - GitLab Helm chart
+- `helm_release.cloudnative_pg` - CloudNativePG operator
+- `helm_release.valkey` - Valkey, replacing the removed bundled Redis
+- `kubectl_manifest.gitlab_postgres` - CNPG `Cluster`, replacing the removed bundled PostgreSQL
+
+## Databases
+
+Chart 10.0 removed the bundled PostgreSQL, Redis and MinIO subcharts, and the chart refuses to
+render if `postgresql.install` or `redis.install` is present and truthy. MinIO was already external
+via `stage2/minio-object-storage`; PostgreSQL and Redis moved here.
+
+GitLab 19.0 sets `MINIMUM_POSTGRES_VERSION = 17`, so `imageName` is pinned deliberately: the CNPG
+operator's own default is an 18.x image, and omitting the field silently provisions PostgreSQL 18.
+
+| Service | Endpoint | Credentials |
+|---|---|---|
+| PostgreSQL | `gitlab-pg-rw.gitlab.svc.cluster.local:5432` | secret `postgresql-password`, key `postgresql-password` |
+| Registry metadata DB | same host, database `registry` | secret `registry-database-password` |
+| Valkey | `gitlab-valkey.gitlab.svc.cluster.local:6379` | secret `valkey-password`, key `default` |
+
+The Valkey secret key is `default` rather than `password` because the chart looks up
+`auth.aclUsers.<user>.passwordKey`, which defaults to the username, and `AUTH <password>` with no
+username authenticates as the `default` ACL user.
+
+### The CNPG Cluster
+
+Defined in `postgres-cluster.tf`, which carries the rationale for the `monolith` import type and the
+pinned `imageName`. `bootstrap.initdb.import` runs only once, at bootstrap: re-importing means
+deleting the Cluster and its PVC first. `externalClusters` is consulted only during that import and
+is inert afterward.
+
+`postImportApplicationSQL` is unsupported with `monolith`, so extensions must be added by hand after
+an import.
+
+### Operating it
+
+`amcheck` is required by GitLab but absent from a fresh monolith import. Recreate it after any
+re-import:
+
+```bash
+kubectl -n gitlab exec gitlab-pg-1 -- psql -U postgres -d gitlabhq_production \
+  -c "CREATE EXTENSION IF NOT EXISTS amcheck;"
+```
+
+Before re-importing, scale `sidekiq`, `webservice`, `registry` and `kas` to zero. KAS writes to the
+database and is easy to overlook; confirm with `pg_stat_activity`, not the pod list. Then delete the
+Cluster and re-apply.
+
+`backup-utility` does **not** cover the `registry` database: Rails' `database.yml` declares only the
+`main` and `ci` connections, both on `gitlabhq_production`, and `gitlab-backup` iterates those
+connections. Dump `registry` separately before any migration. Restores also abort on a version
+mismatch — `lib/backup/restore/preconditions.rb` compares the backup's GitLab version to the running
+one by exact string equality — so a backup is only usable against the exact version that produced it.
 
 ## Variables
 
@@ -161,8 +214,8 @@ sequenceDiagram
 | `gitlab_persistence_storage_class_name` | Storage class | `longhorn` |
 | `gitlab_toolbox_backups_cron_persistence_size` | Backup staging volume size, per-pod ephemeral | `30Gi` |
 | `gitlab_toolbox_persistence_size` | Toolbox PVC size | `20Gi` |
-| `gitlab_postgresql_primary_persistence_size` | PostgreSQL PVC size | `20Gi` |
-| `gitlab_redis_master_persistence_size` | Redis PVC size | `20Gi` |
+| `gitlab_postgres_storage_size` | CloudNativePG cluster data volume size | `20Gi` |
+| `gitlab_valkey_persistence_size` | Valkey data volume size | `2Gi` |
 | `gitlab_gitaly_persistence_size` | Gitaly PVC size | `50Gi` |
 
 ### CI/CD Runner

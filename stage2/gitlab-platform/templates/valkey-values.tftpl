@@ -1,0 +1,30 @@
+# Standalone (replica.enabled = false) renders a Deployment, not a StatefulSet. The chart
+# default RollingUpdate strategy deadlocks here: the replacement pod cannot attach the RWO
+# Longhorn volume the outgoing pod still holds.
+deploymentStrategy: Recreate
+
+auth:
+  enabled: true
+  # The chart reads each user's password from auth.aclUsers.<user>.passwordKey, which
+  # defaults to the username, so the secret must carry a key literally named "default".
+  usersExistingSecret: ${valkey_password_secret}
+  # Rendering fails outright when auth is on and no default user is declared.
+  aclUsers:
+    default:
+      permissions: "~* &* +@all"
+
+dataStorage:
+  enabled: true
+  requestedSize: ${valkey_persistence_size}
+  className: ${persistence_storage_class_name}
+  # Holds Sidekiq queues; keep the claim if the release is ever uninstalled.
+  keepPvc: true
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    # extraLabels is the key that reaches metadata.labels; additionalLabels is not
+    # consumed by this chart's ServiceMonitor template.
+    extraLabels:
+      release: kube-prometheus-stack

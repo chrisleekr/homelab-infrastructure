@@ -1,0 +1,10 @@
+type: S3
+config:
+  bucket: "${minio_bucket}"
+  endpoint: "${minio_endpoint}"
+  region: us-east-1
+  access_key: "${minio_access_key}"
+  secret_key: "${minio_secret_key}"
+  insecure: true
+  disableSSL: true
+  s3ForcePathStyle: true

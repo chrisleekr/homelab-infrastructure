@@ -1,4 +1,9 @@
-# https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/postgresql/postgres-exporter.yml
+# Alerts for the CloudNativePG-managed PostgreSQL backing GitLab.
+#
+# Metric names are CNPG's, not postgres_exporter's: the bundled bitnami PostgreSQL chart and its
+# exporter were removed in GitLab chart 10.0. CNPG's instance manager exports a smaller default
+# set, so per-table statistics, lock counts and bloat estimates have no equivalent here; they need
+# a custom `.spec.monitoring.customQueriesConfigMap` on the Cluster.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -10,6 +15,9 @@ metadata:
   namespace: ${namespace}
 spec:
   groups:
+    # Retained only for the rollback window: CNPG is now primary, so every expression here is
+    # already silent. The bundled PostgreSQL PVC still exists, and these alerts are what would
+    # cover it if that rollback is taken. Delete this group once rollback is ruled out.
     - name: PostgresExporter
       rules:
         - alert: PostgresqlDown
@@ -92,16 +100,6 @@ spec:
           annotations:
             summary: Postgresql high rollback rate (instance {{ $labels.instance }})
             description: "Ratio of transactions being aborted compared to committed is > 2 %\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-
-        ## Note: Commented out as it's normal to be quiet.
-        # - alert: PostgresqlCommitRateLow
-        #   expr: 'rate(pg_stat_database_xact_commit[1m]) < 10'
-        #   for: 2m
-        #   labels:
-        #     severity: critical
-        #   annotations:
-        #     summary: Postgresql commit rate low (instance {{ $labels.instance }})
-        #     description: "Postgresql seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
         - alert: PostgresqlLowXidConsumption
           expr: "rate(pg_txid_current[1m]) < 5"
@@ -201,3 +199,100 @@ spec:
           annotations:
             summary: Postgresql invalid index (instance {{ $labels.instance }})
             description: "The table {{ $labels.relname }} has an invalid index: {{ $labels.indexrelname }}. You should execute `DROP INDEX {{ $labels.indexrelname }};`\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+    - name: CloudNativePG
+      rules:
+        - alert: CnpgPostgresqlDown
+          expr: "cnpg_collector_up == 0"
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: PostgreSQL down (pod {{ $labels.pod }})
+            description: "CNPG collector cannot reach PostgreSQL\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlCollectorError
+          expr: "cnpg_collector_last_collection_error > 0"
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL metrics collection failing (pod {{ $labels.pod }})
+            description: "CNPG collector is erroring, so the alerts below are running blind\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlRestarted
+          expr: "time() - cnpg_pg_postmaster_start_time < 60"
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: PostgreSQL restarted (pod {{ $labels.pod }})
+            description: "Postmaster started less than a minute ago\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlTooManyConnections
+          expr: |
+            sum by (namespace, pod) (cnpg_backends_total)
+              > on (namespace, pod)
+                (max by (namespace, pod) (cnpg_pg_settings_setting{name="max_connections"}) * 0.8)
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL too many connections (pod {{ $labels.pod }})
+            description: "Backends above 80% of max_connections\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlDeadLocks
+          expr: 'increase(cnpg_pg_stat_database_deadlocks{datname!~"template.*|postgres"}[5m]) > 5'
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL deadlocks (database {{ $labels.datname }})
+            description: "More than 5 deadlocks in 5 minutes\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlHighRollbackRate
+          # clamp_min guards the idle case, where commits and rollbacks are both zero.
+          expr: |
+            sum by (namespace, datname) (rate(cnpg_pg_stat_database_xact_rollback{datname!~"template.*|postgres"}[5m]))
+            /
+            clamp_min(
+              sum by (namespace, datname) (
+                  rate(cnpg_pg_stat_database_xact_rollback{datname!~"template.*|postgres"}[5m])
+                + rate(cnpg_pg_stat_database_xact_commit{datname!~"template.*|postgres"}[5m])
+              ), 1)
+            > 0.02
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL high rollback rate (database {{ $labels.datname }})
+            description: "Over 2% of transactions are aborting\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        # Wraparound leaves no margin once it arrives: PostgreSQL refuses writes at 2^31. Default
+        # autovacuum_freeze_max_age is 200M, so 300M means autovacuum is not keeping up.
+        - alert: CnpgPostgresqlTransactionIdWraparound
+          expr: "max by (namespace, datname) (cnpg_pg_database_xid_age) > 300000000"
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL transaction ID age high (database {{ $labels.datname }})
+            description: "XID age past autovacuum_freeze_max_age; wraparound shuts down writes at ~2.1B\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlMultixactWraparound
+          expr: "max by (namespace, datname) (cnpg_pg_database_mxid_age) > 300000000"
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL multixact ID age high (database {{ $labels.datname }})
+            description: "Multixact age past the freeze threshold\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+        - alert: CnpgPostgresqlLongRunningTransaction
+          expr: "max by (namespace, datname) (cnpg_backends_max_tx_duration_seconds) > 3600"
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: PostgreSQL long running transaction (database {{ $labels.datname }})
+            description: "Transaction open over an hour; blocks vacuum and holds back the XID horizon\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
