@@ -51,9 +51,27 @@ aggregator:
   # quarter. Only daily resolution is worth keeping this long; retention1h and retention10m stay at
   # their defaults because the agent's hourly files age out within two days anyway.
   retention1d: 700
+  resources:
+    # Chart leaves limits empty, so ETL bursts are unbounded. Capping costs ETL wall-clock on the
+    # tail, not readiness. The chart's 100m/3Gi requests are left alone. Raise if ingestion lags.
+    limits:
+      cpu: 1000m
 
+# finops-agent subchart requests 500m/512Mi, sized for a multi-node cluster. Only the requests are
+# lowered; its 2Gi memory limit stays as the backstop.
 finopsagent:
   enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
   persistence:
     enabled: true
     size: 8Gi
+
+forecasting:
+  resources:
+    requests:
+      # Chart default 200m books more than this cluster's forecasting workload draws. Memory
+      # request and both limits (1500m/1Gi) stay at chart defaults.
+      cpu: 50m

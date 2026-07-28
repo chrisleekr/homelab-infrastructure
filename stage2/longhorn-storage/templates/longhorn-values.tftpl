@@ -20,6 +20,17 @@ defaultSettings:
   defaultReplicaCount: 1
   backupCompressionMethod: "gzip"
   snapshotMaxCount: 3
+  # Percentage of node allocatable CPU reserved per instance-manager pod, so managers stranded
+  # across engine-image versions multiply it. Longhorn's instances*0.1/cores formula sizes for full
+  # I/O saturation this cluster never reaches. Longhorn accepts 0-40 and 0 removes the request
+  # entirely; 5 is our own floor, not a Longhorn rule. Raise it if volumes start timing out or
+  # rebuilding. v2 stays at the 12 default because the V2 data engine is not enabled here.
+  # Danger Zone setting: the value lands on the Setting CR immediately, but Longhorn defers pushing
+  # it to the instance-manager pods until every engine instance is stopped, retrying until then.
+  # Check APPLIED on the Setting CR, not VALUE.
+  # Raising or lowering this also moves LonghornInstanceManagerCPUUsageWarning, which alerts on
+  # usage as a percentage of this request. See stage2/monitoring/prometheus-rules/longhorn-rules.tftpl.
+  guaranteedInstanceManagerCPU: '{"v1":"8","v2":"12"}'
   # Covers system-managed components only (CSI driver, instance-manager, engine-image).
   # Omitting the value means operator Exists, which is deliberate: taint values vary per
   # worker (worker_hosts_json sets them per node, e.g. worker-low-power), so matching on the

@@ -711,7 +711,11 @@ shared-secrets:
 ## https://gitlab.com/gitlab-org/charts/gitlab-runner/blob/main/values.yaml
 gitlab-runner:
   install: true
-  concurrent: 3
+  # A job pod costs ~350m assuming two services: build 200m + helper 50m + 2 x service 50m, from
+  # the cpu_request values below. Keep concurrent * 350m inside the node's free CPU, or job pods
+  # sit Pending and fail as runner_system_failure when poll_timeout expires (default 180s, not
+  # overridden here).
+  concurrent: 2
   rbac:
     create: true
   envVars:

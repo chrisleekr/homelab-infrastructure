@@ -58,12 +58,17 @@ ingress:
         - ${oauth2_proxy_host}
   %{ endif }
 
+# The proxy idles near zero and only spikes on token exchange, so the request sits well under the
+# limit rather than booking the burst ceiling. Trap: a CPU request below the CPU limit puts the pod
+# in Burstable, not Guaranteed, which raises its oom_score_adj. Auth still fails closed (nginx
+# auth_request denies on any non-2xx), so losing this pod 500s every protected ingress rather than
+# opening one. Set request == limit on both cpu and memory to get Guaranteed back.
 resources:
   limits:
     cpu: 100m
     memory: 300Mi
   requests:
-    cpu: 100m
+    cpu: 25m
     memory: 300Mi
 
 
