@@ -33,7 +33,7 @@ repos:
         entry: python stage1/tests/test_upgrade_ordering.py
         language: python
         additional_dependencies:
-          - PyYAML
+          - PyYAML==6.0.3
         pass_filenames: false
         files: ^stage1/(site\.yml|roles/kubeadm_(node|server|agent)/|tests/)
 

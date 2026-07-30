@@ -3,6 +3,11 @@
 # asserts something about every node in the cluster, not just the control plane. Included
 # from this role's main.yml it would fire mid-run, while the workers are still on the old
 # kubelet, and abort before they were ever upgraded.
+#
+# Every poll below tests rc alongside the output. A kubectl that cannot reach the API server
+# writes its error to stderr and leaves stdout empty, which is indistinguishable from "no
+# offending nodes" and, with failed_when: false, would satisfy both the until: and the
+# assert. An unreachable control plane has to fail these checks, not pass them.
 
 - name: Wait for every node to report the target kubelet version
   # Polled, not sampled. A node that just joined reports its version a moment after it
@@ -14,7 +19,9 @@
       awk '$2 != "v{{ kubeadm_version }}" { print $1 " (" $2 ")" }'
     executable: /bin/bash
   register: kubeadm_server_postflight_stale
-  until: kubeadm_server_postflight_stale.stdout | trim | length == 0
+  until: >-
+    kubeadm_server_postflight_stale.rc == 0
+    and kubeadm_server_postflight_stale.stdout | trim | length == 0
   retries: "{{ kubeadm_server_postflight_retries }}"
   delay: "{{ kubeadm_server_postflight_delay }}"
   failed_when: false
@@ -23,9 +30,13 @@
 
 - name: Assert every node runs the target kubelet version
   ansible.builtin.assert:
-    that: kubeadm_server_postflight_stale.stdout | trim | length == 0
+    that:
+      - kubeadm_server_postflight_stale.rc == 0
+      - kubeadm_server_postflight_stale.stdout | trim | length == 0
     fail_msg: >-
-      Nodes still off v{{ kubeadm_version }}: {{ kubeadm_server_postflight_stale.stdout_lines }}.
+      kubectl exited {{ kubeadm_server_postflight_stale.rc }}
+      ({{ kubeadm_server_postflight_stale.stderr | trim }}); nodes still off
+      v{{ kubeadm_version }}: {{ kubeadm_server_postflight_stale.stdout_lines }}.
       Re-run the playbook; if a worker keeps failing, see docs/kubernetes-upgrades.md.
     quiet: true
 
@@ -39,7 +50,9 @@
       kubectl get nodes --no-headers | awk '$2 != "Ready" { print $1 " (" $2 ")" }'
     executable: /bin/bash
   register: kubeadm_server_postflight_not_ready
-  until: kubeadm_server_postflight_not_ready.stdout | trim | length == 0
+  until: >-
+    kubeadm_server_postflight_not_ready.rc == 0
+    and kubeadm_server_postflight_not_ready.stdout | trim | length == 0
   retries: "{{ kubeadm_server_postflight_retries }}"
   delay: "{{ kubeadm_server_postflight_delay }}"
   failed_when: false
@@ -49,8 +62,13 @@
 - name: Assert every node came back Ready and schedulable
   # Catches a node left cordoned by a drain whose uncordon did not run.
   ansible.builtin.assert:
-    that: kubeadm_server_postflight_not_ready.stdout | trim | length == 0
-    fail_msg: "Nodes not Ready after the upgrade: {{ kubeadm_server_postflight_not_ready.stdout_lines }}"
+    that:
+      - kubeadm_server_postflight_not_ready.rc == 0
+      - kubeadm_server_postflight_not_ready.stdout | trim | length == 0
+    fail_msg: >-
+      kubectl exited {{ kubeadm_server_postflight_not_ready.rc }}
+      ({{ kubeadm_server_postflight_not_ready.stderr | trim }}); nodes not Ready after the
+      upgrade: {{ kubeadm_server_postflight_not_ready.stdout_lines }}
     quiet: true
 
 - name: Wait for kube-system to settle
@@ -67,7 +85,9 @@
       awk '$3 != "Running" && $3 != "Completed" { print $1 " (" $3 ")" }'
     executable: /bin/bash
   register: kubeadm_server_postflight_pods
-  until: kubeadm_server_postflight_pods.stdout | trim | length == 0
+  until: >-
+    kubeadm_server_postflight_pods.rc == 0
+    and kubeadm_server_postflight_pods.stdout | trim | length == 0
   retries: "{{ kubeadm_server_postflight_retries }}"
   delay: "{{ kubeadm_server_postflight_delay }}"
   changed_when: false
@@ -76,6 +96,11 @@
 
 - name: Assert kube-system recovered
   ansible.builtin.assert:
-    that: kubeadm_server_postflight_pods.stdout | trim | length == 0
-    fail_msg: "kube-system pods not Running after the upgrade: {{ kubeadm_server_postflight_pods.stdout_lines }}"
+    that:
+      - kubeadm_server_postflight_pods.rc == 0
+      - kubeadm_server_postflight_pods.stdout | trim | length == 0
+    fail_msg: >-
+      kubectl exited {{ kubeadm_server_postflight_pods.rc }}
+      ({{ kubeadm_server_postflight_pods.stderr | trim }}); kube-system pods not Running
+      after the upgrade: {{ kubeadm_server_postflight_pods.stdout_lines }}
     quiet: true

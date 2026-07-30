@@ -1,23 +1,33 @@
 ---
 # kubeadm only, kept separable from the kubelet: `kubeadm upgrade plan` and `kubeadm upgrade
 # node` must run from the new kubeadm while the old kubelet is still serving pods.
-- name: Download the kubeadm binary
-  ansible.builtin.get_url:
-    url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ node_architecture }}/kubeadm"
-    dest: /usr/local/bin/kubeadm
-    mode: "0755"
-    force: true
+#
+# Self-gating like the install-*.yml appliers, so a caller that opened on kubelet or runtime
+# drift alone does not re-download a kubeadm that is already at the target.
+- name: Install or upgrade the kubeadm binary
+  when: kubeadm_node_kubeadm_upgrade_required | bool
+  block:
+    - name: Download the kubeadm binary
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ node_architecture }}/kubeadm"
+        dest: /usr/local/bin/kubeadm
+        mode: "0755"
+        force: true
 
-- name: Verify the kubeadm binary version
-  ansible.builtin.command: /usr/local/bin/kubeadm version --output=short
-  register: kubeadm_node_kubeadm_post_download_version
-  changed_when: false
+    - name: Verify the kubeadm binary version
+      ansible.builtin.command: /usr/local/bin/kubeadm version --output=short
+      register: kubeadm_node_kubeadm_post_download_version
+      changed_when: false
 
-- name: Assert the kubeadm binary is at the target version
-  # A stale binary here would make `kubeadm upgrade node` a silent no-op on every worker.
-  ansible.builtin.assert:
-    that: kubeadm_node_kubeadm_post_download_version.stdout | trim == 'v' ~ kubeadm_version
-    fail_msg: >-
-      kubeadm reports {{ kubeadm_node_kubeadm_post_download_version.stdout | trim }}
-      after download, expected v{{ kubeadm_version }}.
-    quiet: true
+    - name: Assert the kubeadm binary is at the target version
+      # A stale binary here would make `kubeadm upgrade node` a silent no-op on every worker.
+      #
+      # Skipped under --check: the download never ran, and the command module reports check
+      # mode as rc 0 with an empty stdout, so the assert could only ever fail.
+      ansible.builtin.assert:
+        that: kubeadm_node_kubeadm_post_download_version.stdout | trim == 'v' ~ kubeadm_version
+        fail_msg: >-
+          kubeadm reports {{ kubeadm_node_kubeadm_post_download_version.stdout | trim }}
+          after download, expected v{{ kubeadm_version }}.
+        quiet: true
+      when: not ansible_check_mode

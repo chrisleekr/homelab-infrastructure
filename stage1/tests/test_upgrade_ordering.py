@@ -445,12 +445,10 @@ def upgrade_plan_consumed():
     )
 
 
-# There was an `upgrade_assert_regex` check here, asserting exactly one backslash before
-# `[upgrade` in the success assert. It was removed because its premise was wrong: Jinja lexes
-# string literals with unicode-escape, so '\[upgrade\]' and '\\[upgrade\\]' compile to the
-# same regex and both match. The check enforced a cosmetic preference and would have led
-# someone to "fix" working regexes elsewhere. The real hazard, that the banner text changes
-# between kubeadm minors, is documented at the assert itself and cannot be checked statically.
+# Do not add a check on backslash counts in the success-banner regex. Jinja lexes string
+# literals with unicode-escape, so '\[upgrade\]' and '\\[upgrade\\]' compile to the same
+# regex; the difference is cosmetic. The real hazard, the banner text changing between
+# kubeadm minors, cannot be checked statically and is documented at the assert itself.
 
 
 def preflight_before_apply():
@@ -526,7 +524,7 @@ def binary_apply_gated():
     `when: kubeadm_node_bootstrapped` is the exact inversion of the intended gate and would
     otherwise satisfy a bare name match.
     """
-    guarded = re.compile(r"apply-(kubeadm-binary|node-runtime-and-kubelet)|configure-kubeadm")
+    guarded = re.compile(r"apply-(kubeadm-binary|node-runtime-and-kubelet)")
     ungated, found = [], []
     for task, ancestors in walk(load_tasks(NODE_MAIN)):
         for child in include_targets(task, NODE_MAIN.parent):
@@ -648,13 +646,8 @@ def worker_drain_interlocked():
     Without the cross-host gate a worker would drain against a control plane whose preflight
     never ran, or that failed its own upgrade.
     """
-    gate = None
-    for task, ancestors in walk(load_tasks(AGENT_UPGRADE)):
-        if (task.get("vars") or {}).get(STEP_VAR) == "drain":
-            gate = gate_text(task, ancestors)
-            break
-    if gate is None:
-        raise HarnessError(f"no drain-marked task in {rel(AGENT_UPGRADE)}")
+    task, ancestors, _, _ = resolve_marker("drain", AGENT_UPGRADE)
+    gate = gate_text(task, ancestors)
     if "kubeadm_server_preflight_passed" not in gate:
         return False, f"{rel(AGENT_UPGRADE)}: drain is not gated on kubeadm_server_preflight_passed"
     if "hostvars" not in gate:

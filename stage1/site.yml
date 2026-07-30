@@ -151,13 +151,15 @@
   tasks:
     - name: Postflight, verify the cluster converged
       when: kubernetes_cluster_type == 'kubeadm' and kubeadm_upgrade_enabled | bool
-      # k8s_upgrade deliberately absent: no other play responds to it, so tagging this one
-      # would make `--tags k8s_upgrade` select verification alone and fail against a cluster
-      # nothing had upgraded. The tag stays an intra-role marker.
-      tags: [kubeadm]
+      # k8s_upgrade included so a tag-scoped run verifies what it just upgraded. apply:,
+      # because a tag on a dynamic include selects only the include task, never the tasks
+      # it pulls in.
+      tags: [kubeadm, k8s_upgrade]
       ansible.builtin.include_role:
         name: kubeadm_server
         tasks_from: postflight-verify.yml
+        apply:
+          tags: [kubeadm, k8s_upgrade]
 
 - name: Post setup on local
   hosts: localhost

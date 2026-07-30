@@ -21,23 +21,39 @@
 # The last two stay tied to a pending control plane: the etcd snapshot and the removed-API
 # scan protect `kubeadm upgrade apply`, and a worker roll touches neither etcd nor the
 # served API surface.
+#
+# Every tagged include below carries apply:, not tags: alone. A tag on a dynamic include
+# selects the include task and nothing it pulls in, so `--tags k8s_upgrade` would walk this
+# file and run none of the work. apply tags the included tasks themselves.
 - name: Preflight, check the version skew is supported
-  ansible.builtin.include_tasks: preflight-version-skew.yml
+  ansible.builtin.include_tasks:
+    file: preflight-version-skew.yml
+    apply:
+      tags: [k8s_upgrade]
   when: kubeadm_upgrade_enabled | bool and kubeadm_node_bootstrapped | bool
   tags: [k8s_upgrade]
 
 - name: Preflight, check the cluster is healthy
-  ansible.builtin.include_tasks: preflight-cluster-health.yml
+  ansible.builtin.include_tasks:
+    file: preflight-cluster-health.yml
+    apply:
+      tags: [k8s_upgrade]
   when: kubeadm_upgrade_enabled | bool and kubeadm_node_bootstrapped | bool
   tags: [k8s_upgrade]
 
 - name: Preflight, back up etcd and the PKI
-  ansible.builtin.include_tasks: preflight-backup.yml
+  ansible.builtin.include_tasks:
+    file: preflight-backup.yml
+    apply:
+      tags: [k8s_upgrade]
   when: kubeadm_upgrade_enabled | bool and kubeadm_node_upgrade_pending | bool
   tags: [k8s_upgrade]
 
 - name: Preflight, check for removed APIs
-  ansible.builtin.include_tasks: preflight-deprecated-apis.yml
+  ansible.builtin.include_tasks:
+    file: preflight-deprecated-apis.yml
+    apply:
+      tags: [k8s_upgrade]
   when: kubeadm_upgrade_enabled | bool and kubeadm_node_upgrade_pending | bool
   tags: [k8s_upgrade]
 
@@ -74,7 +90,10 @@
   tags: [cni]
 
 - name: Upgrade kubeadm control plane
-  ansible.builtin.include_tasks: upgrade-control-plane.yml
+  ansible.builtin.include_tasks:
+    file: upgrade-control-plane.yml
+    apply:
+      tags: [k8s_install, k8s_upgrade]
   tags: [k8s_install, k8s_upgrade]
 
 - name: Download kubeconfig

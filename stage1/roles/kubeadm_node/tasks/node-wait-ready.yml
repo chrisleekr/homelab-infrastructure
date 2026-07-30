@@ -2,10 +2,15 @@
 # Ready alone is not proof the upgrade landed: the node reports Ready throughout, because
 # the old kubelet keeps its lease until the moment systemd restarts it. Gating on
 # nodeInfo.kubeletVersion is what distinguishes "back up" from "back up on the new build".
+#
+# Skipped under --check. The command module supports check mode by reporting rc 0 with an
+# empty stdout, which satisfies the rc test and then hands '' to from_json, aborting the run
+# with a JSON decode error. A dry run cannot install the target kubelet anyway.
 - name: Wait for the node to be Ready on the target kubelet version
   ansible.builtin.command: "kubectl get node {{ kubeadm_node_name }} -o json"
   delegate_to: "{{ groups['server'][0] }}"
   register: kubeadm_node_wait_ready_result
+  when: not ansible_check_mode
   # `and` short-circuits, so from_json is never reached while kubectl is still failing.
   until: >-
     kubeadm_node_wait_ready_result.rc == 0
