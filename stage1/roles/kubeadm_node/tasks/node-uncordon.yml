@@ -1,0 +1,7 @@
+---
+# Cleanup for the drain block, so callers must invoke it from `always:`.
+- name: Uncordon the node
+  ansible.builtin.command: "kubectl uncordon {{ kubeadm_node_name }}"
+  delegate_to: "{{ groups['server'][0] }}"
+  register: kubeadm_node_uncordon_result
+  changed_when: kubeadm_node_uncordon_result.rc == 0

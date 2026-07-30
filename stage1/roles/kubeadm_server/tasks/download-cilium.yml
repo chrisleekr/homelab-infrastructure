@@ -2,7 +2,7 @@
 - name: Check if cilium is already installed
   ansible.builtin.stat:
     path: "/usr/local/bin/cilium"
-  register: kubeadm_server_cilium_check
+  register: kubeadm_server_cilium_cli_check
 
 # $ /usr/local/bin/cilium version
 # cilium-cli: v0.16.17 compiled with go1.23.1 on linux/amd64
@@ -31,24 +31,24 @@
     - kubeadm_server_cilium_version_output.stdout_lines | length > 0
   ansible.builtin.set_fact:
     # cilium-cli: v0.16.24 compiled with go1.23.4 on linux/amd64
-    kubeadm_server_cilium_installed_version: "{{ kubeadm_server_cilium_version_output.stdout_lines[0] | regex_replace('^cilium-cli: v([0-9.]+).*$', '\\1') }}"
+    kubeadm_server_cilium_cli_installed_version: "{{ kubeadm_server_cilium_version_output.stdout_lines[0] | regex_replace('^cilium-cli: v([0-9.]+).*$', '\\1') }}"
 
 - name: Debug cilium installed version
   ansible.builtin.debug:
-    msg: "Cilium installed version: {{ kubeadm_server_cilium_installed_version | default('Not installed') }}"
+    msg: "Cilium installed version: {{ kubeadm_server_cilium_cli_installed_version | default('Not installed') }}"
 
 - name: Display cilium version information
   ansible.builtin.debug:
     msg: |
-      Current Cilium version: {{ kubeadm_server_cilium_installed_version | default('Not installed') }}
+      Current Cilium version: {{ kubeadm_server_cilium_cli_installed_version | default('Not installed') }}
       Target Cilium version: {{ cilium_cli_version }}
-      Upgrade needed: {{ (kubeadm_server_cilium_installed_version is defined and kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<')) | default(true) }}
+      Upgrade needed: {{ (kubeadm_server_cilium_cli_installed_version is defined and kubeadm_server_cilium_cli_installed_version is version(cilium_cli_version, '<')) | default(true) }}
 
 - name: Install or redownload cilium
   when: >
-    not kubeadm_server_cilium_check.stat.exists or
+    not kubeadm_server_cilium_cli_check.stat.exists or
     (kubeadm_server_cilium_version_output.rc != 0) or
-    (kubeadm_server_cilium_installed_version is defined and kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<'))
+    (kubeadm_server_cilium_cli_installed_version is defined and kubeadm_server_cilium_cli_installed_version is version(cilium_cli_version, '<'))
   block:
     - name: Download Cilium CLI
       ansible.builtin.get_url:

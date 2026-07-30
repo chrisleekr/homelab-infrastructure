@@ -1,63 +1,93 @@
 ---
 # `kubeadm upgrade apply` mutates cluster-wide state and only runs on the control plane.
-# Workers upgrade with `kubeadm upgrade node`, which is not yet implemented.
+# Workers use `kubeadm upgrade node` from kubeadm_agent/tasks/upgrade-node.yml.
 #
-# kubeadm_node_installed_version is set by the kubeadm_node role, which runs first via
-# this role's meta dependency.
-- name: Check if kubeadm cluster is initialized
-  ansible.builtin.stat:
-    path: /etc/kubernetes/admin.conf
-  register: kubeadm_server_cluster_initialized
-
-- name: Perform kubeadm cluster upgrade
-  when: >
-    kubeadm_server_cluster_initialized.stat.exists and
-    kubeadm_node_installed_version is defined and
-    kubeadm_node_installed_version is version(kubeadm_version, '<')
+# The control plane is deliberately never drained or cordoned. It is a single node that also
+# runs the workloads, and Longhorn sets defaultReplicaCount: 1, so every volume has its only
+# replica here. Draining evicts all of them with nowhere to reschedule and gains nothing: the
+# API server, etcd and the controllers are static pods that kubeadm restarts in place
+# regardless of cordon state. Do not add a drain here. See docs/kubernetes-upgrades.md.
+# Keyed to a Kubernetes version change specifically, not to kubeadm_node_upgrade_pending,
+# which also covers container-runtime drift. A containerd-only bump must not drive
+# `kubeadm upgrade apply` at the version the cluster already runs: that re-renders and
+# restarts every control-plane static pod for no reason, and kubeadm may reject it outright.
+- name: Upgrade the kubeadm control plane
+  when:
+    - kubeadm_upgrade_enabled | bool
+    - kubeadm_node_bootstrapped | bool
+    - kubeadm_node_kubeadm_upgrade_required | bool or kubeadm_node_kubelet_upgrade_required | bool
   block:
+    # The new kubeadm has to be on disk before `upgrade plan`: the old binary does not know
+    # about the target release. The kubelet stays untouched until after apply.
+    - name: Apply the kubeadm binary
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: apply-kubeadm-binary.yml
+
     - name: Run kubeadm upgrade plan
-      ansible.builtin.command: kubeadm upgrade plan
+      ansible.builtin.command: kubeadm upgrade plan v{{ kubeadm_version }}
       register: kubeadm_server_upgrade_plan_output
-      become: true
       changed_when: false
 
     - name: Display kubeadm upgrade plan output
       ansible.builtin.debug:
         msg: "{{ kubeadm_server_upgrade_plan_output.stdout }}"
 
-    - name: Set upgrade command using inventory version
-      ansible.builtin.set_fact:
-        kubeadm_server_upgrade_command: "kubeadm upgrade apply v{{ kubeadm_version }} --yes"
+    - name: Assert the plan offers the target version
+      # The plan is the only thing that knows whether this jump is possible on this
+      # cluster. Applying without reading it is how an unsupported upgrade gets started.
+      ansible.builtin.assert:
+        that:
+          - kubeadm_server_upgrade_plan_output.rc == 0
+          - kubeadm_server_upgrade_plan_output.stdout is search('v' ~ kubeadm_version | regex_escape)
+        fail_msg: >-
+          `kubeadm upgrade plan` does not offer v{{ kubeadm_version }} from
+          {{ kubeadm_node_installed_version }}. Read the plan output above before retrying.
+        quiet: true
 
-    - name: Display planned upgrade command
-      ansible.builtin.debug:
-        msg: |
-          Executing automated cluster upgrade: {{ kubeadm_server_upgrade_command }}
-
-    - name: Execute kubeadm cluster upgrade
-      ansible.builtin.command: "{{ kubeadm_server_upgrade_command }}"
+    - name: Execute the kubeadm cluster upgrade
+      ansible.builtin.command: kubeadm upgrade apply v{{ kubeadm_version }} --yes
       register: kubeadm_server_upgrade_apply_output
-      become: true
-      changed_when: false
-      when: kubeadm_server_upgrade_command is defined and kubeadm_server_upgrade_command | length > 0
+      # Rewrites every static pod manifest and the cluster config, so it is never unchanged.
+      changed_when: kubeadm_server_upgrade_apply_output.rc == 0
 
     - name: Display upgrade output
       ansible.builtin.debug:
         msg: "{{ kubeadm_server_upgrade_apply_output.stdout }}"
 
     - name: Verify cluster upgrade success
+      # This banner is version-coupled, which is the real hazard: kubeadm <=1.30 printed
+      # `[upgrade/successful] SUCCESS! Your cluster was upgraded to`, not `[upgrade]
+      # SUCCESS!`. Re-check the string against the target release on every minor bump, or
+      # the assert quietly stops matching a successful upgrade.
+      #
+      # The escaping is NOT a hazard. Jinja lexes string literals with unicode-escape, so
+      # '\[upgrade\]' and '\\[upgrade\\]' compile to an identical regex and both match.
+      # Single backslashes are kept only because they read better.
       ansible.builtin.assert:
         that:
-          - kubeadm_server_upgrade_apply_output.stdout is search('\\[upgrade\\] SUCCESS!')
+          - kubeadm_server_upgrade_apply_output.stdout is search('\[upgrade\] SUCCESS!')
           - kubeadm_server_upgrade_apply_output.stdout is search('was upgraded to')
         success_msg: "Cluster upgrade completed successfully!"
         fail_msg: "Cluster upgrade verification failed. Please check the output manually."
 
-- name: Restart kubelet service after upgrade
-  when: >
-    kubeadm_node_installed_version is defined and
-    kubeadm_node_installed_version is version(kubeadm_version, '<')
-  ansible.builtin.systemd:
-    name: kubelet
-    state: restarted
-  become: true
+# Separate block so container-runtime drift reaches the control plane without a same-version
+# `kubeadm upgrade apply`. When a Kubernetes upgrade did run, this follows it: only then do
+# the static pod manifests point at the new images and has kubeadm rewritten the kubelet
+# config. The control plane is not drained, so containerd restarts under running pods; the
+# shims keep the containers alive.
+- name: Apply the control-plane container runtime and kubelet
+  when:
+    - kubeadm_upgrade_enabled | bool
+    - kubeadm_node_bootstrapped | bool
+    - kubeadm_node_upgrade_pending | bool
+  block:
+    - name: Apply the container runtime and kubelet
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: apply-node-runtime-and-kubelet.yml
+
+    - name: Wait for the control plane to be Ready on the new kubelet
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: node-wait-ready.yml

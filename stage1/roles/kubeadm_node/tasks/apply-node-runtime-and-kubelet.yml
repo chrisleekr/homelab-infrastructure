@@ -1,0 +1,98 @@
+---
+# Container runtime plus the kubelet binary and its systemd units.
+#
+# On the upgrade path this runs only after the node is drained, because the kubelet restart
+# at the end stops every container on the node.
+- name: Install or upgrade runc
+  ansible.builtin.include_tasks: install-runc.yml
+
+- name: Install or upgrade cni
+  ansible.builtin.include_tasks: install-cni.yml
+
+- name: Install or upgrade containerd
+  ansible.builtin.include_tasks: configure-containerd.yml
+
+- name: Install or upgrade nerdctl
+  ansible.builtin.include_tasks: install-nerdctl.yml
+
+- name: Install or upgrade crictl
+  ansible.builtin.include_tasks: install-crictl.yml
+
+- name: Install or upgrade the kubelet
+  when: kubeadm_node_kubelet_upgrade_required | bool
+  block:
+    - name: Download the kubelet binary
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ kubeadm_version }}/bin/linux/{{ node_architecture }}/kubelet"
+        dest: /usr/local/bin/kubelet
+        mode: "0755"
+        force: true
+
+    - name: Download kubelet.service file
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubelet/kubelet.service"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/kubelet.service
+        mode: "0644"
+        force: true
+
+    - name: Replace /usr/bin with /usr/local/bin in kubelet.service file
+      ansible.builtin.replace:
+        path: /tmp/kubelet.service
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy kubelet.service file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/kubelet.service
+        dest: /etc/systemd/system/kubelet.service
+        remote_src: true
+        mode: "0644"
+
+    - name: Create /etc/systemd/system/kubelet.service.d directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/kubelet.service.d
+        state: directory
+        mode: "0755" # a dir needs the traversal bit; 0644 blocks reading the drop-in
+
+    - name: Download 10-kubeadm.conf
+      vars:
+        base_url: "https://raw.githubusercontent.com/kubernetes/release"
+        path: "cmd/krel/templates/latest/kubeadm/10-kubeadm.conf"
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/v{{ kubelet_service_version }}/{{ path }}"
+        dest: /tmp/10-kubeadm.conf
+        mode: "0644"
+        force: true
+
+    - name: Replace /usr/bin with /usr/local/bin in 10-kubeadm.conf file
+      ansible.builtin.replace:
+        path: /tmp/10-kubeadm.conf
+        regexp: "/usr/bin"
+        replace: "/usr/local/bin"
+
+    - name: Copy 10-kubeadm.conf file to /etc/systemd/system/
+      ansible.builtin.copy:
+        src: /tmp/10-kubeadm.conf
+        dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        remote_src: true
+        mode: "0644"
+
+    # Gated on the detected fact rather than `when: <task>.changed`, which ansible-lint
+    # rejects (no-handler) and which would also miss a unit-file-only change.
+    - name: Reload systemd and restart the kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        daemon_reload: true
+        state: restarted
+
+# Outside the install block so a re-run heals a stopped or disabled kubelet even when the
+# binary is already current. systemd state is idempotent, so this is a no-op when kubelet
+# is already enabled and running.
+- name: Ensure kubelet is enabled and started
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started

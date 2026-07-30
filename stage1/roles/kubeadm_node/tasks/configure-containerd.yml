@@ -1,45 +1,7 @@
 ---
-# /usr/local/bin/containerd --version
-# containerd github.com/containerd/containerd/v2 v2.1.4 75cb2b7193e4e490e9fbdc236c0e811ccaba3376
-
-- name: Get containerd installed version
-  ansible.builtin.command: /usr/local/bin/containerd --version
-  register: kubeadm_node_containerd_version_output
-  changed_when: false
-  failed_when: false
-
-# - name: Debug containerd installed version
-#   ansible.builtin.debug:
-#     msg: |
-#       Containerd version output: {{ kubeadm_node_containerd_version_output.stdout }}
-#       Containerd version output lines: {{ kubeadm_node_containerd_version_output.stdout_lines }}
-#       Containerd version output stderr lines: {{ kubeadm_node_containerd_version_output.stderr_lines }}
-#       Containerd version output stderr: {{ kubeadm_node_containerd_version_output.stderr }}
-#       Containerd version output rc: {{ kubeadm_node_containerd_version_output.rc }}
-
-- name: Set containerd installed version
-  when:
-    - kubeadm_node_containerd_version_output.rc == 0
-    - kubeadm_node_containerd_version_output.stdout_lines | length > 0
-  ansible.builtin.set_fact:
-    kubeadm_node_containerd_installed_version: "{{ kubeadm_node_containerd_version_output.stdout_lines[0] | regex_replace('^containerd .* v([0-9.]+).*$', '\\1') }}"
-
-- name: Debug containerd installed version
-  ansible.builtin.debug:
-    msg: "Containerd installed version: {{ kubeadm_node_containerd_installed_version | default('Not installed') }}"
-
-- name: Display containerd version information
-  ansible.builtin.debug:
-    msg: |
-      Current containerd version: {{ kubeadm_node_containerd_installed_version | default('Not installed') }}
-      Target containerd version: {{ containerd_version }}
-      Upgrade needed: {{ (kubeadm_node_containerd_installed_version is defined and kubeadm_node_containerd_installed_version is version(containerd_version, '<')) | default(true) }}
-
-- name: Install containerd
-  when: >
-    'containerd.service' not in ansible_facts.services or ansible_facts.services['containerd.service'].state != 'running' or
-    (kubeadm_node_containerd_version_output.rc != 0) or
-    (kubeadm_node_containerd_installed_version is defined and kubeadm_node_containerd_installed_version is version(containerd_version, '<'))
+# Pure installer. Detection lives in detect-versions.yml.
+- name: Install or upgrade containerd
+  when: kubeadm_node_containerd_upgrade_required | bool
   block:
     - name: Download containerd tarball
       vars:
@@ -58,8 +20,11 @@
         remote_src: true
 
     - name: Download containerd.service file
+      # Pinned to the tag installed two tasks above, not `main`. A floating branch means the
+      # unit file and the binary can disagree, and this now runs unattended inside the
+      # worker roll rather than only on a fresh build.
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        url: "https://raw.githubusercontent.com/containerd/containerd/v{{ containerd_version }}/containerd.service"
         dest: /lib/systemd/system/containerd.service
         mode: "0644"
 
@@ -87,8 +52,11 @@
                      | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
         dest: /etc/containerd/config.toml
         mode: "0644"
-      notify: Restart containerd
 
-    # Flush so containerd restart completes before kubeadm init runs.
-    - name: Flush handlers
-      ansible.builtin.meta: flush_handlers
+    # Direct restart, not notify: `meta: flush_handlers` is play-wide and would also fire
+    # unrelated pending handlers. Unconditional here because the block only runs when
+    # containerd changed, and kubeadm init needs the runtime up before it starts.
+    - name: Restart containerd to load the new config
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted

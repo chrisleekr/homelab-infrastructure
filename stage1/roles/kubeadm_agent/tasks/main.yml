@@ -83,3 +83,16 @@
   register: kubeadm_agent_label
   # kubectl label prints "not labeled" when the value is already set.
   changed_when: "'not labeled' not in kubeadm_agent_label.stdout"
+
+# Last, so a worker that joined during this same run is already registered and labelled
+# before anything considers draining it.
+#
+# apply:, not tags: alone. A tag on a dynamic include selects the include task and nothing
+# it pulls in, so `--tags k8s_upgrade` would run this task and skip the entire roll. apply
+# tags the included tasks, and inheritance carries it through the nested include_role calls.
+- name: Roll the worker onto the target Kubernetes version
+  ansible.builtin.include_tasks:
+    file: upgrade-node.yml
+    apply:
+      tags: [k8s_upgrade]
+  tags: [k8s_upgrade]

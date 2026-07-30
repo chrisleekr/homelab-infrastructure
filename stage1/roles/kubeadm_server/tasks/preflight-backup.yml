@@ -1,0 +1,73 @@
+---
+# kubeadm has no downgrade. If `kubeadm upgrade apply` corrupts etcd, this snapshot is the
+# only way back, so it is taken before anything mutates the cluster.
+
+- name: Stamp the backup name
+  # Stamped from the controller clock at run time, NOT from ansible_date_time. ansible.cfg
+  # enables jsonfile fact caching with the default 24h timeout, so a same-day retry at the
+  # same kubeadm_version would replay a cached timestamp, compute an identical path, and
+  # overwrite the pristine pre-upgrade snapshot with one of a half-upgraded cluster.
+  ansible.builtin.set_fact:
+    kubeadm_server_backup_name: "etcd-pre-upgrade-v{{ kubeadm_version }}-{{ '%Y%m%dT%H%M%S' | strftime }}"
+
+- name: Ensure the upgrade backup directory exists
+  ansible.builtin.file:
+    path: "{{ kubeadm_upgrade_backup_dir }}"
+    state: directory
+    mode: "0700" # holds a full etcd snapshot and the cluster CA keys
+
+- name: Resolve the etcd pod name
+  ansible.builtin.command: kubectl -n kube-system get pods -l component=etcd -o name
+  register: kubeadm_server_etcd_pod
+  changed_when: false
+
+- name: Assert exactly one etcd pod was found
+  ansible.builtin.assert:
+    that: kubeadm_server_etcd_pod.stdout_lines | length == 1
+    fail_msg: "Expected one etcd pod, found {{ kubeadm_server_etcd_pod.stdout_lines }}. Snapshot the cluster manually before upgrading."
+    quiet: true
+
+- name: Take an etcd snapshot
+  # /var/lib/etcd is a hostPath mount, so writing there from inside the pod lands the file
+  # on the control-plane host. `kubectl cp` would stream it to the Ansible controller
+  # instead, which is not where recovery reads it from.
+  ansible.builtin.command: >-
+    kubectl -n kube-system exec {{ kubeadm_server_etcd_pod.stdout | trim | basename }} --
+    etcdctl
+    --endpoints=https://127.0.0.1:2379
+    --cacert=/etc/kubernetes/pki/etcd/ca.crt
+    --cert=/etc/kubernetes/pki/etcd/server.crt
+    --key=/etc/kubernetes/pki/etcd/server.key
+    snapshot save /var/lib/etcd/{{ kubeadm_server_backup_name }}.db
+  register: kubeadm_server_etcd_snapshot
+  changed_when: kubeadm_server_etcd_snapshot.rc == 0
+
+- name: Move the snapshot out of the etcd data directory
+  ansible.builtin.copy:
+    src: "/var/lib/etcd/{{ kubeadm_server_backup_name }}.db"
+    dest: "{{ kubeadm_upgrade_backup_dir }}/{{ kubeadm_server_backup_name }}.db"
+    remote_src: true
+    mode: "0600"
+
+- name: Remove the snapshot from the etcd data directory
+  # Leaving stray files in etcd's data directory is asking for trouble on the next restart.
+  ansible.builtin.file:
+    path: "/var/lib/etcd/{{ kubeadm_server_backup_name }}.db"
+    state: absent
+
+- name: Back up the cluster PKI
+  # etcd data is useless without the CA that signs every client and serving certificate.
+  #
+  # mode: preserve because kubeadm expects a specific mix (0600 keys, 0644 certs, 0755 dirs)
+  # that a restore has to put back exactly; the 0700 parent is what keeps the copy private.
+  ansible.builtin.copy:
+    src: /etc/kubernetes/pki/
+    dest: "{{ kubeadm_upgrade_backup_dir }}/{{ kubeadm_server_backup_name }}-pki/"
+    remote_src: true
+    mode: preserve
+
+- name: Display the backup location
+  ansible.builtin.debug:
+    msg: >-
+      Pre-upgrade backup written to {{ kubeadm_upgrade_backup_dir }}/{{ kubeadm_server_backup_name }}.db
+      and {{ kubeadm_upgrade_backup_dir }}/{{ kubeadm_server_backup_name }}-pki/

@@ -1,0 +1,16 @@
+---
+# Delegated to the control plane: the target may be a worker with no kubeconfig, and the API
+# server must stay reachable while its kubelet is stopped.
+#
+# --ignore-daemonsets is mandatory: Cilium, kube-proxy and Longhorn run as DaemonSet pods
+# that cannot be evicted, so a drain without it never completes. --delete-emptydir-data
+# because several kube-system pods hold emptyDir scratch space.
+- name: Drain the node
+  ansible.builtin.command: >-
+    kubectl drain {{ kubeadm_node_name }}
+    --ignore-daemonsets
+    --delete-emptydir-data
+    --timeout={{ kubeadm_node_drain_timeout }}
+  delegate_to: "{{ groups['server'][0] }}"
+  register: kubeadm_node_drain_result
+  changed_when: kubeadm_node_drain_result.rc == 0

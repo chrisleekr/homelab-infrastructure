@@ -1,0 +1,5 @@
+---
+# Postflight settle poll. The control-plane static pods and the Cilium DaemonSet both
+# restart during an upgrade, so kube-system needs time to converge before it is judged.
+kubeadm_server_postflight_retries: 30
+kubeadm_server_postflight_delay: 10

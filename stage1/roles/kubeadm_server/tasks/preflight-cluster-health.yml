@@ -1,0 +1,49 @@
+---
+# Upgrading an already-degraded cluster turns one broken component into an ambiguous
+# failure. Establish health first, so anything that breaks later is attributable to the
+# upgrade.
+
+- name: Assert the API server is serving
+  ansible.builtin.command: kubectl get --raw=/readyz
+  register: kubeadm_server_preflight_readyz
+  changed_when: false
+  failed_when: kubeadm_server_preflight_readyz.stdout is not search('ok')
+  check_mode: false
+
+- name: Find nodes that are not Ready
+  # A node reading "Ready,SchedulingDisabled" also fails here, which is intended: a node
+  # left cordoned by an earlier aborted run must be dealt with before starting another.
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      kubectl get nodes --no-headers | awk '$2 != "Ready" { print $1 " (" $2 ")" }'
+    executable: /bin/bash
+  register: kubeadm_server_preflight_not_ready
+  changed_when: false
+  check_mode: false
+
+- name: Assert every node is Ready
+  ansible.builtin.assert:
+    that: kubeadm_server_preflight_not_ready.stdout | trim | length == 0
+    fail_msg: "Nodes not Ready: {{ kubeadm_server_preflight_not_ready.stdout_lines }}. Fix the cluster before upgrading."
+    quiet: true
+
+- name: Find kube-system pods that are not settled
+  # Evicted and Error pods are terminal objects that linger until someone deletes them. They
+  # say nothing about current cluster health, and counting them would let one dead pod block
+  # every run of this playbook, upgrade or not.
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      kubectl get pods -n kube-system --no-headers |
+      awk '$3 != "Running" && $3 != "Completed" && $3 != "Evicted" && $3 != "Error" { print $1 " (" $3 ")" }'
+    executable: /bin/bash
+  register: kubeadm_server_preflight_unhealthy_pods
+  changed_when: false
+  check_mode: false
+
+- name: Assert kube-system is healthy
+  ansible.builtin.assert:
+    that: kubeadm_server_preflight_unhealthy_pods.stdout | trim | length == 0
+    fail_msg: "kube-system pods not Running: {{ kubeadm_server_preflight_unhealthy_pods.stdout_lines }}. Fix the cluster before upgrading."
+    quiet: true

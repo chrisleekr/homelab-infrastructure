@@ -97,6 +97,16 @@ vulnerabilities:
     statement: gRPC-Go xDS RBAC and HTTP/2 vulnerabilities (task/terraform/tflint/trivy) - waiting for upstream rebuild with grpc >= 1.82.1
     expired_at: 2026-08-15
 
+  # golang.org/x/text HIGH vendored by kubectl 1.36.3, go-task 3.52.0 (x/text v0.38.0),
+  # terraform 1.15.8 (v0.37.0) and trivy 0.72.0 (v0.38.0). Fixed in x/text 0.39.0. Published
+  # 2026-07-14, after every tool's current pinned release; all four are already at the latest
+  # upstream tag, so no version bump clears it. Unblocks as each upstream rebuilds.
+  # Not reachable here: the infinite loop needs attacker-controlled text fed to norm.Iter, and
+  # these are one-shot CLIs run by CI and the operator shell against trusted input.
+  - id: CVE-2026-56852
+    statement: golang.org/x/text norm.Iter infinite loop on invalid input (kubectl/task/terraform/trivy) - waiting for upstream rebuild with x/text >= 0.39.0
+    expired_at: 2026-08-15
+
 misconfigurations:
   # Dockerfile checks - acceptable for this use case
   - id: DS-0002

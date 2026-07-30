@@ -2,6 +2,13 @@
 # Node-level setup shared by the control plane (kubeadm_server) and workers
 # (kubeadm_agent). Both roles pull this in via a meta dependency, so container
 # runtime and kubelet stay identical across the cluster.
+#
+# This file only ever performs the FRESH-INSTALL path. On a node that has already joined a
+# cluster, replacing binaries in place restarts the kubelet under running pods with no
+# drain and no `kubeadm upgrade node`. That path belongs to the upgrade flows:
+#   control plane: kubeadm_server/tasks/upgrade-control-plane.yml
+#   workers:       kubeadm_agent/tasks/upgrade-node.yml
+# Both reach back into this role with `tasks_from:` to reuse the same apply files.
 - name: Assert the node architecture is supported
   # node_architecture (inventory) is a bare dict lookup on ansible_facts['architecture'];
   # an unsupported value (a 32-bit armv7l flash is the usual cause) would otherwise fail
@@ -13,26 +20,16 @@
       and aarch64 (arm64) are supported; re-flash with 64-bit Ubuntu Server.
     quiet: true
 
-- name: Install runc
-  ansible.builtin.include_tasks: install-runc.yml
-  tags: [container_runtime]
+- name: Detect installed versions and node state
+  ansible.builtin.include_tasks: detect-versions.yml
+  tags: [always]
 
-- name: Install cni
-  ansible.builtin.include_tasks: install-cni.yml
-  tags: [container_runtime]
+- name: Install the container runtime and kubelet
+  ansible.builtin.include_tasks: apply-node-runtime-and-kubelet.yml
+  when: not kubeadm_node_bootstrapped
+  tags: [container_runtime, container_tools, k8s_install]
 
-- name: Configure containerd
-  ansible.builtin.include_tasks: configure-containerd.yml
-  tags: [container_runtime]
-
-- name: Install nerdctl
-  ansible.builtin.include_tasks: install-nerdctl.yml
-  tags: [container_tools]
-
-- name: Install crictl
-  ansible.builtin.include_tasks: install-crictl.yml
-  tags: [container_tools]
-
-- name: Configure kubeadm and kubelet
-  ansible.builtin.include_tasks: configure-kubeadm-kubelet.yml
+- name: Install the kubeadm binary
+  ansible.builtin.include_tasks: apply-kubeadm-binary.yml
+  when: not kubeadm_node_bootstrapped
   tags: [k8s_install]
