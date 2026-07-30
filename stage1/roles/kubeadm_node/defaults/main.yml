@@ -1,0 +1,12 @@
+---
+# Node-local upgrade tunables. The operator-facing knobs (versions, the upgrade kill
+# switch, the backup directory) live in inventories/inventory.yml instead.
+
+# Longhorn replica rebuilds dominate drain time on this cluster. Too short and the drain
+# fails mid-eviction, leaving the node cordoned with pods still on it.
+kubeadm_node_drain_timeout: 300s
+
+# Post-restart readiness poll. retries * delay must exceed the worst-case kubelet restart
+# plus CNI re-attach, otherwise a healthy node is reported as failed.
+kubeadm_node_wait_ready_retries: 30
+kubeadm_node_wait_ready_delay: 10

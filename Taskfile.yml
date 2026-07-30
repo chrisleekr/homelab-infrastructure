@@ -56,6 +56,17 @@ tasks:
         --exit-code 1
         chrisleekr/homelab-infrastructure:latest
 
+  stage1:test:
+    desc: Assert the kubeadm upgrade ordering statically. Needs a python3 with PyYAML, which the ansible install already provides. No cluster, no network.
+    cmds:
+      - python3 stage1/tests/test_upgrade_ordering.py
+
+  stage1:ansible:syntax:
+    desc: Parse every play and role without connecting to a host
+    dir: stage1
+    cmds:
+      - ansible-playbook -i "inventories/inventory.yml" site.yml --syntax-check
+
   stage1:ansible:ping:
     desc: Verify access to the cluster
     dir: stage1

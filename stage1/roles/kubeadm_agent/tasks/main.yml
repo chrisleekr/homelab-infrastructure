@@ -83,3 +83,9 @@
   register: kubeadm_agent_label
   # kubectl label prints "not labeled" when the value is already set.
   changed_when: "'not labeled' not in kubeadm_agent_label.stdout"
+
+# Last, so a worker that joined during this same run is already registered and labelled
+# before anything considers draining it.
+- name: Roll the worker onto the target Kubernetes version
+  ansible.builtin.include_tasks: upgrade-node.yml
+  tags: [k8s_upgrade]

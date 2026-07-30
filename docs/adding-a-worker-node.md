@@ -281,8 +281,8 @@ targets, where the step is a no-op.
 
 ## Known gaps
 
-- **Worker upgrades are not automated.** Bumping `kubeadm_version` upgrades the control
-  plane (`kubeadm upgrade apply`) and re-downloads worker binaries, but does not run
-  `kubeadm upgrade node` on workers.
 - **SD card endurance.** kubelet and containerd write constantly. Booting from a USB SSD is
   worth considering for a long-lived node.
+
+Worker upgrades are automated: bumping `kubeadm_version` drains, upgrades and uncordons each
+worker one at a time. See [Kubernetes upgrades](kubernetes-upgrades.md).

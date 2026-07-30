@@ -1,8 +1,57 @@
 ---
-# Container runtime and kubelet come from the kubeadm_node role (meta dependency).
-- name: Upgrade kubeadm control plane
-  ansible.builtin.include_tasks: upgrade-control-plane.yml
-  tags: [k8s_install]
+# Container runtime and kubelet come from the kubeadm_node role (meta dependency), which
+# also sets the kubeadm_node_* detection facts every gate below reads.
+#
+# Order is the contract:
+#   1. every preflight runs before anything mutates the cluster
+#   2. Cilium moves before the control plane (rationale in upgrade-cilium.yml)
+#   3. install/initialise stay ahead of the Cilium tasks, because both drive kubectl
+#      against a cluster that only exists once `kubeadm init` has run
+#   4. postflight verification is last
+# The preflight and upgrade steps no-op on a fresh node: kubeadm_node_upgrade_pending is
+# false until the node has joined a cluster.
+
+# The first two preflights gate on kubeadm_node_bootstrapped, not on this node's
+# kubeadm_node_upgrade_pending, so they still run when the control plane is current but a
+# worker is behind. Without that a worker could drain itself after a run in which no health
+# check executed at all. They cannot gate on kubeadm_upgrade_enabled alone: both need a
+# reachable API server, and on a fresh host they run before install-kubectl.yml and
+# `kubeadm init`, so they would abort the build of a cluster that does not exist yet.
+#
+# The last two stay tied to a pending control plane: the etcd snapshot and the removed-API
+# scan protect `kubeadm upgrade apply`, and a worker roll touches neither etcd nor the
+# served API surface.
+- name: Preflight, check the version skew is supported
+  ansible.builtin.include_tasks: preflight-version-skew.yml
+  when: kubeadm_upgrade_enabled | bool and kubeadm_node_bootstrapped | bool
+  tags: [k8s_upgrade]
+
+- name: Preflight, check the cluster is healthy
+  ansible.builtin.include_tasks: preflight-cluster-health.yml
+  when: kubeadm_upgrade_enabled | bool and kubeadm_node_bootstrapped | bool
+  tags: [k8s_upgrade]
+
+- name: Preflight, back up etcd and the PKI
+  ansible.builtin.include_tasks: preflight-backup.yml
+  when: kubeadm_upgrade_enabled | bool and kubeadm_node_upgrade_pending | bool
+  tags: [k8s_upgrade]
+
+- name: Preflight, check for removed APIs
+  ansible.builtin.include_tasks: preflight-deprecated-apis.yml
+  when: kubeadm_upgrade_enabled | bool and kubeadm_node_upgrade_pending | bool
+  tags: [k8s_upgrade]
+
+- name: Record that the preflight checks passed
+  # Workers read this off the control plane's hostvars before draining themselves.
+  #
+  # Unconditionally true: every preflight above aborts the play on failure, so reaching this
+  # task at all IS the proof. Deriving it from kubeadm_node_upgrade_pending instead would
+  # make it false on any run where the control plane is already current, which silently
+  # skips every worker on exactly the retry the recovery procedure tells you to run.
+  # Each worker still gates on its own kubeadm_node_upgrade_pending.
+  ansible.builtin.set_fact:
+    kubeadm_server_preflight_passed: true
+  tags: [always]
 
 - name: Install kubectl
   ansible.builtin.include_tasks: install-kubectl.yml
@@ -24,6 +73,10 @@
   ansible.builtin.include_tasks: upgrade-cilium.yml
   tags: [cni]
 
+- name: Upgrade kubeadm control plane
+  ansible.builtin.include_tasks: upgrade-control-plane.yml
+  tags: [k8s_install, k8s_upgrade]
+
 - name: Download kubeconfig
   ansible.builtin.include_tasks: download-kubeconfig.yml
   tags: [kubeconfig]
@@ -31,3 +84,7 @@
 - name: Untaint node
   ansible.builtin.include_tasks: untaint-node.yml
   tags: [k8s_config]
+
+# postflight-verify.yml is deliberately NOT included here. It asserts that every node runs
+# the target version, and the workers are upgraded by a later play. site.yml runs it from a
+# final `hosts: server` play once the agent play has finished.

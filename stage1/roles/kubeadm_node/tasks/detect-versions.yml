@@ -1,0 +1,124 @@
+---
+# Single source of truth for every install/upgrade gate in this role and its dependants.
+# Runs before anything mutates the node, so the facts describe the node as found.
+#
+# check_mode: false on every probe. Without it a --check run leaves the registers empty and
+# every downstream `when:` templates an undefined var instead of reporting a plan.
+
+# Owned here rather than assumed from site.yml pre_tasks, so the role is self-contained
+# when included on its own (the containerd gate reads ansible_facts.services).
+- name: Gather service state information as fact data
+  ansible.builtin.service_facts:
+  check_mode: false
+
+- name: Probe installed component versions
+  # A missing binary exits non-zero, which is a valid answer here, not a failure.
+  ansible.builtin.command: "{{ item.cmd }}"
+  loop:
+    - { name: runc, cmd: /usr/local/sbin/runc --version }
+    - { name: cni, cmd: /opt/cni/bin/macvlan --version }
+    - { name: containerd, cmd: /usr/local/bin/containerd --version }
+    - { name: nerdctl, cmd: /usr/local/bin/nerdctl --version }
+    - { name: crictl, cmd: /usr/local/bin/crictl --version }
+    - { name: kubeadm, cmd: /usr/local/bin/kubeadm version --output=short }
+    - { name: kubelet, cmd: /usr/local/bin/kubelet --version }
+  loop_control:
+    label: "{{ item.name }}"
+  register: kubeadm_node_version_probes
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Check whether the node has already joined a cluster
+  # kubelet.conf is written by `kubeadm join`, admin.conf by `kubeadm init`. Either means
+  # the node is serving workloads, so binaries may only be replaced under an upgrade flow.
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /etc/kubernetes/kubelet.conf
+    - /etc/kubernetes/admin.conf
+  register: kubeadm_node_cluster_conf_stat
+  check_mode: false
+
+- name: Initialise the installed version map
+  ansible.builtin.set_fact:
+    kubeadm_node_installed_versions: {}
+
+- name: Record installed component versions
+  # 0.0.0 for an absent or unreadable binary, so every comparison below stays defined and
+  # resolves to "install needed". Tools print their semver to stdout or stderr depending on
+  # the tool, hence the concatenation.
+  #
+  # The concatenation is fully parenthesised on purpose: `~` binds looser than `|`, so
+  # `a ~ b | regex_search(...)` filters only b and then concatenates a in front of it.
+  ansible.builtin.set_fact:
+    kubeadm_node_installed_versions: >-
+      {{ kubeadm_node_installed_versions | combine({
+           item.item.name: (((item.stdout | default('')) ~ ' ' ~ (item.stderr | default('')))
+                            | regex_search('[0-9]+\.[0-9]+\.[0-9]+') | default('0.0.0', true))
+         }) }}
+  loop: "{{ kubeadm_node_version_probes.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+- name: Set node bootstrap and component upgrade facts
+  ansible.builtin.set_fact:
+    kubeadm_node_bootstrapped: "{{ kubeadm_node_cluster_conf_stat.results | map(attribute='stat.exists') | select | list | length > 0 }}"
+    kubeadm_node_installed_version: "{{ kubeadm_node_installed_versions.kubeadm }}"
+    kubeadm_node_runc_upgrade_required: "{{ kubeadm_node_installed_versions.runc is version(runc_version, '<') }}"
+    kubeadm_node_cni_upgrade_required: "{{ kubeadm_node_installed_versions.cni is version(cni_version, '<') }}"
+    kubeadm_node_nerdctl_upgrade_required: "{{ kubeadm_node_installed_versions.nerdctl is version(nerdctl_version, '<') }}"
+    kubeadm_node_crictl_upgrade_required: "{{ kubeadm_node_installed_versions.crictl is version(crictl_version, '<') }}"
+    # The not-running clause only heals a broken runtime on a node that reaches the
+    # installer, which since the upgrade split means a fresh node or one already inside the
+    # drained window. On a joined node a dead containerd is NOT repaired by a plain re-run;
+    # it needs an upgrade to be pending, or manual intervention.
+    kubeadm_node_containerd_upgrade_required: >-
+      {{ kubeadm_node_installed_versions.containerd is version(containerd_version, '<')
+         or 'containerd.service' not in ansible_facts.services
+         or ansible_facts.services['containerd.service'].state != 'running' }}
+    kubeadm_node_kubeadm_upgrade_required: "{{ kubeadm_node_installed_versions.kubeadm is version(kubeadm_version, '<') }}"
+    kubeadm_node_kubelet_upgrade_required: "{{ kubeadm_node_installed_versions.kubelet is version(kubeadm_version, '<') }}"
+    # Version drift only. Deliberately excludes containerd's not-running clause, so a
+    # transient runtime blip does not trigger a full node drain.
+    kubeadm_node_runtime_drift: >-
+      {{ kubeadm_node_installed_versions.runc is version(runc_version, '<')
+         or kubeadm_node_installed_versions.cni is version(cni_version, '<')
+         or kubeadm_node_installed_versions.containerd is version(containerd_version, '<')
+         or kubeadm_node_installed_versions.nerdctl is version(nerdctl_version, '<')
+         or kubeadm_node_installed_versions.crictl is version(crictl_version, '<') }}
+
+- name: Set the Kubernetes node name
+  # Not the inventory hostname. Workers pin nodeRegistration.name to inventory_hostname in
+  # their join config, but the control plane's kubeadm-config.yaml.j2 sets no name, so
+  # kubeadm registers it under the lowercased machine hostname. The inventory alias for the
+  # control plane is `server_host`, which matches no node object at all.
+  #
+  # nodename, not hostname: the hostname fact is platform.node().split('.')[0], while kubeadm
+  # derives the node name from os.Hostname() untruncated. They diverge on an FQDN hostname.
+  ansible.builtin.set_fact:
+    kubeadm_node_name: >-
+      {{ inventory_hostname if inventory_hostname in (groups['agent'] | default([]))
+         else ansible_facts['nodename'] | lower }}
+
+- name: Set the upgrade pending fact
+  # The one gate every upgrade flow keys off. Scoped to bootstrapped nodes: a fresh node
+  # installs rather than upgrades.
+  #
+  # Runtime drift counts. The runtime installers only run inside the drained window now, so
+  # without this a containerd or runc bump alone would be a silent no-op on every joined
+  # node and quietly skip runtime CVE patches.
+  ansible.builtin.set_fact:
+    kubeadm_node_upgrade_pending: >-
+      {{ kubeadm_node_bootstrapped
+         and (kubeadm_node_kubeadm_upgrade_required
+              or kubeadm_node_kubelet_upgrade_required
+              or kubeadm_node_runtime_drift) }}
+
+- name: Display detected node state
+  ansible.builtin.debug:
+    msg: |
+      Bootstrapped: {{ kubeadm_node_bootstrapped }}
+      Installed: {{ kubeadm_node_installed_versions }}
+      Target kubeadm/kubelet: {{ kubeadm_version }}
+      Upgrade pending: {{ kubeadm_node_upgrade_pending }}

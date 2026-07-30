@@ -56,16 +56,34 @@ cluster:
     crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
     containerd_version: "2.3.3" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.3.5" # https://github.com/containerd/nerdctl/releases
+    # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
+    # A bump is what arms the upgrade path; see docs/kubernetes-upgrades.md.
     kubeadm_version: "1.36.3" # https://kubernetes.io/releases/
     kubectl_version: "1.36.3" # https://kubernetes.io/releases/
     kubelet_service_version: "0.21.1" # https://github.com/kubernetes/release/releases
-    # https://github.com/cilium/cilium-cli/releases
-    # $ /usr/local/bin/cilium version
+
+    # Two distinct Cilium versions. cilium_version is the agent/operator release that runs
+    # in the cluster; cilium_cli_version is only the local binary that drives Helm. They
+    # move independently, so gating an agent upgrade on the CLI version compares unrelated
+    # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_cli_version: "0.19.6"
+    cilium_version: "1.19.6" # https://github.com/cilium/cilium/releases
+    cilium_cli_version: "0.19.7" # https://github.com/cilium/cilium-cli/releases
+
+    # Deprecated-API scanner run as an upgrade preflight.
+    pluto_version: "5.24.1" # https://github.com/FairwindsOps/pluto/releases
+
+    # Escape hatch. `-e kubeadm_upgrade_enabled=false` reduces a run to install-and-join
+    # only, leaving every already-bootstrapped node untouched.
+    kubeadm_upgrade_enabled: true
+
+    # Control-plane etcd snapshot and PKI copy taken before `kubeadm upgrade apply`.
+    kubeadm_upgrade_backup_dir: /var/backups/kubeadm
 
     # Upgrade instructions
-    #  https://v1-32.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+    #  https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+    #  https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/upgrading-linux-nodes/
+    # Runbook: docs/kubernetes-upgrades.md
     # Finish: Kubeadm
     ########################
 

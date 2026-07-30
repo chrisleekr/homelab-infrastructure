@@ -1,0 +1,62 @@
+---
+# Rolling upgrade for one already-joined worker. site.yml runs the agent play with
+# serial: 1, so exactly one worker is in this file at a time.
+#
+# Step order is the contract and is asserted by stage1/tests/test_upgrade_ordering.py, which
+# runs as a pre-commit hook. Draining after the kubelet binary moves is the bug this file
+# exists to prevent: it replaces binaries under running pods before kubeadm has rewritten the
+# node's config.
+#
+# The `kubeadm_upgrade_step` vars below have no runtime effect. They are the anchors that test
+# matches each step on, which is why they carry a noqa for the role-prefix rule. Removing them
+# as unused disarms the ordering assertions without failing anything.
+- name: Roll this worker onto the target version
+  # hostvars gate: the control plane sets kubeadm_server_preflight_passed only after every
+  # preflight succeeded. Without it a worker would drain itself against a control plane
+  # that never got upgraded, or one whose backup failed.
+  when:
+    - kubeadm_upgrade_enabled | bool
+    - kubeadm_node_upgrade_pending | bool
+    - hostvars[groups['server'][0]].kubeadm_server_preflight_passed | default(false) | bool
+  block:
+    - name: Apply the kubeadm binary # noqa: var-naming[no-role-prefix]
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: apply-kubeadm-binary.yml
+      vars:
+        kubeadm_upgrade_step: apply_kubeadm_binary
+
+    - name: Upgrade the node configuration
+      # Reads the new kubelet config from the cluster and writes it locally. Must run
+      # before the kubelet binary moves, or the new kubelet starts on the old config.
+      ansible.builtin.command: kubeadm upgrade node
+      register: kubeadm_agent_upgrade_node
+      changed_when: kubeadm_agent_upgrade_node.rc == 0
+      vars:
+        kubeadm_upgrade_step: upgrade_node
+
+    - name: Drain the node # noqa: var-naming[no-role-prefix]
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: node-drain.yml
+      vars:
+        kubeadm_upgrade_step: drain
+
+    - name: Apply the container runtime and kubelet # noqa: var-naming[no-role-prefix]
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: apply-node-runtime-and-kubelet.yml
+      vars:
+        kubeadm_upgrade_step: apply_runtime_kubelet
+
+    - name: Wait for the node to be Ready on the new kubelet # noqa: var-naming[no-role-prefix]
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: node-wait-ready.yml
+      vars:
+        kubeadm_upgrade_step: wait_ready
+  always:
+    - name: Uncordon the node
+      ansible.builtin.include_role:
+        name: kubeadm_node
+        tasks_from: node-uncordon.yml

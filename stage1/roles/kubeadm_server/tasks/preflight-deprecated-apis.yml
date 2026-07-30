@@ -1,0 +1,46 @@
+---
+# A minor bump removes API versions. Anything still submitting a removed version breaks the
+# moment the API server restarts, and the failure surfaces as unrelated workload errors
+# rather than as an upgrade problem. pluto reads the live cluster and says so up front.
+# Ref: https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+
+- name: Download pluto
+  # Checksum verified against the release's own checksums.txt. This binary is extracted to
+  # /usr/local/bin and run as root against the live cluster, so an unverified fetch is a
+  # root-level supply-chain hole. get_url matches the checksum-file line by the URL
+  # basename, which is exactly the released asset name.
+  ansible.builtin.get_url:
+    url: "https://github.com/FairwindsOps/pluto/releases/download/v{{ pluto_version }}/pluto_{{ pluto_version }}_linux_{{ node_architecture }}.tar.gz"
+    checksum: "sha256:https://github.com/FairwindsOps/pluto/releases/download/v{{ pluto_version }}/checksums.txt"
+    dest: /tmp/pluto.tar.gz
+    mode: "0644"
+    force: true
+
+- name: Extract pluto
+  ansible.builtin.unarchive:
+    src: /tmp/pluto.tar.gz
+    dest: /usr/local/bin/
+    remote_src: true
+    include:
+      - pluto
+    mode: "0755"
+
+- name: Detect APIs removed in the target version
+  # --target-versions pins the check to the version being upgraded to, not to whatever
+  # pluto ships as its default. Exit code 3 means removed APIs were found.
+  ansible.builtin.command: >-
+    /usr/local/bin/pluto detect-all-in-cluster
+    --target-versions k8s=v{{ kubeadm_version }}
+    --output wide
+    --only-show-removed
+  register: kubeadm_server_pluto_scan
+  changed_when: false
+  failed_when: false
+
+- name: Assert nothing in the cluster uses a removed API
+  ansible.builtin.assert:
+    that: kubeadm_server_pluto_scan.rc == 0
+    fail_msg: |
+      Objects use APIs removed in v{{ kubeadm_version }}. Migrate them, then re-run.
+      {{ kubeadm_server_pluto_scan.stdout }}
+    quiet: true

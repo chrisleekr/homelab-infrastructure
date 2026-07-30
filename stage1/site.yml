@@ -56,6 +56,9 @@
 
 - name: Kubernetes setup
   hosts: server
+  # A half-upgraded control plane must not be followed by worker plays. Aborting the whole
+  # run on the first failure keeps the cluster at a known version instead of a mixed one.
+  any_errors_fatal: true
   become: true
   pre_tasks:
     - name: Gather service state information as fact data
@@ -108,7 +111,13 @@
   hosts: agent
   # serial: 1 for the same AnsiballZ cache race as the cluster play above, and it also
   # serialises the join (one bootstrap token created on the control plane at a time).
+  #
+  # It now also carries the rolling-upgrade contract: exactly one worker is drained at a
+  # time. Raising it drains N workers at once and can evict every replica of a workload.
   serial: 1
+  # Combined with serial: 1, a worker that fails to drain, upgrade or come back Ready stops
+  # the run before the next worker is touched.
+  any_errors_fatal: true
   become: true
   pre_tasks:
     - name: Gather service state information as fact data
@@ -131,6 +140,24 @@
     - name: Systemd handlers
       ansible.builtin.import_tasks:
         file: handlers/systemd.yml
+
+# Separate play, after the agent play, because it asserts that EVERY node reports the
+# target version. Run from inside the server role it would fire while the workers were
+# still on the old kubelet and abort the run before they were ever upgraded.
+- name: Verify the cluster converged on the target version
+  hosts: server
+  any_errors_fatal: true
+  become: true
+  tasks:
+    - name: Postflight, verify the cluster converged
+      when: kubernetes_cluster_type == 'kubeadm' and kubeadm_upgrade_enabled | bool
+      # k8s_upgrade deliberately absent: no other play responds to it, so tagging this one
+      # would make `--tags k8s_upgrade` select verification alone and fail against a cluster
+      # nothing had upgraded. The tag stays an intra-role marker.
+      tags: [kubeadm]
+      ansible.builtin.include_role:
+        name: kubeadm_server
+        tasks_from: postflight-verify.yml
 
 - name: Post setup on local
   hosts: localhost

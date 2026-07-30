@@ -1,19 +1,26 @@
 ---
 - name: Check if cilium is already installed
   ansible.builtin.command: kubectl get deployment cilium-operator -n kube-system
-  register: kubeadm_server_cilium_check
+  register: kubeadm_server_cilium_operator_check
   changed_when: false
   failed_when: false
 
 - name: Install cilium
-  when: kubeadm_server_cilium_check.rc != 0
+  when: kubeadm_server_cilium_operator_check.rc != 0
   block:
     - name: Install Cilium
-      ansible.builtin.command: cilium install --helm-set securityContext.privileged=true
+      # --version pins the agent to the declared release. Without it the CLI installs its
+      # own built-in default, and if that is newer than cilium_version the upgrade gate
+      # (installed < target) never fires, leaving the cluster permanently on an undeclared
+      # version that no inventory bump can correct.
+      ansible.builtin.command: >-
+        cilium install
+        --version {{ cilium_version }}
+        --helm-set securityContext.privileged=true
       register: kubeadm_server_cilium_install
       changed_when: kubeadm_server_cilium_install.rc == 0
 
     - name: Wait for Cilium status to be ready
       ansible.builtin.command: cilium status --wait
-      register: kubeadm_server_cilium_status
+      register: kubeadm_server_cilium_install_status
       changed_when: false

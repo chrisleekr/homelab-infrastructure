@@ -1,17 +1,54 @@
 ---
 # Reference: https://docs.cilium.io/en/stable/operations/upgrade/#version-specific-notes
+#
+# Runs before the control plane upgrade so the datapath already speaks the API surface the
+# new API server exposes.
+#
+# Gate on the running agent version, read from the DaemonSet image tag. Never gate on
+# cilium_cli_version: the CLI is a separate release train, so it fires on CLI bumps and
+# stays silent on real Cilium releases. `cilium status -o json` is avoided because its
+# schema has changed across CLI releases.
+
+- name: Read the running Cilium agent image
+  ansible.builtin.command: >-
+    kubectl -n kube-system get daemonset cilium
+    -o jsonpath={.spec.template.spec.containers[0].image}
+  register: kubeadm_server_cilium_ds_image
+  changed_when: false
+  failed_when: false
+
+- name: Set the running Cilium agent version
+  # No DaemonSet yet means install-cilium.yml just created the cluster at the target
+  # version, so there is nothing to upgrade.
+  ansible.builtin.set_fact:
+    kubeadm_server_cilium_agent_version: >-
+      {{ (kubeadm_server_cilium_ds_image.rc == 0)
+         | ternary(kubeadm_server_cilium_ds_image.stdout | regex_search('[0-9]+\.[0-9]+\.[0-9]+') | default(cilium_version, true),
+                   cilium_version) }}
+
+- name: Display Cilium version information
+  ansible.builtin.debug:
+    msg: |
+      Running Cilium agent version: {{ kubeadm_server_cilium_agent_version }}
+      Target Cilium agent version: {{ cilium_version }}
+      Upgrade needed: {{ kubeadm_server_cilium_agent_version is version(cilium_version, '<') }}
 
 - name: Upgrade Cilium
-  when: >
-    kubeadm_server_cilium_installed_version is defined and
-    kubeadm_server_cilium_installed_version is version(cilium_cli_version, '<')
+  when: kubeadm_server_cilium_agent_version is version(cilium_version, '<')
   block:
+    - name: Dry run the Cilium upgrade
+      # Renders what would be applied without touching the cluster. A chart or values
+      # problem surfaces here rather than half way through a live datapath upgrade.
+      ansible.builtin.command: "cilium upgrade --version {{ cilium_version }} --dry-run"
+      register: kubeadm_server_cilium_dry_run
+      changed_when: false
+
     - name: Upgrade Cilium
-      ansible.builtin.command: cilium upgrade --wait
+      ansible.builtin.command: "cilium upgrade --version {{ cilium_version }} --wait"
       register: kubeadm_server_cilium_upgrade_output
       changed_when: kubeadm_server_cilium_upgrade_output.rc == 0
 
     - name: Wait for Cilium status to be ready
       ansible.builtin.command: cilium status --wait
-      register: kubeadm_server_cilium_status
+      register: kubeadm_server_cilium_upgrade_status
       changed_when: false

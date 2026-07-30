@@ -9,7 +9,7 @@ default_stages:
 
 repos:
   - repo: https://github.com/ansible/ansible-lint
-    rev: v26.1.0
+    rev: v26.6.0
     hooks:
       - id: ansible-lint
         # Override Python 3.13 requirement - Alpine 3.21 has Python 3.12
@@ -21,8 +21,24 @@ repos:
         additional_dependencies:
           - ansible
 
+  # Ordering guard for the kubeadm rolling upgrade. Static parse of the stage1 Ansible
+  # tree; ansible-lint cannot see that a drain must follow `kubeadm upgrade node`.
+  - repo: local
+    hooks:
+      - id: ansible-upgrade-ordering
+        name: kubeadm upgrade ordering
+        # Invoked through the interpreter rather than as an executable, so the hook does not
+        # depend on the file mode. Docker Desktop's macOS mount translation reports every
+        # file as executable, which makes committed mode bits unreliable here.
+        entry: python stage1/tests/test_upgrade_ordering.py
+        language: python
+        additional_dependencies:
+          - PyYAML
+        pass_filenames: false
+        files: ^stage1/(site\.yml|roles/kubeadm_(node|server|agent)/|tests/)
+
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.105.0
+    rev: v1.108.1
     hooks:
       - id: terraform_fmt
       - id: terraform_validate

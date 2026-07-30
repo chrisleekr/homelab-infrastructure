@@ -1,0 +1,20 @@
+---
+# kubeadm refuses to skip a minor version, and the kubelet may trail the API server by at
+# most three minors. Catching a bad jump here costs nothing; catching it after
+# `kubeadm upgrade apply` has started means restoring the etcd snapshot.
+# Ref: https://kubernetes.io/releases/version-skew-policy/
+- name: Assert the upgrade advances at most one minor version
+  vars:
+    installed_minor: "{{ kubeadm_node_installed_version.split('.')[0:2] | join('.') }}"
+    target_minor: "{{ kubeadm_version.split('.')[0:2] | join('.') }}"
+  ansible.builtin.assert:
+    that:
+      - kubeadm_version is version(kubeadm_node_installed_version, '>=')
+      - target_minor is version(installed_minor, '==') or
+        (kubeadm_version.split('.')[0] | int == kubeadm_node_installed_version.split('.')[0] | int
+         and kubeadm_version.split('.')[1] | int == kubeadm_node_installed_version.split('.')[1] | int + 1)
+    fail_msg: >-
+      Refusing to upgrade {{ kubeadm_node_installed_version }} -> {{ kubeadm_version }}.
+      kubeadm supports one minor version per upgrade and has no downgrade path. Step
+      through {{ kubeadm_node_installed_version.split('.')[0] }}.{{ kubeadm_node_installed_version.split('.')[1] | int + 1 }}.x first.
+    quiet: true

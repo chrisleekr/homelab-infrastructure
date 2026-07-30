@@ -1,50 +1,7 @@
 ---
-- name: Check if nerdctl exists
-  ansible.builtin.stat:
-    path: /usr/local/bin/nerdctl
-  register: kubeadm_node_nerdctl_stat
-
-# $ /usr/local/bin/nerdctl --version
-# nerdctl version 1.7.6
-
-- name: Get nerdctl installed version
-  ansible.builtin.command: /usr/local/bin/nerdctl --version
-  register: kubeadm_node_nerdctl_version_output
-  changed_when: false
-  failed_when: false
-
-# - name: Debug nerdctl installed version
-#   ansible.builtin.debug:
-#     msg: |
-#       Nerdctl version output: {{ kubeadm_node_nerdctl_version_output.stdout }}
-#       Nerdctl version output lines: {{ kubeadm_node_nerdctl_version_output.stdout_lines }}
-#       Nerdctl version output stderr lines: {{ kubeadm_node_nerdctl_version_output.stderr_lines }}
-#       Nerdctl version output stderr: {{ kubeadm_node_nerdctl_version_output.stderr }}
-#       Nerdctl version output rc: {{ kubeadm_node_nerdctl_version_output.rc }}
-
-- name: Set nerdctl installed version
-  when:
-    - kubeadm_node_nerdctl_version_output.rc == 0
-    - kubeadm_node_nerdctl_version_output.stdout_lines | length > 0
-  ansible.builtin.set_fact:
-    kubeadm_node_nerdctl_installed_version: "{{ kubeadm_node_nerdctl_version_output.stdout_lines[0] | regex_replace('^nerdctl version ([0-9.]+).*$', '\\1') }}"
-
-- name: Debug nerdctl installed version
-  ansible.builtin.debug:
-    msg: "Nerdctl installed version: {{ kubeadm_node_nerdctl_installed_version | default('Not installed') }}"
-
-- name: Display nerdctl version information
-  ansible.builtin.debug:
-    msg: |
-      Current nerdctl version: {{ kubeadm_node_nerdctl_installed_version | default('Not installed') }}
-      Target nerdctl version: {{ nerdctl_version }}
-      Upgrade needed: {{ (kubeadm_node_nerdctl_installed_version is defined and kubeadm_node_nerdctl_installed_version is version(nerdctl_version, '<')) | default(true) }}
-
+# Pure installer. Detection lives in detect-versions.yml.
 - name: Install or upgrade nerdctl
-  when: >
-    not kubeadm_node_nerdctl_stat.stat.exists or
-    (kubeadm_node_nerdctl_version_output.rc != 0) or
-    (kubeadm_node_nerdctl_installed_version is defined and kubeadm_node_nerdctl_installed_version is version(nerdctl_version, '<'))
+  when: kubeadm_node_nerdctl_upgrade_required | bool
   block:
     - name: Download nerdctl
       vars:
@@ -54,6 +11,9 @@
         url: "{{ base_url }}/v{{ nerdctl_version }}/{{ path }}"
         dest: /tmp/nerdctl.tar.gz
         mode: "0644"
+        # Without force the cached /tmp tarball from the previous version is reused and the
+        # "upgrade" silently reinstalls the old binary.
+        force: true
 
     - name: Extract nerdctl
       ansible.builtin.unarchive:
@@ -66,6 +26,6 @@
       register: kubeadm_node_nerdctl_post_download_version
       changed_when: false
 
-    - name: Display nerdctl post download version
+    - name: Display downloaded nerdctl version
       ansible.builtin.debug:
-        msg: "{{ kubeadm_node_nerdctl_post_download_version.stdout }}"
+        msg: "{{ kubeadm_node_nerdctl_post_download_version.stdout_lines[0] | default('unknown') }}"
