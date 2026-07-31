@@ -56,9 +56,12 @@ tasks:
       - ./.venv-docs/bin/python scripts/check-docs.py --check
 
   docs:test:
-    desc: Assert the documentation drift gate itself. Needs a python3 with PyYAML. No network.
+    desc: Assert the documentation drift gate itself. No network.
+    # The test re-runs check-docs.py with sys.executable, which imports yaml, so
+    # it needs the venv interpreter rather than whatever python3 is on PATH.
+    deps: [docs:install]
     cmds:
-      - python3 scripts/tests/test_check_docs.py
+      - ./.venv-docs/bin/python scripts/tests/test_check_docs.py
 
   versions:check:
     desc: Check for newer tool and Alpine package versions in Dockerfile

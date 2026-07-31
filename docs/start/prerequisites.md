@@ -19,7 +19,7 @@ Nothing else. kubectl, helm, terraform, ansible and `bws` all live in the contai
 | [Terraform Cloud](https://app.terraform.io/) | Remote state backend. Create a workspace and an API token. |
 | [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) | Every secret and config value. Create a project and a machine account. |
 | [Auth0](https://auth0.com/) | OAuth2 login in front of Grafana, ArgoCD and the rest |
-| A domain | Services are exposed as `service.domain.local`; Let's Encrypt issues certificates for them |
+| A domain | Services are exposed as `service.<domain>`. The `letsencrypt-prod` issuer solves ACME HTTP-01, so a certificate needs a publicly resolvable name reachable on port 80. A `.local` name is LAN-only and Let's Encrypt will not issue for it. |
 
 ## The control-plane host
 

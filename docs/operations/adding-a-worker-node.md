@@ -110,7 +110,7 @@ address later, edit `/etc/netplan/50-cloud-init.yaml` on the node and run `netpl
 ## 3. Boot and verify (Raspberry Pi)
 
 Boot the Pi. First boot takes a few minutes: cloud-init creates the user, applies the
-network, and restarts `ssh.socket` on the new port.
+network, and starts `ssh.socket` on port 22.
 
 Confirm you can reach it (use `wlan0` instead of `eth0` if you configured wifi):
 
@@ -132,7 +132,7 @@ Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escapin
 injects it natively). One JSON object per worker:
 
 ```json
-[{"name":"worker-01","host":"192.168.1.102","port":"2222","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
+[{"name":"worker-01","host":"192.168.1.102","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
 | Key | Required | Default | Notes |

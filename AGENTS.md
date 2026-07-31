@@ -70,7 +70,7 @@ version that keeps a future reader from reintroducing the bug.
 - **GitLab AMD64 only**: Check `host_machine_architecture` variable; GitLab skipped on ARM64
 - **Module dependencies**: Defined in `stage2/main.tf` - respect `depends_on` chains
 - **Validation**: Always run `task precommit` before suggesting commits
-- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/operations/bitwarden-secrets.md), injected at runtime; `.env` holds only the bws token
+- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/operations/bitwarden-secrets.md), injected at runtime; `.env` holds only the bws bootstrap values, `BWS_ACCESS_TOKEN` and the optional `BWS_PROJECT_ID`
 - **Pre-commit hooks**: ansible-lint, terraform_fmt, terraform_validate, trivy, gitleaks
 
 ## Security & Best Practices

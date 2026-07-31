@@ -28,8 +28,8 @@ flowchart TD
 Reads `worker_hosts_json` and `add_host`s each entry into the `agent` group. Workers are therefore
 *not* static inventory entries: the fleet scales by editing one Bitwarden secret.
 
-An unset or empty list adds no hosts, leaving `agent` empty and plays 4 and 5 as no-ops. That is the
-single-node cluster.
+An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. Play 5 targets
+`server`, so postflight verification still runs. That is the single-node cluster.
 
 ### 2. Server setup on cluster
 
@@ -42,11 +42,9 @@ Handlers imported: `fail2ban.yml`, `apt-cache.yml`, `reboot.yml`.
 
 !!! info "Why `serial: 1` here"
 
-    Parallel host forks building the same AnsiballZ module archive collide on the shared cache
-    file's `-part` rename, and one fails with `ENOENT`
-    ([ansible/ansible#16489](https://github.com/ansible/ansible/issues/16489)). It only bites plays
-    with more than one host, which became possible when `host_setup` moved from `hosts: server` to
-    `hosts: cluster`. One host at a time is fine at homelab scale.
+    Parallel host forks collide on the shared AnsiballZ module cache
+    ([ansible/ansible#16489](https://github.com/ansible/ansible/issues/16489)), so any play with
+    more than one host needs `serial: 1`.
 
 !!! danger "The `flush_handlers` barrier"
 

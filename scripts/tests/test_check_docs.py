@@ -292,15 +292,40 @@ def test_untracked_files_are_out_of_scope() -> None:
         check("gitignored .env is not scanned", result.returncode == 0, result.stderr.strip())
 
 
-def test_scanning_nothing_is_a_failure() -> None:
-    """Check E's only fail-open: an empty file list passes having read nothing."""
+def test_unreadable_mkdocs_yml_is_rejected() -> None:
+    """An mkdocs.yml that is not a readable file must fail on the guard, not a traceback."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         build_fixture(root, nav="nav: []\n", pages={})
         (root / "mkdocs.yml").unlink()
-        (root / "mkdocs.yml").mkdir()  # a directory, so no file is ever readable
+        (root / "mkdocs.yml").mkdir()  # a directory, so is_file() is False
         result = run_checker(root)
-        check("zero files scanned fails", result.returncode == 1, result.stderr.strip())
+        check("unreadable config fails", result.returncode == 1, result.stderr.strip())
+        check(
+            "the missing-config guard fires, not a traceback",
+            "not found" in result.stderr and "Traceback" not in result.stderr,
+            result.stderr.strip(),
+        )
+
+
+def test_empty_mkdocs_yml_is_not_a_traceback() -> None:
+    """An empty config parses to None. Check A must report the gap, not raise AttributeError."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        build_fixture(
+            root,
+            nav="nav:\n  - Home: index.md\n",
+            pages={"index.md": "# Home\n"},
+            modules=("nginx",),
+        )
+        (root / "mkdocs.yml").write_text("", encoding="utf-8")
+        result = run_checker(root)
+        check("empty config fails", result.returncode == 1, result.stderr.strip())
+        check(
+            "reports the uncovered module, not a traceback",
+            "docs/stage2/nginx.md" in result.stderr and "Traceback" not in result.stderr,
+            result.stderr.strip(),
+        )
 
 
 def test_em_dash_in_mkdocs_nav_is_rejected() -> None:

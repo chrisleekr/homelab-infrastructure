@@ -1,7 +1,8 @@
 # Terraform variables
 
-All 136 input variables are declared in the root `stage2/variables.tf` and passed down to modules.
-No module reads a variable directly, which is why every value is set in one place.
+All 136 root input variables are declared in `stage2/variables.tf` and passed down to modules.
+Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*`
+directly, which is why every value is set in one place.
 
 Values are supplied as `TF_VAR_*` environment variables, injected from
 [Bitwarden](../operations/bitwarden-secrets.md) when you enter the tooling container. There is no

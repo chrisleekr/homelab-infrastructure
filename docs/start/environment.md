@@ -17,7 +17,7 @@ sequenceDiagram
     C->>BWS: authenticate with BWS_ACCESS_TOKEN
     BWS-->>C: secrets for BWS_PROJECT_ID
     Note over C: exported as environment variables
-    C->>Tools: inventory.yml and variables.tf<br/>read them via lookup("env", ...) and TF_VAR_*
+    C->>Tools: inventory.yml reads them with an env lookup;<br/>Terraform maps TF_VAR_* onto the variables.tf inputs
 ```
 
 ## 1. Create the `.env`

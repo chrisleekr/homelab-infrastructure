@@ -274,7 +274,7 @@ Navigate to `https://gitlab.chrislee.local`
 2. Create a new instance runner
 3. Copy the authentication token
 4. Set `TF_VAR_gitlab_runner_authentication_token`
-5. Run `terraform apply`
+5. Run `task stage2:terraform:apply`
 
 ## Helm Chart
 

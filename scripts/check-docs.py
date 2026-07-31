@@ -158,8 +158,9 @@ def load_nav_paths() -> set[str]:
     """Every docs-relative page path reachable from the nav tree."""
     with MKDOCS_YML.open(encoding="utf-8") as handle:
         # _NavLoader is a SafeLoader subclass; see its docstring for why this is
-        # not the yaml.load foot-gun it looks like.
-        config = yaml.load(handle, Loader=_NavLoader)
+        # not the yaml.load foot-gun it looks like. `or {}`: an empty or
+        # comment-only file parses to None, and .get would raise.
+        config = yaml.load(handle, Loader=_NavLoader) or {}
 
     found: set[str] = set()
 

@@ -27,10 +27,18 @@ INVENTORY="$REPO_ROOT/stage1/inventories/inventory.yml"
 README="$REPO_ROOT/README.md"
 VERSIONS_DOC="$REPO_ROOT/docs/reference/versions.md"
 
+# Reject anything that is not exactly `--check` or nothing. A typo'd flag must not
+# fall through to apply mode: in CI that rewrites the tracked files and exits 0, so
+# the gate would report success having checked nothing.
 CHECK_ONLY=false
-if [[ "${1:-}" == "--check" ]]; then
-  CHECK_ONLY=true
-fi
+case "$#:${1:-}" in
+  "0:") ;;
+  "1:--check") CHECK_ONLY=true ;;
+  *)
+    echo "ERROR: usage: ${0##*/} [--check]" >&2
+    exit 2
+    ;;
+esac
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -151,10 +159,8 @@ done <<< "$INVENTORY_KEYS"
 replace_block() {
   local file=$1 start=$2 end=$3 payload=$4
   local n_start n_end
-  # Without this precondition the awk below has two silent failure modes: a
-  # missing END marker leaves skip=1 to EOF and truncates the file (which apply
-  # mode then writes back), and a missing pair copies the file verbatim so the
-  # gate reports "in sync" forever with no generated table present.
+  # Exactly one marker pair, or the awk below silently truncates the file (no END)
+  # or copies it verbatim and reports "in sync" forever (no pair).
   n_start=$(grep -c -- "^$start" "$file" || true)
   n_end=$(grep -c -- "^$end" "$file" || true)
   if [[ "$n_start" != 1 || "$n_end" != 1 ]]; then
@@ -162,8 +168,7 @@ replace_block() {
     echo "  found: start=$n_start end=$n_end" >&2
     exit 1
   fi
-  # Counting alone is not enough: with END above START the awk clears skip on the
-  # first marker and sets it on the second, discarding the rest of the file.
+  # Ordered, too: END above START discards the rest of the file.
   if [[ "$(grep -n -- "^$start" "$file" | cut -d: -f1)" -gt "$(grep -n -- "^$end" "$file" | cut -d: -f1)" ]]; then
     echo "ERROR: ${file#"$REPO_ROOT"/} has '$end' before '$start'" >&2
     exit 1
@@ -191,17 +196,16 @@ rewrite_spans() {
     rm -f "$file.bak"
   done <<< "$VERSION_MAP"
 
-  # Substitution is driven by the key list, so a span whose key is misspelled or
-  # simply unmanaged is skipped in silence and the gate still reports "in sync".
-  # Reject unknown keys instead: the page promises every pin stays current.
+  # Substitution is driven by the key list, so an unknown key would be skipped in
+  # silence and the gate would still report "in sync". Reject it instead.
   while IFS= read -r used; do
     [[ -n "$used" ]] || continue
     if ! grep -q "^${used}=" <<< "$VERSION_MAP"; then
       echo "ERROR: unknown version span key '<!--v:${used}-->' in ${label}" >&2
       exit 1
     fi
-  # `[^>]*` rather than an allow-list: a key the class does not anticipate would
-  # not match at all, so the typo this check exists to catch would escape it.
+  # `[^>]*` rather than an allow-list, or the typo this check exists to catch
+  # would not match at all.
   done < <(grep -oE '<!--v:[^>]*-->' "$file" | sed -E 's|<!--v:(.*)-->|\1|' | sort -u)
 }
 

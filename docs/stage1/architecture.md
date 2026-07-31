@@ -40,7 +40,7 @@ empty `worker_hosts_json` the `agent` group is empty and every worker play is a 
 
 ```mermaid
 flowchart LR
-    ctrlplane["Control plane<br/>Ubuntu AMD64<br/>kube-apiserver, etcd,<br/>scheduler, controller-manager"]
+    ctrlplane["Control plane<br/>Ubuntu AMD64 or ARM64<br/>kube-apiserver, etcd,<br/>scheduler, controller-manager"]
     token["Bootstrap token<br/>+ CA cert hash"]:::aux
     worker1["Worker 1<br/>AMD64 or ARM64"]
     workerN["Worker N"]
