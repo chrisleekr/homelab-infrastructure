@@ -6,7 +6,7 @@
 # runs the workloads, and Longhorn sets defaultReplicaCount: 1, so every volume has its only
 # replica here. Draining evicts all of them with nowhere to reschedule and gains nothing: the
 # API server, etcd and the controllers are static pods that kubeadm restarts in place
-# regardless of cordon state. Do not add a drain here. See docs/kubernetes-upgrades.md.
+# regardless of cordon state. Do not add a drain here. See docs/operations/kubernetes-upgrades.md.
 # Keyed to a Kubernetes version change specifically, not to kubeadm_node_upgrade_pending,
 # which also covers container-runtime drift. A containerd-only bump must not drive
 # `kubeadm upgrade apply` at the version the cluster already runs: that re-renders and

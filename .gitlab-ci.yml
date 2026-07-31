@@ -21,6 +21,7 @@ variables:
 stages:
   - build
   - test
+  - docs
 
 docker-build-dev:
   stage: build
@@ -107,3 +108,48 @@ trivy-scan:
     - master
     - main
   allow_failure: false
+
+# Documentation gate. GitLab validates but never publishes: GitHub Actions owns
+# Pages (.github/workflows/docs.yml). Development happens in GitLab MRs, so this
+# is the gate that actually catches drift first. Runs on every branch and MR,
+# including master, so deleting a Terraform module or bumping an inventory pin
+# trips it regardless of which remote the work lands on.
+docs-build:
+  stage: docs
+  image: python:3.13-alpine
+  # The top-level `default:` block attaches docker:27-dind to every job. This one
+  # has no use for a Docker daemon, and starting one costs a privileged runner slot.
+  services: []
+  # Start immediately rather than queueing behind buildx and Trivy. Nothing here
+  # consumes the built image, and serialising the docs gate behind the image build
+  # would make it unrunnable on the very MR that breaks the image.
+  needs: []
+  interruptible: true
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  cache:
+    # Keyed on the pin file, so only a dependency bump invalidates it.
+    key:
+      files:
+        - docs/requirements.txt
+    paths:
+      - .cache/pip
+  before_script:
+    # bash: sync-versions.sh is #!/bin/bash and alpine ships ash only.
+    # diffutils: BusyBox `diff` accepts -q but differs in output formatting from
+    #   the GNU diff the script is developed against on macOS and CI.
+    - apk add --no-cache bash diffutils
+    - pip install --quiet -r docs/requirements.txt
+  script:
+    # Cheapest gates first, so a stale version table fails before the site build.
+    - bash scripts/sync-versions.sh --check
+    - python3 scripts/tests/test_check_docs.py
+    - python3 scripts/check-docs.py --check
+    - mkdocs build --strict --site-dir site
+  artifacts:
+    name: "docs-$CI_COMMIT_REF_SLUG"
+    paths:
+      - site/
+    expire_in: 1 week
+    expose_as: "Rendered documentation"

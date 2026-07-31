@@ -57,7 +57,7 @@ cluster:
     containerd_version: "2.3.3" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.3.5" # https://github.com/containerd/nerdctl/releases
     # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
-    # A bump is what arms the upgrade path; see docs/kubernetes-upgrades.md.
+    # A bump is what arms the upgrade path; see docs/operations/kubernetes-upgrades.md.
     kubeadm_version: "1.36.3" # https://kubernetes.io/releases/
     kubectl_version: "1.36.3" # https://kubernetes.io/releases/
     kubelet_service_version: "0.21.1" # https://github.com/kubernetes/release/releases
@@ -83,7 +83,7 @@ cluster:
     # Upgrade instructions
     #  https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
     #  https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/upgrading-linux-nodes/
-    # Runbook: docs/kubernetes-upgrades.md
+    # Runbook: docs/operations/kubernetes-upgrades.md
     # Finish: Kubeadm
     ########################
 

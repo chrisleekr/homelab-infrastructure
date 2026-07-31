@@ -8,72 +8,59 @@
 
 > Provisioning a Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
 
+**📖 Full documentation → <https://chrisleekr.github.io/homelab-infrastructure/>**
+
 ## Overview
 
-A comprehensive two-stage infrastructure-as-code solution for provisioning Kubernetes clusters with enterprise-grade applications. Uses Ansible for server setup and Kubernetes cluster bootstrap, followed by Terraform for deploying a complete application stack including GitLab, monitoring, storage, VPN, and CI/CD tools.
+A two-stage infrastructure-as-code solution for provisioning a single-node Kubernetes cluster and
+deploying a complete application stack on it.
 
-**Core Architecture:**
+- **Stage 1 (Ansible)**: server hardening and Kubernetes bootstrap via kubeadm, k3s or minikube
+- **Stage 2 (Terraform)**: 19 modules, including GitLab, ArgoCD, monitoring, logging, storage, VPN, ingress
+- **Containerised tooling**: one Alpine image with kubectl, helm, terraform, ansible and bws
 
-- **Stage 1 (Ansible)**: Server hardening, Kubernetes cluster provisioning (kubeadm/k3s/minikube)
-- **Stage 2 (Terraform)**: Application deployment and infrastructure services
-- **Containerized Tooling**: Docker image with kubectl, helm, terraform, ansible, kubent
+Supported platforms:
 
-**Supported Platforms:**
+- **Control plane**: Ubuntu AMD64. GitLab publishes no ARM64 image.
+- **Workers**: optional, AMD64 or ARM64 (e.g. a Raspberry Pi). Architecture is detected per host.
+- **Kubernetes**: kubeadm (recommended), k3s (alternative), minikube (experimental).
 
-- **Control plane**: Ubuntu AMD64 (GitLab has no ARM64 image)
-- **Workers**: optional, AMD64 or ARM64 (e.g. a Raspberry Pi). Architecture is detected per host. See [Adding a worker node](docs/adding-a-worker-node.md).
-- **Kubernetes Options**: kubeadm (recommended), k3s (alternative), minikube (experimental)
-- **Infrastructure**: Single control-plane node, optimized for homelab environments
+## Documentation
 
-## Project Structure
+| Section | Covers |
+|---------|--------|
+| [Get started](docs/start/index.md) | Prerequisites, secrets, both stages, verification |
+| [Cluster (Stage 1)](docs/stage1/index.md) | Architecture, the `site.yml` plays, inventory, tags, handlers, all 10 roles |
+| [Platform (Stage 2)](docs/stage2/index.md) | All 19 Terraform modules and the dependency graph |
+| [Operations](docs/operations/index.md) | Kubernetes upgrades, adding a worker, secrets, troubleshooting |
+| [Reference](docs/reference/index.md) | Version pins, `task` commands, repository layout, Terraform variables |
+| [Contributing](CONTRIBUTING.md) | Development guidelines |
 
-```text
-homelab-infrastructure/
-├── stage1/                       # Ansible playbooks and roles
-│   ├── ansible.cfg               # Ansible configuration
-│   ├── site.yml                  # Main playbook orchestration
-│   ├── inventories/
-│   │   └── inventory.yml         # Host definitions and version pinning
-│   ├── roles/
-│   │   ├── host_setup/           # Server hardening (fail2ban, ufw)
-│   │   ├── kubeadm_*/            # kubeadm cluster setup
-│   │   ├── k3s_*/                # k3s cluster setup
-│   │   ├── minikube_*/           # minikube cluster setup
-│   │   └── localhost_post_setup/ # Post-deployment tasks
-│   └── requirements*.txt         # Python/Ansible dependencies
-├── stage2/                       # Terraform modules
-│   ├── main.tf                   # Module orchestration and dependencies
-│   ├── variables.tf              # All input variables
-│   ├── providers.tf              # Provider configurations
-│   ├── backend.tf                # Terraform Cloud backend
-│   └── <module>/                 # Individual service modules
-├── scripts/                      # Helper scripts
-├── container/                    # Container customization files
-├── Dockerfile                    # Alpine container with all tools
-├── Taskfile.yml                  # Task runner (primary command interface)
-├── .pre-commit-config.yaml       # Pre-commit hooks configuration
-└── .env.example                  # Bitwarden access-token template (secrets live in Bitwarden)
+## Quick Start
+
+Requires Docker and [Task](https://taskfile.dev/). Everything else runs in the container.
+
+```bash
+cp .env.example .env     # add BWS_ACCESS_TOKEN and BWS_PROJECT_ID
+task repo:setup          # pre-commit hooks, ansible-galaxy, pip
+task docker:build        # build the tooling image
+task docker:exec         # drop into the container, secrets injected from Bitwarden
 ```
 
-## Build & Commands
+Then provision:
 
-**Task Runner (Taskfile.yml):**
+```bash
+task stage1:ansible:ping        # verify SSH access
+task stage1:ansible:playbook    # Stage 1: build the cluster
+task stage2:terraform:apply     # Stage 2: deploy the platform
+```
 
-| Command | Description |
-|---------|-------------|
-| `task repo:setup` | Install dependencies (pre-commit, ansible-galaxy, pip) |
-| `task docker:build` | Build Alpine container image |
-| `task docker:run` | Start container with volume mounts |
-| `task docker:exec` | Interactive bash session in container |
-| `task precommit` | Run all pre-commit hooks |
-| `task stage1:ansible:ping` | Verify SSH connectivity to server |
-| `task stage1:ansible:playbook` | Deploy Stage 1 (Ansible) |
-| `task stage2:terraform:init` | Initialize Terraform |
-| `task stage2:terraform:plan` | Plan Terraform deployment |
-| `task stage2:terraform:apply` | Apply Terraform deployment |
-| `task stage2:terraform:lock` | Regenerate provider lock for multi-platform |
+Stage 1 hardens hosts and may reboot them. Read
+[Get started](docs/start/index.md) before running any of this.
 
-**Container Tools:**
+## Toolchain
+
+Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 
 <!-- VERSIONS_START - Do not remove this comment, used by sync-versions workflow -->
 | Tool | Version |
@@ -85,231 +72,11 @@ homelab-infrastructure/
 | trivy | 0.72.0 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
-## Quick Start
+Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at
+[Version pins](docs/reference/versions.md).
 
-### Prerequisites
-
-1. Set up Terraform Cloud and create an API key.
-
-2. Install Ubuntu AMD64 on a server and configure the following:
-   - GitLab (`registry.gitlab.com/gitlab-org/build/cng/kubectl`) does not support ARM64 yet.
-   - Note that the server SSH port must not be `22`.
-
-   ```shell
-   $ ssh chrislee@192.168.1.100
-
-   >$ sudo mkdir -p /etc/systemd/system/ssh.socket.d
-   >$ sudo cat >/etc/systemd/system/ssh.socket.d/override.conf <<EOF
-   [Socket]
-   ListenStream=2222
-   EOF
-
-   >$ sudo systemctl daemon-reload
-   >$ reboot
-
-   $ ssh chrislee@192.168.1.100 -p2222
-
-   >$ vim ~/.ssh/authorized_keys
-   # Add the public key located at ~/.ssh/id_rsa.pub to the authorized_keys file
-   ```
-
-### Stage 0: Setup the Environment
-
-1. Secrets and configuration are stored in **Bitwarden Secrets Manager** and injected into the
-   container at runtime. Copy the template and set only the two Bitwarden values:
-
-   ```bash
-   cp .env.example .env
-   #   BWS_ACCESS_TOKEN=<machine-account access token>
-   #   BWS_PROJECT_ID=<id from `bws project list`>
-   ```
-
-   - Follow [docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md) to install `bws`,
-     create the secrets (including `kubernetes_cluster_type` = `k3s` or `kubeadm`), and verify.
-   - Note that `minikube` can be provisioned but failed to work with the current setup.
-
-2. Ensure that you have an SSH key file ready for use with Ubuntu (e.g., `~/.ssh/id_rsa.pub`).
-
-3. Run `repo:setup` to make sure you have all the necessary tools.
-
-   ```bash
-   task repo:setup
-   ```
-
-### Stage 1: Provision Kubernetes Cluster
-
-1. Verify access by running the following commands:
-
-   ```bash
-   $ task docker:exec
-   /srv# cd stage1
-   /srv/stage1# ansible all -i "inventories/inventory.yml" -m ping
-   ```
-
-   - If you want to validate the Ansible playbook, you can run the following command:
-
-     ```bash
-     /srv/stage1# ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --check
-     BECOME password: <ubuntu root password>
-     ```
-
-2. Prepare the VM template by running the following command:
-
-   ```bash
-   /srv/stage1# ansible-playbook --ask-become-pass -i "inventories/inventory.yml" site.yml
-   BECOME password: <ubuntu root password>
-   ```
-
-   - At the end of the playbook, the `.kube/config` should be copied to the local machine in `container/root/.kube/config`.
-
-### Stage 2: Deploy Kubernetes Infrastructure
-
-1. Initialize Terraform by running the following commands:
-
-   ```bash
-   $ task docker:exec
-   /srv# cd stage2
-   /srv/stage2# terraform workspace select <workspace name>
-   /srv/stage2# terraform init
-   ```
-
-2. Provision infrastructure using Terraform by running the following commands:
-
-   ```bash
-   /srv/stage2# terraform plan
-   /srv/stage2# terraform apply
-   ```
-
-## Configuration Management
-
-**Secrets & configuration (Bitwarden Secrets Manager):**
-
-All secrets and configuration values (e.g. `kubernetes_cluster_type`, `server_ssh_host`,
-`host_machine_architecture`, `docker_default_data_path`, and every `TF_VAR_*`) are stored as secrets in
-a Bitwarden Secrets Manager project. The container's `.bashrc` runs `bws run` on entry and injects them
-as environment variables, so Terraform and Ansible pick them up unchanged.
-
-The local `.env` holds only `BWS_ACCESS_TOKEN` and `BWS_PROJECT_ID`. Values are stored **flattened**
-(no `${...}` interpolation). Full walkthrough and the per-variable reference:
-[docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md).
-
-**Terraform Variables:**
-
-Extensive variable system in `stage2/variables.tf` covering:
-
-- Network configuration (domains, IPs, ingress settings)
-- Storage settings (Longhorn, MinIO capacity)
-- Application configuration (GitLab, monitoring, auth)
-- Resource limits and security settings
-
-## Infrastructure Components
-
-**Terraform Module Dependencies:**
-
-```mermaid
-flowchart TD
-    kubernetes[kubernetes]
-    nginx[nginx]
-    cert_manager[cert_manager_letsencrypt]
-    longhorn[longhorn_storage]
-    minio[minio_object_storage]
-    gitlab[gitlab_platform]
-    monitoring[monitoring]
-    logging[logging]
-    auth[auth]
-    kubecost[kubecost]
-    vpn[vpn]
-    argocd[argocd]
-    datadog[datadog]
-    reloader[reloader]
-    litellm[litellm]
-    omniroute[omniroute]
-
-    kubernetes --> nginx
-    nginx --> cert_manager
-    cert_manager --> longhorn
-    cert_manager --> logging
-    cert_manager --> kubecost
-    cert_manager --> datadog
-    longhorn --> minio
-    minio --> gitlab
-    logging --> monitoring
-    cert_manager --> monitoring
-    monitoring --> auth
-    nginx --> auth
-    gitlab --> argocd
-    logging --> argocd
-    kubernetes --> vpn
-    kubernetes --> reloader
-    cert_manager --> litellm
-    longhorn --> litellm
-    cert_manager --> omniroute
-    longhorn --> omniroute
-```
-
-**Core Kubernetes Stack:**
-
-1. **Cluster Options**:
-   - **kubeadm**: Production-ready, full control, recommended for AMD64
-   - **k3s**: Lightweight, good for resource-constrained environments
-   - **minikube**: Development/testing, local development workflows
-
-2. **Networking**: Cilium CNI for kubeadm, built-in for k3s/minikube
-
-3. **Storage**: Longhorn distributed storage with configurable data paths
-
-## Stage 2 Modules
-
-Each module has its own README with detailed configuration options:
-
-| Module | Description |
-|--------|-------------|
-| [Kubernetes](stage2/kubernetes/README.md) | CoreDNS, Prometheus CRDs |
-| [NGINX](stage2/nginx/README.md) | Ingress Controller with MetalLB |
-| [Cert Manager](stage2/cert-manager-letsencrypt/README.md) | TLS certificate management with Let's Encrypt |
-| [Longhorn](stage2/longhorn-storage/README.md) | Distributed block storage |
-| [MinIO](stage2/minio-object-storage/README.md) | S3-compatible object storage |
-| [GitLab](stage2/gitlab-platform/README.md) | CI/CD platform with registry and runners (AMD64 only) |
-| [Monitoring](stage2/monitoring/README.md) | Prometheus, Grafana, AlertManager, ElastAlert2 |
-| [Logging](stage2/logging/README.md) | ECK (Elasticsearch, Kibana, Filebeat) |
-| [Auth](stage2/auth/README.md) | OAuth2 proxy with Auth0 |
-| [ArgoCD](stage2/argocd/README.md) | GitOps continuous deployment |
-| [ArgoCD Image Updater](stage2/argocd-updater/README.md) | Resolves mutable image tags to digests and commits them back to the GitOps repo |
-| [Kubecost](stage2/monitoring-kubecost/README.md) | Cost monitoring |
-| [VPN](stage2/vpn/README.md) | Tailscale and WireGuard |
-| [Datadog](stage2/datadog/README.md) | Datadog monitoring (optional) |
-| [Stakater Reloader](stage2/stakater-reloader/README.md) | Auto-restart on Secret/ConfigMap changes |
-| [LiteLLM](stage2/litellm/README.md) | Self-hosted OpenAI-compatible LLM proxy (optional) |
-| [OmniRoute](stage2/omniroute-gateway/README.md) | Self-hosted OpenAI-compatible AI gateway with a dashboard (optional) |
-| [Cloudflare Tunnel](stage2/cloudflare-tunnel/README.md) | cloudflared connector, exposes services via Cloudflare (optional) |
-
-## Optional Modules
-
-Modules controlled by enable flags in Terraform variables:
-
-| Module | Variable | Default |
-|--------|----------|---------|
-| GitLab | `host_machine_architecture == "amd64"` | Auto (AMD64 only) |
-| Logging (ECK) | `logging_module_enable` | `true` |
-| Datadog | `datadog_enable` | `false` |
-| Tailscale | `tailscale_enable` | `false` |
-| WireGuard | `wireguard_enable` | `false` |
-| LiteLLM | `litellm_enable` | `false` |
-| OmniRoute | `omniroute_enable` | `false` |
-| Cloudflare Tunnel | `cloudflare_tunnel_enable` | `false` |
-| ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
-
-## Troubleshooting
-
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
-
-## Git Workflow
-
-- **Quality Gates**: Always run `task precommit` before commits
-- **Container Testing**: Test Ansible/Terraform changes in container environment
-- **Version Control**: Never commit `.env` files or sensitive configuration
-- **Branch Strategy**: Feature branches for infrastructure changes
-- **Review Process**: Infrastructure changes require careful review due to impact
+Run `task precommit` before every commit, and work on feature branches. Infrastructure changes need
+careful review.
 
 ## Contributing
 

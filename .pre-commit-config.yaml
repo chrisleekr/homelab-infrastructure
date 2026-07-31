@@ -17,6 +17,12 @@ repos:
         args:
           - --project-dir=./stage1
           - --exclude=container/
+          # mkdocs.yml carries `!!python/name:` tags for the pymdownx mermaid and
+          # emoji extensions, which ansible-lint's safe loader rejects as
+          # load-failure. It must be excluded here rather than in
+          # stage1/.ansible-lint, whose exclude_paths resolve relative to that
+          # file and so cannot name a repo-root path.
+          - --exclude=mkdocs.yml
         # Uncomment if you need the full Ansible community bundle instead of ansible-core:
         additional_dependencies:
           - ansible
@@ -36,6 +42,45 @@ repos:
           - PyYAML==6.0.3
         pass_filenames: false
         files: ^stage1/(site\.yml|roles/kubeadm_(node|server|agent)/|tests/)
+
+      # Documentation drift gate. Static parse of mkdocs.yml nav plus the docs/
+      # tree against the stage1 role and stage2 module directories. MkDocs itself
+      # is not required, so the only dependency is PyYAML - same contract as the
+      # ansible-upgrade-ordering hook above.
+      - id: docs-drift
+        name: documentation drift (coverage, citations, orphans, typography)
+        entry: python scripts/check-docs.py --check
+        language: python
+        additional_dependencies:
+          - PyYAML==6.0.3
+        pass_filenames: false
+        # No `files:` filter, deliberately. The typography check reads every
+        # tracked text file, so any path-scoped regex would let an em dash in an
+        # unlisted file reach master with only CI to catch it. The whole gate
+        # runs in well under a second, so scoping buys nothing.
+
+      # Guards the drift gate above. Its failure modes are all silent-pass, so a
+      # regression would leave CI green while checking nothing.
+      - id: docs-drift-tests
+        name: documentation drift gate self-test
+        entry: python scripts/tests/test_check_docs.py
+        language: python
+        additional_dependencies:
+          - PyYAML==6.0.3
+        pass_filenames: false
+        files: ^scripts/(check-docs\.py|tests/test_check_docs\.py)$
+
+      # Version-pin drift. Regenerates the sentinel blocks in README.md and
+      # docs/reference/versions.md from Dockerfile ARGs and inventory.yml, and
+      # rewrites every <!--v:key--> span, then diffs.
+      - id: docs-versions
+        name: version pins in sync (Dockerfile + inventory -> README + docs)
+        # `language: system` with an explicit bash, for the same mode-bit reason
+        # as the hook above.
+        entry: bash scripts/sync-versions.sh --check
+        language: system
+        pass_filenames: false
+        files: ^(Dockerfile|stage1/inventories/inventory\.yml|README\.md|docs/.*\.md|scripts/sync-versions\.sh)$
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.108.1

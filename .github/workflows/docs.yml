@@ -1,0 +1,97 @@
+name: Docs
+
+on:
+  push:
+    # Both branches: GitLab is canonical and GitHub main is synced by hand, so
+    # whichever branch name a sync lands on should publish.
+    branches:
+      - main
+      - master
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "scripts/check-docs.py"
+      - "scripts/sync-versions.sh"
+      - ".github/workflows/docs.yml"
+  # No paths filter on pull_request, deliberately. Code-side changes are exactly
+  # what invalidates the doc facts the gates below check: deleting a Terraform
+  # module, renaming an Ansible role, bumping an inventory version pin.
+  pull_request:
+  workflow_dispatch:
+
+# Floor for the whole workflow. The deploy job raises its own; `build` must never
+# hold pages/id-token because it executes PR-controlled input (docs/requirements.txt
+# and mkdocs.yml, which mkdocs itself loads with yaml.Loader).
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  # Never cancel a publish midway through.
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate and build documentation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The steps below run repo-supplied code; do not leave a usable
+          # GITHUB_TOKEN in .git/config for it to read.
+          persist-credentials: false
+
+      # Cheapest gate first: bash and coreutils only, no interpreter setup.
+      # Invoked via `bash` rather than `./` for the same reason the pre-commit
+      # hooks are: mode bits are unreliable under Docker Desktop's macOS mounts.
+      - name: Verify version pins
+        run: bash scripts/sync-versions.sh --check
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      # check-docs.py needs PyYAML, which docs/requirements.txt declares directly
+      # rather than relying on whatever the runner image happens to ship.
+      - name: Install MkDocs
+        run: pip install -r docs/requirements.txt
+
+      - name: Verify the drift gate itself
+        run: python scripts/tests/test_check_docs.py
+
+      - name: Verify docs coverage, citations and nav
+        run: python scripts/check-docs.py --check
+
+      # --strict turns every warning into an error, which is what makes this the
+      # internal link checker.
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  # Separate job so the `github-pages` environment's deployment-branch rule is
+  # evaluated only for publishing runs. Environment rules gate whether a job may
+  # START, so putting it on `build` would refuse the whole job on pull_request
+  # (ref refs/pull/N/merge) and the gates above would never run.
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

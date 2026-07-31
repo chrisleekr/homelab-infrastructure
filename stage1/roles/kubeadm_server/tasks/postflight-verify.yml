@@ -37,7 +37,7 @@
       kubectl exited {{ kubeadm_server_postflight_stale.rc }}
       ({{ kubeadm_server_postflight_stale.stderr | trim }}); nodes still off
       v{{ kubeadm_version }}: {{ kubeadm_server_postflight_stale.stdout_lines }}.
-      Re-run the playbook; if a worker keeps failing, see docs/kubernetes-upgrades.md.
+      Re-run the playbook; if a worker keeps failing, see docs/operations/kubernetes-upgrades.md.
     quiet: true
 
 - name: Wait for every node to be Ready and schedulable

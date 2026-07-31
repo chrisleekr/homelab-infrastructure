@@ -6,7 +6,7 @@
 # this file). The filename is exact: `user-data`, no extension, UTF-8 without BOM.
 #
 # It must be Ubuntu Server, not Ubuntu Desktop and not Raspberry Pi OS. See
-# docs/adding-a-worker-node.md for how to tell them apart before you boot.
+# docs/operations/adding-a-worker-node.md for how to tell them apart before you boot.
 
 # MUST match the "name" of this node in worker_hosts_json. kubeadm registers the node
 # under its hostname, and Ansible addresses it by the same name.

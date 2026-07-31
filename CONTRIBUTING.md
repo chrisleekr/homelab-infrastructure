@@ -79,6 +79,7 @@ The following hooks are configured:
 | `terraform_tflint` | Lint Terraform files |
 | `detect-private-key` | Prevent committing private keys |
 | `gitleaks` | Detect secrets in code |
+| `docs-drift` | Doc coverage, path citations, nav orphans, and no em dash in any tracked text file. En dashes, U+2013, are allowed and correct in ranges like `30–60 min` |
 
 ## Pull Request Process
 
@@ -121,7 +122,7 @@ The following hooks are configured:
    - `variables.tf` - Module variables (if needed)
    - `provider.tf` - Provider configuration (if needed)
    - `templates/` - Template files (if needed)
-   - `README.md` - Module documentation
+   - `docs/stage2/<module-name>.md` - Module documentation, plus a `mkdocs.yml` nav entry
 3. Add module to `stage2/main.tf` with appropriate dependencies
 4. Add enable variable to `stage2/variables.tf` if optional
 
@@ -134,9 +135,28 @@ The following hooks are configured:
    - `templates/` - Jinja2 templates (if needed)
 3. Add role to appropriate playbook in `stage1/`
 
+## Documentation Style
+
+### Mermaid Diagrams
+
+Never set `fill:` or `color:` in a `classDef`. Material renders diagrams into a closed shadow root and
+paints label text from the active palette, so a hardcoded `color:` is silently dropped and a hardcoded
+`fill:` then clashes with whichever theme the reader is using. Leave both to the theme and mark nodes
+with the border only:
+
+| Class | `classDef` | Use for |
+|-------|-----------|---------|
+| `danger` | `stroke:#e53935,stroke-width:3px` | Destructive or disruptive: reboots, drains |
+| `shared` | `stroke:#b9770e,stroke-width:2px` | Re-entered from more than one caller |
+| `optional` | `stroke-dasharray:5 3` | Gated by a flag, or populated at runtime |
+| `done` | `stroke:#388e3c,stroke-width:2px` | Terminal success state |
+| `aux` | `stroke:#78909c,stroke-dasharray:2 2` | Not a cluster node: localhost, external, artifacts |
+
+Most nodes should carry no class at all. Mark only what a reader would otherwise miss.
+
 ## Security Guidelines
 
-- **Never commit secrets** - Store them in Bitwarden Secrets Manager (see [docs/bitwarden-secrets-setup.md](docs/bitwarden-secrets-setup.md)); the container injects them at runtime
+- **Never commit secrets** - Store them in Bitwarden Secrets Manager (see [Bitwarden secrets](https://chrisleekr.github.io/homelab-infrastructure/operations/bitwarden-secrets/)); the container injects them at runtime
 - **Never commit `.env` files** - The gitignored `.env` holds only `BWS_ACCESS_TOKEN` / `BWS_PROJECT_ID`
 - **Use SSH keys** - Never commit private keys
 - **Pin versions** - Always pin tool and chart versions

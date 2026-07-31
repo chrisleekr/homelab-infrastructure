@@ -1,7 +1,7 @@
 # AGENTS.md: AI Agent Context
 
 This document provides essential context for AI models interacting with this codebase.
-For full documentation, see [README.md](README.md).
+For full documentation, see <https://chrisleekr.github.io/homelab-infrastructure/>.
 
 ## Quick Reference
 
@@ -53,6 +53,9 @@ version that keeps a future reader from reintroducing the bug.
 - **Variable descriptions are one or two sentences.** Longer rationale goes in a comment above the
   block.
 - **Skip caveats about caveats.** If a cited doc needs walking back, cite a better source instead.
+- **No em dashes, U+2014.** In any tracked text file: prose, Mermaid labels, `mkdocs.yml` nav
+  titles, and `.tf` / `.yml` / `.sh` comments. Use a comma, colon, full stop or parentheses.
+  `scripts/check-docs.py` enforces it and names the file, line and column.
 
 ## Version Sources of Truth
 
@@ -67,7 +70,7 @@ version that keeps a future reader from reintroducing the bug.
 - **GitLab AMD64 only**: Check `host_machine_architecture` variable; GitLab skipped on ARM64
 - **Module dependencies**: Defined in `stage2/main.tf` - respect `depends_on` chains
 - **Validation**: Always run `task precommit` before suggesting commits
-- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/bitwarden-secrets-setup.md), injected at runtime; `.env` holds only the bws token
+- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/operations/bitwarden-secrets.md), injected at runtime; `.env` holds only the bws token
 - **Pre-commit hooks**: ansible-lint, terraform_fmt, terraform_validate, trivy, gitleaks
 
 ## Security & Best Practices

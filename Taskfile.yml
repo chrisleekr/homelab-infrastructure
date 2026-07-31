@@ -17,13 +17,56 @@ tasks:
     cmds:
       - pre-commit run --all-files
 
+  # MkDocs lives in its own venv rather than in the repo Dockerfile. Putting it
+  # in the image would create a second version pin alongside docs/requirements.txt,
+  # and a docs dependency CVE would start failing trivy-scan for the ops toolbox.
+  docs:install:
+    desc: Create the docs virtualenv and install MkDocs from docs/requirements.txt
+    # Task re-runs this only when the pin file changes, so the other docs tasks
+    # can depend on it unconditionally.
+    sources:
+      - docs/requirements.txt
+    generates:
+      - .venv-docs/bin/mkdocs
+    cmds:
+      - python3 -m venv .venv-docs
+      - ./.venv-docs/bin/python -m pip install --quiet --upgrade pip
+      - ./.venv-docs/bin/python -m pip install --quiet -r docs/requirements.txt
+
+  docs:serve:
+    desc: Serve the docs with live reload on http://127.0.0.1:8000
+    deps: [docs:install]
+    cmds:
+      # Always from the repo root: pymdownx.snippets base paths resolve against
+      # the working directory, so serving from a subdirectory breaks the
+      # CONTRIBUTING/SECURITY/AGENTS includes.
+      - ./.venv-docs/bin/mkdocs serve
+
+  docs:build:
+    desc: Build the docs into site/ in strict mode, where any warning is an error
+    deps: [docs:install]
+    cmds:
+      - ./.venv-docs/bin/mkdocs build --strict
+
+  docs:check:
+    desc: Run every documentation drift gate exactly as CI does, without building
+    deps: [docs:install]
+    cmds:
+      - bash ./scripts/sync-versions.sh --check
+      - ./.venv-docs/bin/python scripts/check-docs.py --check
+
+  docs:test:
+    desc: Assert the documentation drift gate itself. Needs a python3 with PyYAML. No network.
+    cmds:
+      - python3 scripts/tests/test_check_docs.py
+
   versions:check:
     desc: Check for newer tool and Alpine package versions in Dockerfile
     cmds:
       - ./scripts/bump-versions.sh --check
 
   versions:bump:
-    desc: Bump all tool and Alpine package versions in Dockerfile and sync README
+    desc: Bump all tool and Alpine package versions in Dockerfile, then regenerate the README and docs version tables
     cmds:
       - ./scripts/bump-versions.sh --apply
       - ./scripts/sync-versions.sh
@@ -113,7 +156,7 @@ tasks:
   stage2:terraform:init:lock:
     desc: Regenerate all provider lock files with multi-platform hashes. Run inside Docker container
     cmds:
-      # Remove darwin-built provider caches from child modules — they cannot be used inside linux_amd64 Docker container.
+      # Remove darwin-built provider caches from child modules. They cannot be used inside linux_amd64 Docker container.
       # Per HashiCorp Discuss: https://discuss.hashicorp.com/t/trying-to-run-terraform-validate-with-tf-plugin-cache-dir-set/64632
       - find stage2 -mindepth 2 -maxdepth 2 -name ".terraform" -type d -exec rm -rf {} +
       # Lock root module (darwin_arm64 + linux_amd64 so both macOS and Docker CI work)

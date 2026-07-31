@@ -1,0 +1,19 @@
+/* Wide layout. Material defaults .md-grid to 61rem (~976px), which wraps the
+   wide tables in the Stage 2 module reference and the long mermaid flowcharts.
+   Narrowing the primary sidebar buys the content the rest. */
+
+:root {
+  --sidebar-width: 12rem;
+}
+
+.md-sidebar--primary {
+  width: var(--sidebar-width);
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+  width: calc(var(--sidebar-width) - 0.6rem);
+}
+
+.md-grid {
+  max-width: 1440px;
+}

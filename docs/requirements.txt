@@ -1,0 +1,14 @@
+# MkDocs documentation toolchain. This file is the single version pin: GitHub
+# Actions, GitLab CI and `task docs:install` all resolve from it, which is why
+# mkdocs is deliberately absent from the repo Dockerfile. A second pin in an
+# image tag or an apk line would drift and nothing would catch it.
+#
+# Major-bounded ranges: minor and patch bumps land without review, majors need
+# one. Material 9 -> 10 is where theme templates break.
+# https://squidfunk.github.io/mkdocs-material/
+mkdocs-material>=9.7,<10
+
+# Direct dependency of scripts/check-docs.py, which parses mkdocs.yml nav with a
+# custom SafeLoader subclass. mkdocs pulls PyYAML in transitively, but the drift
+# gate depends on it directly, so it is declared directly.
+PyYAML>=6.0,<7
