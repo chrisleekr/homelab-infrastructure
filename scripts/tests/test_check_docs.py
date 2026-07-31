@@ -342,6 +342,72 @@ def test_em_dash_in_mkdocs_nav_is_rejected() -> None:
         check("names mkdocs.yml", "mkdocs.yml:" in result.stderr, result.stderr.strip())
 
 
+def test_wrapped_paragraph_is_rejected() -> None:
+    """Check F. A paragraph and a list item both continue on the next line."""
+    for label, body, wrapped_line in (
+        ("paragraph", "# Home\n\nThe loader reads the token\nfrom the mounted .env.\n", 4),
+        ("list item", "# Home\n\n- The loader reads the token\n  from the mounted .env.\n", 4),
+    ):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_fixture(root, nav="nav:\n  - Home: index.md\n", pages={"index.md": body})
+            result = run_checker(root)
+            check(f"wrapped {label} fails", result.returncode == 1, result.stderr.strip())
+            check(
+                f"names the continuation line for {label}",
+                f"index.md:{wrapped_line}" in result.stderr,
+                result.stderr.strip(),
+            )
+
+
+def test_multi_line_blocks_are_not_wraps() -> None:
+    """Only prose folds. Every other construct is multi-line by definition, and a
+    false positive here would be unfixable without breaking the page."""
+    page = "\n".join(
+        (
+            "---",
+            "title: Home",
+            "hide:",
+            "  - toc",
+            "---",
+            "",
+            "# Home",
+            "",
+            "| Step | Effect |",
+            "|---|---|",
+            "| one | two |",
+            "",
+            "```text",
+            "first output line",
+            "second output line",
+            "```",
+            "",
+            "- first item",
+            "- second item",
+            "",
+            '!!! note "Title"',
+            "",
+            "    The body sits at its own column.",
+            "",
+            "> Quoted line.",
+            ">",
+            "> Second quoted paragraph.",
+            "",
+            "[![CI](https://example.test/ci.svg)](https://example.test/ci)",
+            "[![License](https://example.test/mit.svg)](https://example.test/license)",
+            "",
+            "Two trailing spaces force a break.  ",
+            "So this line is deliberate.",
+            "",
+        )
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        build_fixture(root, nav="nav:\n  - Home: index.md\n", pages={"index.md": page})
+        result = run_checker(root)
+        check("multi-line blocks pass", result.returncode == 0, result.stderr.strip())
+
+
 def test_unknown_flag_is_rejected() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)

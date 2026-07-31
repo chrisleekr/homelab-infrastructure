@@ -2,15 +2,13 @@
 
 Joins worker nodes to the cluster and rolls them onto the target Kubernetes version.
 
-**Invoked by** play 4 (`hosts: agent`, `serial: 1`, `any_errors_fatal: true`), tag `kubeadm_agent`.
-Skipped entirely when `worker_hosts_json` is empty.
+**Invoked by** play 4 (`hosts: agent`, `serial: 1`, `any_errors_fatal: true`), tag `kubeadm_agent`. Skipped entirely when `worker_hosts_json` is empty.
 
 **Depends on** [`kubeadm_node`](kubeadm-node.md) via `meta/main.yml`.
 
 ## The join handshake
 
-Guarded by a `stat` on `/etc/kubernetes/kubelet.conf`, so the whole block is skipped on a node that
-has already joined.
+Guarded by a `stat` on `/etc/kubernetes/kubelet.conf`, so the whole block is skipped on a node that has already joined.
 
 ```mermaid
 sequenceDiagram
@@ -28,14 +26,11 @@ sequenceDiagram
     CP->>W: kubectl label node --overwrite
 ```
 
-Both credential steps run with `delegate_to: groups['server'][0]`, so they execute *on* the control
-plane, not the worker.
+Both credential steps run with `delegate_to: groups['server'][0]`, so they execute *on* the control plane, not the worker.
 
 !!! note "The join config is deleted immediately"
 
-    It holds the bootstrap token, a cluster-join credential, so it is not left on disk past the
-    handshake. The deletion sits inside the join block, so a re-run on an already-joined node skips
-    it rather than failing on a missing file.
+    It holds the bootstrap token, a cluster-join credential, so it is not left on disk past the handshake. The deletion sits inside the join block, so a re-run on an already-joined node skips it rather than failing on a missing file.
 
     Token creation and the `set_fact` that stores it are both `no_log: true`.
 
@@ -48,17 +43,13 @@ This asymmetry is easy to misread:
 | **Taints** | the join config | No admission restriction; the kubelet may self-set them |
 | **Labels** | `kubectl label` from the control plane | Labels in the `kubernetes.io` namespace **cannot** be self-set by the kubelet. NodeRestriction admission blocks it |
 
-Labelling runs on **every** pass, not just on join, so relabelling an existing worker is a matter of
-editing `worker_hosts_json` and re-running. `node-role.kubernetes.io/worker` is always merged in.
+Labelling runs on **every** pass, not just on join, so relabelling an existing worker is a matter of editing `worker_hosts_json` and re-running. `node-role.kubernetes.io/worker` is always merged in.
 
-The `changed_when` keys off `kubectl label` printing `not labeled` when the value is already set,
-which keeps re-runs honest.
+The `changed_when` keys off `kubectl label` printing `not labeled` when the value is already set, which keeps re-runs honest.
 
 ## The rolling upgrade
 
-`upgrade-node.yml` is included last, so a worker that joined during this same run is already
-registered and labelled before anything considers draining it. It reaches into
-[`kubeadm_node`](kubeadm-node.md) five times:
+`upgrade-node.yml` is included last, so a worker that joined during this same run is already registered and labelled before anything considers draining it. It reaches into [`kubeadm_node`](kubeadm-node.md) five times:
 
 ```mermaid
 flowchart LR
@@ -73,13 +64,9 @@ flowchart LR
     classDef danger stroke:#e53935,stroke-width:3px
 ```
 
-Unlike the control plane, workers **are** drained, one at a time, because `serial: 1` on play 4
-guarantees exactly one worker is in this sequence at any moment. Combined with `any_errors_fatal`, a
-worker that fails to drain, upgrade or come back Ready stops the run before the next worker is
-touched.
+Unlike the control plane, workers **are** drained, one at a time, because `serial: 1` on play 4 guarantees exactly one worker is in this sequence at any moment. Combined with `any_errors_fatal`, a worker that fails to drain, upgrade or come back Ready stops the run before the next worker is touched.
 
-Before draining, the worker reads `kubeadm_server_preflight_passed` off the control plane's
-`hostvars`, and gates on its own `kubeadm_node_upgrade_pending`.
+Before draining, the worker reads `kubeadm_server_preflight_passed` off the control plane's `hostvars`, and gates on its own `kubeadm_node_upgrade_pending`.
 
 ## Variables
 
@@ -93,24 +80,18 @@ Before draining, the worker reads `kubeadm_server_preflight_passed` off the cont
 
 ## Re-run behaviour
 
-Idempotent. The join block is skipped once `kubelet.conf` exists; labelling re-applies harmlessly;
-the upgrade no-ops when the node is already on the target version.
+Idempotent. The join block is skipped once `kubelet.conf` exists; labelling re-applies harmlessly; the upgrade no-ops when the node is already on the target version.
 
 ## Gotchas
 
 !!! danger "Raising `serial` breaks the drain guarantee"
 
-    `serial: 1` on play 4 is the only thing preventing N workers draining simultaneously, which can
-    evict every replica of a workload. It is a correctness constraint, not a performance tuning knob.
+    `serial: 1` on play 4 is the only thing preventing N workers draining simultaneously, which can evict every replica of a workload. It is a correctness constraint, not a performance tuning knob.
 
 !!! warning "`--tags k8s_upgrade` needs `apply:`"
 
-    The `upgrade-node.yml` include carries both `tags:` and `apply: tags:`. Without `apply:`, a
-    tag-scoped run would execute the include task and skip the entire roll, reporting success while
-    doing nothing. Tag inheritance then carries through the nested `include_role` calls.
+    The `upgrade-node.yml` include carries both `tags:` and `apply: tags:`. Without `apply:`, a tag-scoped run would execute the include task and skip the entire roll, reporting success while doing nothing. Tag inheritance then carries through the nested `include_role` calls.
 
 !!! note "Join waits for registration, not for Ready"
 
-    The `kubectl get node` retry loop confirms the node has *registered* with the API server. It does
-    not wait for `Ready`. On a first join the CNI may still be starting when the play moves on;
-    postflight verification in play 5 is what actually confirms convergence.
+    The `kubectl get node` retry loop confirms the node has *registered* with the API server. It does not wait for `Ready`. On a first join the CNI may still be starting when the play moves on; postflight verification in play 5 is what actually confirms convergence.

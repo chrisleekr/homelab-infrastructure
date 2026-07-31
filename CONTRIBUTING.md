@@ -79,7 +79,7 @@ The following hooks are configured:
 | `terraform_tflint` | Lint Terraform files |
 | `detect-private-key` | Prevent committing private keys |
 | `gitleaks` | Detect secrets in code |
-| `docs-drift` | Doc coverage, path citations, nav orphans, and no em dash in any tracked text file. En dashes, U+2013, are allowed and correct in ranges like `30–60 min` |
+| `docs-drift` | Doc coverage, path citations, nav orphans, no em dash in any tracked text file, and no hard-wrapped Markdown paragraph. En dashes, U+2013, are allowed and correct in ranges like `30–60 min` |
 
 ## Pull Request Process
 
@@ -137,12 +137,13 @@ The following hooks are configured:
 
 ## Documentation Style
 
+### Line Wrapping
+
+One line per paragraph, list item and quoted line. Never hard wrap prose: a reflowed paragraph arrives in review as a rewritten block and `git blame` then points at the reflow instead of the edit. Turn on soft wrap in your editor; `.editorconfig` and `.markdownlint.json` already disable the line-length rules that push you the other way. The `docs-drift` hook rejects a wrap.
+
 ### Mermaid Diagrams
 
-Never set `fill:` or `color:` in a `classDef`. Material renders diagrams into a closed shadow root and
-paints label text from the active palette, so a hardcoded `color:` is silently dropped and a hardcoded
-`fill:` then clashes with whichever theme the reader is using. Leave both to the theme and mark nodes
-with the border only:
+Never set `fill:` or `color:` in a `classDef`. Material renders diagrams into a closed shadow root and paints label text from the active palette, so a hardcoded `color:` is silently dropped and a hardcoded `fill:` then clashes with whichever theme the reader is using. Leave both to the theme and mark nodes with the border only:
 
 | Class | `classDef` | Use for |
 |-------|-----------|---------|

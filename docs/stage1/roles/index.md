@@ -1,7 +1,6 @@
 # Roles
 
-Ten roles under `stage1/roles/`. Nine are named directly in
-[`site.yml`](../playbook.md); `kubeadm_node` is not. It arrives as a `meta` dependency.
+Ten roles under `stage1/roles/`. Nine are named directly in [`site.yml`](../playbook.md); `kubeadm_node` is not. It arrives as a `meta` dependency.
 
 ```mermaid
 flowchart TD
@@ -53,8 +52,7 @@ flowchart TD
 | [`minikube_pre_setup`](minikube-pre-setup.md) | play 3 | `minikube`, `container_runtime` | 1 | 0 |
 | [`minikube_server`](minikube-server.md) | play 3 | `minikube` | 3 | 1 |
 
-Only the kubeadm path supports workers, rolling upgrades and Cilium. The k3s and minikube roles
-provision a control plane and stop there.
+Only the kubeadm path supports workers, rolling upgrades and Cilium. The k3s and minikube roles provision a control plane and stop there.
 
 ## Reading a role page
 

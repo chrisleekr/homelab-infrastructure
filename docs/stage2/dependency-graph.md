@@ -1,10 +1,8 @@
 # Module dependency graph
 
-Terraform infers ordering from data flow, but these modules mostly exchange no outputs. They race
-for the same cluster. `stage2/main.tf` therefore declares ordering explicitly with `depends_on`.
+Terraform infers ordering from data flow, but these modules mostly exchange no outputs. They race for the same cluster. `stage2/main.tf` therefore declares ordering explicitly with `depends_on`.
 
-One edge is implicit rather than declared: `argocd` reads `module.monitoring.monitoring_namespace`,
-which Terraform enforces exactly like a `depends_on`. It is drawn dotted below.
+One edge is implicit rather than declared: `argocd` reads `module.monitoring.monitoring_namespace`, which Terraform enforces exactly like a `depends_on`. It is drawn dotted below.
 
 Dashed nodes are gated by an enable flag and may be absent from the plan entirely.
 
@@ -78,17 +76,11 @@ flowchart TD
 
 !!! note "The `auth` edge is the awkward one"
 
-    `auth` depends on `monitoring`, and `monitoring` depends on `logging`, so enabling OAuth2 pulls
-    the whole observability stack into the critical path of the apply. That is why the first
-    `terraform apply` on a fresh cluster takes so long: cert issuance and Longhorn volume creation
-    both sit upstream of it.
+    `auth` depends on `monitoring`, and `monitoring` depends on `logging`, so enabling OAuth2 pulls the whole observability stack into the critical path of the apply. That is why the first `terraform apply` on a fresh cluster takes so long: cert issuance and Longhorn volume creation both sit upstream of it.
 
 ## Gated modules and the DAG
 
-`count = 0` removes a module from the plan but **not** its `depends_on` edges. The dependency simply
-resolves against an empty resource set. The practical consequences:
+`count = 0` removes a module from the plan but **not** its `depends_on` edges. The dependency simply resolves against an empty resource set. The practical consequences:
 
-- On ARM64, `gitlab_platform` has `count = 0`, so `argocd` loses its GitLab ordering edge. It still
-  waits on `cert_manager_letsencrypt` and on `monitoring`, which in turn waits on `logging`.
-- Disabling `logging_module_enable` drops the Elasticsearch datasource from Grafana but leaves
-  `monitoring` otherwise intact.
+- On ARM64, `gitlab_platform` has `count = 0`, so `argocd` loses its GitLab ordering edge. It still waits on `cert_manager_letsencrypt` and on `monitoring`, which in turn waits on `logging`.
+- Disabling `logging_module_enable` drops the Elasticsearch datasource from Grafana but leaves `monitoring` otherwise intact.

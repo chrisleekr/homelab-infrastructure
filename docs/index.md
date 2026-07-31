@@ -6,8 +6,7 @@ hide:
 
 # Homelab Infrastructure
 
-Two-stage infrastructure-as-code for a single-node Kubernetes homelab. Ansible bootstraps and hardens
-the cluster, Terraform deploys the platform on top of it.
+Two-stage infrastructure-as-code for a single-node Kubernetes homelab. Ansible bootstraps and hardens the cluster, Terraform deploys the platform on top of it.
 
 ```mermaid
 flowchart LR
@@ -32,8 +31,7 @@ flowchart LR
 
     ---
 
-    Five steps from a bare Ubuntu box to a running platform. Prerequisites, secrets, both stages,
-    and how to verify it worked.
+    Five steps from a bare Ubuntu box to a running platform. Prerequisites, secrets, both stages, and how to verify it worked.
 
     [Start here](start/index.md)
 
@@ -41,8 +39,7 @@ flowchart LR
 
     ---
 
-    The Ansible half. Architecture, the six plays of `site.yml`, inventory and worker declaration,
-    tags, handlers, and all ten roles.
+    The Ansible half. Architecture, the six plays of `site.yml`, inventory and worker declaration, tags, handlers, and all ten roles.
 
     [Read the Stage 1 docs](stage1/index.md)
 
@@ -50,8 +47,7 @@ flowchart LR
 
     ---
 
-    The Terraform half. 19 modules, what each deploys, and the `depends_on` graph that decides the
-    order.
+    The Terraform half. 19 modules, what each deploys, and the `depends_on` graph that decides the order.
 
     [Read the Stage 2 docs](stage2/index.md)
 
@@ -59,8 +55,7 @@ flowchart LR
 
     ---
 
-    Runbooks for a cluster that already exists: Kubernetes upgrades, adding a worker, secrets, and
-    a symptom index.
+    Runbooks for a cluster that already exists: Kubernetes upgrades, adding a worker, secrets, and a symptom index.
 
     [Open the runbooks](operations/index.md)
 
@@ -68,8 +63,7 @@ flowchart LR
 
     ---
 
-    Version pins and their sources of truth, every `task` command, repository layout, Terraform
-    variables.
+    Version pins and their sources of truth, every `task` command, repository layout, Terraform variables.
 
     [Browse the reference](reference/index.md)
 
@@ -77,8 +71,7 @@ flowchart LR
 
     ---
 
-    Development guidelines, the security policy, and the conventions AI agents follow in this
-    repository.
+    Development guidelines, the security policy, and the conventions AI agents follow in this repository.
 
     [Contributing guide](contribute/contributing.md)
 

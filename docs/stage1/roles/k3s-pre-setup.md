@@ -6,8 +6,7 @@ Prerequisites for the k3s path. Selected when `kubernetes_cluster_type == 'k3s'`
 
 ## What it does
 
-One `tasks/main.yml`, considerably more branching than the kubeadm equivalent because it carries
-upstream's multi-distribution support.
+One `tasks/main.yml`, considerably more branching than the kubeadm equivalent because it carries upstream's multi-distribution support.
 
 | Step | Notes |
 |---|---|
@@ -33,9 +32,7 @@ upstream's multi-distribution support.
 
 ## Firewall handling
 
-The role opens the API port unconditionally, and opens etcd ports only when
-`groups[server_group] | length > 1`, that is, only for an HA control plane. A homelab single-node
-install never needs them.
+The role opens the API port unconditionally, and opens etcd ports only when `groups[server_group] | length > 1`, that is, only for an HA control plane. A homelab single-node install never needs them.
 
 ## Re-run behaviour
 
@@ -45,15 +42,12 @@ Idempotent.
 
 !!! warning "This role is inherited from upstream and is broader than this repo needs"
 
-    It handles RedHat, SUSE, Arch and Debian. In this repository only the Ubuntu paths are exercised,
-    so the others are effectively untested here.
+    It handles RedHat, SUSE, Arch and Debian. In this repository only the Ubuntu paths are exercised, so the others are effectively untested here.
 
 !!! note "k3s does not use Cilium"
 
-    k3s ships flannel and its own service proxy. The `cilium_version` pins are inert on this path,
-    as is everything under [`kubeadm_node`](kubeadm-node.md).
+    k3s ships flannel and its own service proxy. The `cilium_version` pins are inert on this path, as is everything under [`kubeadm_node`](kubeadm-node.md).
 
 !!! danger "No worker or upgrade support"
 
-    Play 4 is kubeadm-only, and so is the upgrade machinery in play 5. Choosing k3s means a
-    single-node cluster with manual upgrades.
+    Play 4 is kubeadm-only, and so is the upgrade machinery in play 5. Choosing k3s means a single-node cluster with manual upgrades.

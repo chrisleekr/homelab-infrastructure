@@ -147,8 +147,7 @@ GitLab (`registry.gitlab.com/gitlab-org/build/cng/kubectl`) does not support ARM
 
 ### Checking Current Architecture
 
-The architecture is set by the `host_machine_architecture` secret in Bitwarden (`amd64` or `arm64`).
-Check the injected value inside the container:
+The architecture is set by the `host_machine_architecture` secret in Bitwarden (`amd64` or `arm64`). Check the injected value inside the container:
 
 ```bash
 echo "$host_machine_architecture"    # amd64 or arm64

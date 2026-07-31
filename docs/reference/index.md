@@ -18,11 +18,8 @@ This is the question that causes the most confusion, so it gets a table.
 | Helm charts | the individual `helm_release` resources under `stage2/` | edit, then `terraform apply` |
 | Alpine packages | pinned `apk` lines in `Dockerfile` | `task versions:bump` |
 
-[Version pins](versions.md) is generated from the first two by `scripts/sync-versions.sh` and
-verified in CI. Editing those tables by hand does nothing. The next run overwrites them.
+[Version pins](versions.md) is generated from the first two by `scripts/sync-versions.sh` and verified in CI. Editing those tables by hand does nothing. The next run overwrites them.
 
 !!! note "kubectl is pinned twice, on purpose"
 
-    Once for the operator's client (`ARG KUBECTL_VERSION`) and once for the nodes
-    (`kubectl_version`). `scripts/sync-versions.sh` asserts they agree and fails outright if they
-    diverge, so a silent client/server skew cannot reach the docs.
+    Once for the operator's client (`ARG KUBECTL_VERSION`) and once for the nodes (`kubectl_version`). `scripts/sync-versions.sh` asserts they agree and fails outright if they diverge, so a silent client/server skew cannot reach the docs.

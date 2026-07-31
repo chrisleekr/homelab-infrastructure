@@ -64,10 +64,7 @@ sequenceDiagram
 
 ## Node Topology
 
-Storage nodes and compute nodes are separated. Only nodes labeled
-`node.longhorn.io/create-default-disk=true` get a Longhorn disk, so replicas stay on the
-control plane. Tainted workers run the CSI stack so their pods can mount volumes, but hold
-no data.
+Storage nodes and compute nodes are separated. Only nodes labeled `node.longhorn.io/create-default-disk=true` get a Longhorn disk, so replicas stay on the control plane. Tainted workers run the CSI stack so their pods can mount volumes, but hold no data.
 
 ```mermaid
 flowchart TB
@@ -79,22 +76,13 @@ flowchart TB
     CSIWorker -->|"volume attached over the network"| StorageCP
 ```
 
-The label is applied by `kubernetes_labels.longhorn_default_disk`, not by hand. Longhorn
-evaluates `createDefaultDiskLabeledNodes` only the first time it detects a node, so the
-label must exist before `helm_release.longhorn` runs. It is a hard precondition: without it
-a rebuilt control plane comes up with no disk and every PVC stays `Pending`, and nothing
-fails at apply time to tell you why.
+The label is applied by `kubernetes_labels.longhorn_default_disk`, not by hand. Longhorn evaluates `createDefaultDiskLabeledNodes` only the first time it detects a node, so the label must exist before `helm_release.longhorn` runs. It is a hard precondition: without it a rebuilt control plane comes up with no disk and every PVC stays `Pending`, and nothing fails at apply time to tell you why.
 
-Enabling the setting does **not** remove disks from nodes Longhorn already knows about. A
-worker that joined while the setting was disabled keeps the default disk it was given;
-remove that disk in the Longhorn UI if you want it compute-only.
+Enabling the setting does **not** remove disks from nodes Longhorn already knows about. A worker that joined while the setting was disabled keeps the default disk it was given; remove that disk in the Longhorn UI if you want it compute-only.
 
 ### Applying toleration changes
 
-`defaultSettings.taintToleration` is a Longhorn [Danger Zone](https://longhorn.io/docs/1.10.1/references/settings/#danger-zone)
-setting. Longhorn will not reconcile it into a component that has running engines or
-replicas, so on a cluster with attached volumes the Setting CR can sit at `APPLIED=false`
-indefinitely:
+`defaultSettings.taintToleration` is a Longhorn [Danger Zone](https://longhorn.io/docs/1.10.1/references/settings/#danger-zone) setting. Longhorn will not reconcile it into a component that has running engines or replicas, so on a cluster with attached volumes the Setting CR can sit at `APPLIED=false` indefinitely:
 
 ```bash
 kubectl -n longhorn-system get setting taint-toleration
@@ -102,10 +90,7 @@ kubectl -n longhorn-system get setting taint-toleration
 # taint-toleration  node.homelab/class:NoSchedule  false
 ```
 
-`APPLIED=false` does not mean the toleration is missing everywhere. A newly joined node's
-instance-manager has no running engines, so it receives the toleration immediately. What
-lags is the control plane's own instance-manager, which is harmless here because the control
-plane is untainted. Check the component that actually matters rather than the flag:
+`APPLIED=false` does not mean the toleration is missing everywhere. A newly joined node's instance-manager has no running engines, so it receives the toleration immediately. What lags is the control plane's own instance-manager, which is harmless here because the control plane is untainted. Check the component that actually matters rather than the flag:
 
 ```bash
 kubectl -n longhorn-system get ds longhorn-csi-plugin \

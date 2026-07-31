@@ -9,8 +9,7 @@
 | An SSH keypair, e.g. `~/.ssh/id_rsa.pub` | Ansible authenticates with it |
 | Git | |
 
-Nothing else. kubectl, helm, terraform, ansible and `bws` all live in the container image. See
-[Version pins](../reference/versions.md) for exactly which versions.
+Nothing else. kubectl, helm, terraform, ansible and `bws` all live in the container image. See [Version pins](../reference/versions.md) for exactly which versions.
 
 ## Accounts
 
@@ -25,16 +24,13 @@ Nothing else. kubectl, helm, terraform, ansible and `bws` all live in the contai
 
 !!! warning "AMD64 recommended for the control plane"
 
-    `registry.gitlab.com/gitlab-org/build/cng/kubectl` publishes no ARM64 image, so on an ARM64
-    control plane the Stage 2 GitLab module is skipped. Everything else deploys normally. Workers
-    may be either architecture.
+    `registry.gitlab.com/gitlab-org/build/cng/kubectl` publishes no ARM64 image, so on an ARM64 control plane the Stage 2 GitLab module is skipped. Everything else deploys normally. Workers may be either architecture.
 
 Install Ubuntu Server, then make two changes.
 
 ### 1. Move sshd off port 22
 
-Stage 1's UFW configuration rate-limits port 22 and opens the host's actual `ansible_port`. Running
-sshd on 22 means you are rate-limiting your own automation.
+Stage 1's UFW configuration rate-limits port 22 and opens the host's actual `ansible_port`. Running sshd on 22 means you are rate-limiting your own automation.
 
 ```bash
 ssh <user>@<control-plane-ip>
@@ -59,8 +55,7 @@ sudo systemctl daemon-reload && sudo systemctl restart ssh.socket
 
     Getting this wrong locks you out of the host.
 
-The worker runbook covers the same change in more detail, including the service-activated case:
-[Adding a worker node](../operations/adding-a-worker-node.md).
+The worker runbook covers the same change in more detail, including the service-activated case: [Adding a worker node](../operations/adding-a-worker-node.md).
 
 ### 2. Install your public key
 
@@ -76,8 +71,7 @@ Confirm key-based login works before continuing. Ansible does not prompt for an 
 
 Skip this for a single-node cluster.
 
-Workers may be AMD64 or ARM64. A Raspberry Pi works. Each needs the same treatment as above: a
-reachable IP, a non-default SSH port, and your public key installed.
+Workers may be AMD64 or ARM64. A Raspberry Pi works. Each needs the same treatment as above: a reachable IP, a non-default SSH port, and your public key installed.
 
 For Raspberry Pi there are cloud-init examples in the repository that do all of this at first boot:
 

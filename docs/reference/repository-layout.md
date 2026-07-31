@@ -50,12 +50,8 @@ homelab-infrastructure/
 
 !!! note "`stage1/ansible.cfg` sets `local_tmp = /tmp/.ansible/tmp`"
 
-    The container bind-mounts `/root` from the Docker host, and `fcntl.flock` is not enforced on
-    that filesystem. Unenforced flock breaks the AnsiballZ module-cache mutex, so concurrent workers
-    race on a shared `-part` file and one loses with `ENOENT`. Moving controller-side temp work to
-    `/tmp` puts it on a filesystem where flock works.
+    The container bind-mounts `/root` from the Docker host, and `fcntl.flock` is not enforced on that filesystem. Unenforced flock breaks the AnsiballZ module-cache mutex, so concurrent workers race on a shared `-part` file and one loses with `ENOENT`. Moving controller-side temp work to `/tmp` puts it on a filesystem where flock works.
 
 ## Generated and ignored
 
-`site/`, `.venv-docs/`, `.task/`, `container/root`, `.env`, `**/.terraform`, `*.tfvars`,
-`**/terraform.tfstate`, `*.bak`.
+`site/`, `.venv-docs/`, `.task/`, `container/root`, `.env`, `**/.terraform`, `*.tfvars`, `**/terraform.tfstate`, `*.bak`.

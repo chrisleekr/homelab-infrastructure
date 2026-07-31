@@ -1,7 +1,6 @@
 # Task commands
 
-Every operation in this repository goes through [Task](https://taskfile.dev/). Naming follows
-`area:verb:qualifier`.
+Every operation in this repository goes through [Task](https://taskfile.dev/). Naming follows `area:verb:qualifier`.
 
 ```bash
 task --list          # everything with a desc
@@ -10,10 +9,7 @@ task --list-all      # including the undescribed ones
 
 !!! info "Run tasks inside the container"
 
-    The image ships `task` itself and mounts the repo at `/srv`, so every target below is available
-    from `task docker:exec`. Run them there: that is where the pinned toolchain lives and where
-    `.bashrc` has injected the Bitwarden secrets. Two exceptions run on the host: `docker:*`, which
-    needs a Docker daemon the image does not have, and `repo:setup:mac`, which is Homebrew.
+    The image ships `task` itself and mounts the repo at `/srv`, so every target below is available from `task docker:exec`. Run them there: that is where the pinned toolchain lives and where `.bashrc` has injected the Bitwarden secrets. Two exceptions run on the host: `docker:*`, which needs a Docker daemon the image does not have, and `repo:setup:mac`, which is Homebrew.
 
 ## Repository setup
 
@@ -63,8 +59,7 @@ See [Version pins](versions.md).
 | `task stage1:ansible:playbook` | The full run |
 | `task stage1:ansible:playbook:worker` | Workers only: `--limit 'localhost:agent' --skip-tags post_setup` |
 
-All but `stage1:test` and `stage1:ansible:syntax` need SSH access. The two `playbook` targets prompt
-for the become password.
+All but `stage1:test` and `stage1:ansible:syntax` need SSH access. The two `playbook` targets prompt for the become password.
 
 ## Stage 2: Terraform
 
@@ -79,6 +74,4 @@ for the become password.
 
 !!! warning "`init:lock` must run inside the container"
 
-    It first deletes darwin-built provider caches from the child modules, because they cannot be used
-    inside a `linux_amd64` container. Producing both platforms' hashes is what lets the same lock
-    file work on macOS and in CI.
+    It first deletes darwin-built provider caches from the child modules, because they cannot be used inside a `linux_amd64` container. Producing both platforms' hashes is what lets the same lock file work on macOS and in CI.

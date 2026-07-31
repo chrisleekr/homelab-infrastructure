@@ -2,8 +2,7 @@
 
 Terraform module for deploying [Kubecost](https://www.kubecost.com/) to Kubernetes. Provides real-time cost visibility and insights for Kubernetes workloads, helping optimize resource allocation and reduce cloud spending.
 
-Kubecost 3.x has no Prometheus dependency. The FinOps agent scrapes the cluster and pushes ETL files
-to a MinIO bucket, and the aggregator reads that bucket back to answer queries.
+Kubecost 3.x has no Prometheus dependency. The FinOps agent scrapes the cluster and pushes ETL files to a MinIO bucket, and the aggregator reads that bucket back to answer queries.
 
 ## Architecture
 
@@ -68,8 +67,7 @@ flowchart TB
 
 ## Usage
 
-The bucket named by `minio_bucket_name` must exist before apply. It is provisioned by the MinIO
-tenant via `minio_tenant_default_buckets` in `stage2/variables.tf`.
+The bucket named by `minio_bucket_name` must exist before apply. It is provisioned by the MinIO tenant via `minio_tenant_default_buckets` in `stage2/variables.tf`.
 
 ```bash
 task stage2:terraform:apply
@@ -83,9 +81,7 @@ Then browse to `https://cost.chrislee.local` (or your configured `kubecost_ingre
 kubectl -n kubecost get deploy,sts
 ```
 
-Six workloads should be Ready: the `aggregator` StatefulSet plus the `cloud-cost`, `frontend`,
-`local-store`, `forecasting`, and `finopsagent` Deployments. A `cloud-cost` or `aggregator` crash
-loop citing `federated-store.yaml` means the S3 credentials or endpoint are wrong.
+Six workloads should be Ready: the `aggregator` StatefulSet plus the `cloud-cost`, `frontend`, `local-store`, `forecasting`, and `finopsagent` Deployments. A `cloud-cost` or `aggregator` crash loop citing `federated-store.yaml` means the S3 credentials or endpoint are wrong.
 
 ## Helm Chart
 
@@ -94,10 +90,7 @@ loop citing `federated-store.yaml` means the S3 credentials or endpoint are wron
 | Repository | <https://kubecost.github.io/kubecost> |
 | Chart | kubecost |
 
-The pre-3.0 `cost-analyzer` chart lives at a different repository and is not interchangeable. The
-module directory is deliberately not named `kubecost`: the Helm provider resolves a chart name to a
-local path before consulting the repository, so a sibling directory of that name shadows the remote
-chart.
+The pre-3.0 `cost-analyzer` chart lives at a different repository and is not interchangeable. The module directory is deliberately not named `kubecost`: the Helm provider resolves a chart name to a local path before consulting the repository, so a sibling directory of that name shadows the remote chart.
 
 ## References
 

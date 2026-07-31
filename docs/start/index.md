@@ -23,12 +23,8 @@ flowchart LR
 
 !!! tip "Everything runs in a container"
 
-    You do not install kubectl, helm, terraform or ansible on your machine. `task docker:build`
-    builds an Alpine image with all of them pinned, and `task docker:exec` drops you into it. The
-    only things you need locally are Docker and [Task](https://taskfile.dev/).
+    You do not install kubectl, helm, terraform or ansible on your machine. `task docker:build` builds an Alpine image with all of them pinned, and `task docker:exec` drops you into it. The only things you need locally are Docker and [Task](https://taskfile.dev/).
 
 !!! warning "Read this before Stage 1"
 
-    Stage 1 hardens hosts: it enables UFW, removes snapd, disables swap and may reboot to enable
-    memory cgroups. Run it against a machine you are willing to have reconfigured, not your daily
-    driver.
+    Stage 1 hardens hosts: it enables UFW, removes snapd, disables swap and may reboot to enable memory cgroups. Run it against a machine you are willing to have reconfigured, not your daily driver.

@@ -62,8 +62,7 @@ sequenceDiagram
 
 ### Always
 
-- `kubernetes_namespace_v1.vpn_namespace` - The `vpn` namespace, created even when both backends are
-  disabled. It carries `prevent_destroy = true`.
+- `kubernetes_namespace_v1.vpn_namespace` - The `vpn` namespace, created even when both backends are disabled. It carries `prevent_destroy = true`.
 
 ### Tailscale (when enabled)
 
@@ -91,12 +90,9 @@ sequenceDiagram
 | `tailscale_hostname` | Hostname shown in tailnet | `tailscale-kubernetes` |
 | `tailscale_timezone` | Container timezone | `Australia/Melbourne`, not settable |
 
-`tailscale_auth_key` has no default and `stage2/main.tf` always evaluates the module, so a value is
-required even when `tailscale_enable` is `false`.
+`tailscale_auth_key` has no default and `stage2/main.tf` always evaluates the module, so a value is required even when `tailscale_enable` is `false`.
 
-`tailscale_timezone` exists only in `stage2/vpn/variables.tf`. `stage2/main.tf` does not pass it and
-`stage2/variables.tf` declares no matching root variable, so `TF_VAR_tailscale_timezone` has no
-effect. Changing it means editing the module default.
+`tailscale_timezone` exists only in `stage2/vpn/variables.tf`. `stage2/main.tf` does not pass it and `stage2/variables.tf` declares no matching root variable, so `TF_VAR_tailscale_timezone` has no effect. Changing it means editing the module default.
 
 ### WireGuard
 

@@ -28,16 +28,12 @@ Runbooks for a cluster that already exists.
 
 !!! danger "The control plane is never drained"
 
-    Draining a single-node control plane evicts every workload in the cluster. The upgrade
-    automation deliberately does not drain it. Do not add a drain to
-    `kubeadm_server/tasks/upgrade-control-plane.yml`.
+    Draining a single-node control plane evicts every workload in the cluster. The upgrade automation deliberately does not drain it. Do not add a drain to `kubeadm_server/tasks/upgrade-control-plane.yml`.
 
 !!! danger "`serial: 1` on the worker play is a correctness constraint"
 
-    It guarantees exactly one worker is drained at a time. Raising it to go faster can evict every
-    replica of a workload simultaneously.
+    It guarantees exactly one worker is drained at a time. Raising it to go faster can evict every replica of a workload simultaneously.
 
 !!! warning "Only consecutive minor upgrades are tested"
 
-    For both Kubernetes and Cilium. Always update to the latest patch of the current minor before
-    moving to the next minor.
+    For both Kubernetes and Cilium. Always update to the latest patch of the current minor before moving to the next minor.

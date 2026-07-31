@@ -12,8 +12,7 @@
 
 ## Overview
 
-A two-stage infrastructure-as-code solution for provisioning a single-node Kubernetes cluster and
-deploying a complete application stack on it.
+A two-stage infrastructure-as-code solution for provisioning a single-node Kubernetes cluster and deploying a complete application stack on it.
 
 - **Stage 1 (Ansible)**: server hardening and Kubernetes bootstrap via kubeadm, k3s or minikube
 - **Stage 2 (Terraform)**: 19 modules, including GitLab, ArgoCD, monitoring, logging, storage, VPN, ingress
@@ -55,8 +54,7 @@ task stage1:ansible:playbook    # Stage 1: build the cluster
 task stage2:terraform:apply     # Stage 2: deploy the platform
 ```
 
-Stage 1 hardens hosts and may reboot them. Read
-[Get started](docs/start/index.md) before running any of this.
+Stage 1 hardens hosts and may reboot them. Read [Get started](docs/start/index.md) before running any of this.
 
 ## Toolchain
 
@@ -72,11 +70,9 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 | trivy | 0.72.0 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
-Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at
-[Version pins](docs/reference/versions.md).
+Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at [Version pins](docs/reference/versions.md).
 
-Run `task precommit` before every commit, and work on feature branches. Infrastructure changes need
-careful review.
+Run `task precommit` before every commit, and work on feature branches. Infrastructure changes need careful review.
 
 ## Contributing
 

@@ -23,9 +23,7 @@ cilium status                          # kubeadm path only
 kubectl get svc -A --field-selector spec.type=LoadBalancer
 ```
 
-Every `LoadBalancer` service must have an `EXTERNAL-IP`. A `<pending>` here means MetalLB is missing
-or has no free address in its pool. See [`localhost_post_setup`](../stage1/roles/localhost-post-setup.md).
-Nothing in the platform is reachable until this is resolved.
+Every `LoadBalancer` service must have an `EXTERNAL-IP`. A `<pending>` here means MetalLB is missing or has no free address in its pool. See [`localhost_post_setup`](../stage1/roles/localhost-post-setup.md). Nothing in the platform is reachable until this is resolved.
 
 ## Storage
 
@@ -42,8 +40,7 @@ Longhorn should be the default StorageClass, and no PVC should be stuck `Pending
 kubectl top nodes
 ```
 
-An error here means metrics-server did not install. Horizontal pod autoscaling and the Grafana node
-dashboards both depend on it.
+An error here means metrics-server did not install. Horizontal pod autoscaling and the Grafana node dashboards both depend on it.
 
 ## Certificates
 
@@ -51,8 +48,7 @@ dashboards both depend on it.
 kubectl get certificate -A
 ```
 
-Every certificate `READY=True`. A stuck certificate is usually DNS: the HTTP-01 challenge needs the
-name to resolve to your ingress from outside.
+Every certificate `READY=True`. A stuck certificate is usually DNS: the HTTP-01 challenge needs the name to resolve to your ingress from outside.
 
 ```bash
 kubectl describe certificaterequest -A | tail -40
@@ -72,8 +68,7 @@ Each is behind OAuth2 Proxy and Auth0, at `service.domain.local`:
 | Kibana | [logging](../stage2/logging.md) |
 | Kubecost | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
 
-A TLS warning means the certificate is not issued yet. A 500 from the proxy usually means the Auth0
-callback URL does not match the ingress hostname.
+A TLS warning means the certificate is not issued yet. A 500 from the proxy usually means the Auth0 callback URL does not match the ingress hostname.
 
 ## The version convergence contract
 
@@ -83,8 +78,7 @@ Play 5 of the playbook already asserted this, but to check it yourself:
 kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.nodeInfo.kubeletVersion}{"\n"}{end}'
 ```
 
-Every kubelet on the version pinned in `stage1/inventories/inventory.yml`. See
-[Version pins](../reference/versions.md).
+Every kubelet on the version pinned in `stage1/inventories/inventory.yml`. See [Version pins](../reference/versions.md).
 
 ## If something is wrong
 

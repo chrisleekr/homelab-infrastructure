@@ -129,12 +129,9 @@ sequenceDiagram
 
 ## Databases
 
-Chart 10.0 removed the bundled PostgreSQL, Redis and MinIO subcharts, and the chart refuses to
-render if `postgresql.install` or `redis.install` is present and truthy. MinIO was already external
-via `stage2/minio-object-storage`; PostgreSQL and Redis moved here.
+Chart 10.0 removed the bundled PostgreSQL, Redis and MinIO subcharts, and the chart refuses to render if `postgresql.install` or `redis.install` is present and truthy. MinIO was already external via `stage2/minio-object-storage`; PostgreSQL and Redis moved here.
 
-GitLab 19.0 sets `MINIMUM_POSTGRES_VERSION = 17`, so `imageName` is pinned deliberately: the CNPG
-operator's own default is an 18.x image, and omitting the field silently provisions PostgreSQL 18.
+GitLab 19.0 sets `MINIMUM_POSTGRES_VERSION = 17`, so `imageName` is pinned deliberately: the CNPG operator's own default is an 18.x image, and omitting the field silently provisions PostgreSQL 18.
 
 | Service | Endpoint | Credentials |
 |---|---|---|
@@ -142,39 +139,26 @@ operator's own default is an 18.x image, and omitting the field silently provisi
 | Registry metadata DB | same host, database `registry` | secret `registry-database-password` |
 | Valkey | `gitlab-valkey.gitlab.svc.cluster.local:6379` | secret `valkey-password`, key `default` |
 
-The Valkey secret key is `default` rather than `password` because the chart looks up
-`auth.aclUsers.<user>.passwordKey`, which defaults to the username, and `AUTH <password>` with no
-username authenticates as the `default` ACL user.
+The Valkey secret key is `default` rather than `password` because the chart looks up `auth.aclUsers.<user>.passwordKey`, which defaults to the username, and `AUTH <password>` with no username authenticates as the `default` ACL user.
 
 ### The CNPG Cluster
 
-Defined in `postgres-cluster.tf`, which carries the rationale for the `monolith` import type and the
-pinned `imageName`. `bootstrap.initdb.import` runs only once, at bootstrap: re-importing means
-deleting the Cluster and its PVC first. `externalClusters` is consulted only during that import and
-is inert afterward.
+Defined in `postgres-cluster.tf`, which carries the rationale for the `monolith` import type and the pinned `imageName`. `bootstrap.initdb.import` runs only once, at bootstrap: re-importing means deleting the Cluster and its PVC first. `externalClusters` is consulted only during that import and is inert afterward.
 
-`postImportApplicationSQL` is unsupported with `monolith`, so extensions must be added by hand after
-an import.
+`postImportApplicationSQL` is unsupported with `monolith`, so extensions must be added by hand after an import.
 
 ### Operating it
 
-`amcheck` is required by GitLab but absent from a fresh monolith import. Recreate it after any
-re-import:
+`amcheck` is required by GitLab but absent from a fresh monolith import. Recreate it after any re-import:
 
 ```bash
 kubectl -n gitlab exec gitlab-pg-1 -- psql -U postgres -d gitlabhq_production \
   -c "CREATE EXTENSION IF NOT EXISTS amcheck;"
 ```
 
-Before re-importing, scale `sidekiq`, `webservice`, `registry` and `kas` to zero. KAS writes to the
-database and is easy to overlook; confirm with `pg_stat_activity`, not the pod list. Then delete the
-Cluster and re-apply.
+Before re-importing, scale `sidekiq`, `webservice`, `registry` and `kas` to zero. KAS writes to the database and is easy to overlook; confirm with `pg_stat_activity`, not the pod list. Then delete the Cluster and re-apply.
 
-`backup-utility` does **not** cover the `registry` database: Rails' `database.yml` declares only the
-`main` and `ci` connections, both on `gitlabhq_production`, and `gitlab-backup` iterates those
-connections. Dump `registry` separately before any migration. Restores also abort on a version
-mismatch. `lib/backup/restore/preconditions.rb` compares the backup's GitLab version to the running
-one by exact string equality, so a backup is only usable against the exact version that produced it.
+`backup-utility` does **not** cover the `registry` database: Rails' `database.yml` declares only the `main` and `ci` connections, both on `gitlabhq_production`, and `gitlab-backup` iterates those connections. Dump `registry` separately before any migration. Restores also abort on a version mismatch. `lib/backup/restore/preconditions.rb` compares the backup's GitLab version to the running one by exact string equality, so a backup is only usable against the exact version that produced it.
 
 ## Variables
 
@@ -315,13 +299,9 @@ kubectl -n gitlab exec -it $(kubectl -n gitlab get pod -l app=toolbox -o name) -
 
 Backups are configured to run via CronJob and stored in MinIO `gitlab-backups` bucket.
 
-Each run stages its tarball on its own generic ephemeral volume, garbage-collected with the pod, so
-no shared claim can wedge the schedule. That volume uses a dedicated `Delete`-reclaim StorageClass
-(`backup-storageclass.tf`); the shared `longhorn` class is `Retain` and would strand a volume nightly.
+Each run stages its tarball on its own generic ephemeral volume, garbage-collected with the pod, so no shared claim can wedge the schedule. That volume uses a dedicated `Delete`-reclaim StorageClass (`backup-storageclass.tf`); the shared `longhorn` class is `Retain` and would strand a volume nightly.
 
-Jobs are capped at 3h (`activeDeadlineSeconds: 10800`), generous against a healthy run. Without a
-deadline a stuck backup runs indefinitely, and `concurrencyPolicy: Replace` then deletes it on the
-next schedule, leaving no failed job behind to notice.
+Jobs are capped at 3h (`activeDeadlineSeconds: 10800`), generous against a healthy run. Without a deadline a stuck backup runs indefinitely, and `concurrencyPolicy: Replace` then deletes it on the next schedule, leaving no failed job behind to notice.
 
 ## Troubleshooting
 

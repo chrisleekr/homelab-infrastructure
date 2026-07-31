@@ -1,11 +1,8 @@
 # Platform (Stage 2)
 
-Stage 2 is Terraform. It assumes a working Kubernetes cluster from
-[Stage 1](../stage1/index.md) and deploys 19 modules onto it.
+Stage 2 is Terraform. It assumes a working Kubernetes cluster from [Stage 1](../stage1/index.md) and deploys 19 modules onto it.
 
-Every module is a directory under `stage2/`, wired together in `stage2/main.tf`. All input variables
-live in the root `stage2/variables.tf` and are passed down, so a module never reads a variable
-directly.
+Every module is a directory under `stage2/`, wired together in `stage2/main.tf`. All input variables live in the root `stage2/variables.tf` and are passed down, so a module never reads a variable directly.
 
 ## Always-on modules
 
@@ -27,8 +24,7 @@ These have no `count`, so they deploy on every apply.
 
 ## Gated modules
 
-Controlled by an enable flag. The Terraform idiom is `count = var.<name>_enable ? 1 : 0`, so a
-disabled module is simply not in the plan.
+Controlled by an enable flag. The Terraform idiom is `count = var.<name>_enable ? 1 : 0`, so a disabled module is simply not in the plan.
 
 | Module | Gate | Default |
 |---|---|---|
@@ -41,16 +37,12 @@ disabled module is simply not in the plan.
 | [LiteLLM](litellm.md) | `litellm_enable` | `false` |
 | [OmniRoute](omniroute-gateway.md) | `omniroute_enable` | `false` |
 
-The [VPN](vpn.md) module has no module-level gate, so it is always in the plan and its `vpn`
-namespace is always created. The two backends are gated per resource by `tailscale_enable` and
-`wireguard_enable`, both `false` by default and independent of each other.
+The [VPN](vpn.md) module has no module-level gate, so it is always in the plan and its `vpn` namespace is always created. The two backends are gated per resource by `tailscale_enable` and `wireguard_enable`, both `false` by default and independent of each other.
 
 !!! warning "GitLab is AMD64 only"
 
-    `registry.gitlab.com/gitlab-org/build/cng/kubectl` publishes no ARM64 image. On an ARM64 control
-    plane the GitLab module is skipped entirely, which also removes ArgoCD's `depends_on` source.
+    `registry.gitlab.com/gitlab-org/build/cng/kubectl` publishes no ARM64 image. On an ARM64 control plane the GitLab module is skipped entirely, which also removes ArgoCD's `depends_on` source.
 
 ## Ordering
 
-Modules do not deploy in file order. See the [dependency graph](dependency-graph.md) for the actual
-`depends_on` DAG and why the ordering matters.
+Modules do not deploy in file order. See the [dependency graph](dependency-graph.md) for the actual `depends_on` DAG and why the ordering matters.

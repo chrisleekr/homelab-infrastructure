@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Documentation drift gate.
 
-Four static checks over the docs tree. None of them needs MkDocs installed, so the
+Five static checks over the docs tree. None of them needs MkDocs installed, so the
 only dependency is PyYAML.
 
   A. Coverage    every stage2 module and stage1 role has a doc page AND a nav entry,
@@ -9,6 +9,7 @@ only dependency is PyYAML.
   B. Citations   every repo path cited in inline code under docs/ actually exists.
   D. Orphans     every .md under docs/ appears in the mkdocs.yml nav.
   E. Typography  no em dash in any tracked text file.
+  F. Wrapping    no hard-wrapped paragraph in any tracked Markdown file.
 
 Check C, version pins, lives in scripts/sync-versions.sh because it is line-oriented
 text substitution over sentinel blocks, which that script already does.
@@ -372,6 +373,116 @@ def check_typography(errors: list[str]) -> int:
     return checked
 
 
+# ---------------------------------------------------------------------------
+# Check F - wrapping. Prose is authored one logical line per paragraph, list item
+# and quoted line. Hard wrapping reflows on every edit, so a one-word change
+# arrives in review as a rewritten block and `git blame` points at the reflow.
+# Wrapping is the editor's job: .editorconfig sets max_line_length = off and
+# .markdownlint.json disables MD013 so neither nags you back into it.
+# ---------------------------------------------------------------------------
+# Anything that opens a construct other than a paragraph. No line folds onto one.
+BLOCK_STARTS = tuple(
+    re.compile(pattern)
+    for pattern in (
+        r"#{1,6}(\s|$)",  # ATX heading
+        r"(-{3,}|\*{3,}|_{3,})\s*$",  # thematic break, or a setext h2 underline
+        r"=+\s*$",  # setext h1 underline
+        r"={3,}(\s|$)",  # pymdownx.tabbed tab marker
+        r"\|",  # table row
+        r"<",  # HTML block or comment
+        r"(!!!|\?\?\?)",  # admonition, pymdownx.details
+        r"\[[^\]]*\]:\s",  # link reference definition
+        r"\{",  # attr_list block
+        r":\s",  # definition list body
+    )
+)
+LIST_MARKER = re.compile(r"([-*+]|\d+[.)])(\s+)(?=\S)")
+QUOTE_PREFIX = re.compile(r">+\s?")
+# Two trailing spaces or a backslash is an explicit line break, not a wrap.
+HARD_BREAK = re.compile(r"( {2,}|\\)$")
+# A badge row. One image link per line is deliberate and stays that way.
+IMAGE_LINK = re.compile(r"\[?!\[[^\]]*\]\([^)]*\)(\]\([^)]*\))?")
+
+
+def _is_image_row(body: str) -> bool:
+    return bool(body) and not IMAGE_LINK.sub("", body).strip()
+
+
+def iter_wrapped(text: str):
+    """Yield the 1-based line number of every line that continues the line above.
+
+    A continuation is a non-blank line that opens nothing of its own and sits at
+    the exact column where the preceding line's text starts: same quote prefix,
+    same indent. That equality is what keeps an indented code block, a nested
+    list and an admonition body out of it, since each starts at a column of its
+    own after a blank line.
+    """
+    lines = text.split("\n")
+
+    start = 0
+    if lines and lines[0].strip() == "---":  # YAML front matter is not Markdown
+        for end, line in enumerate(lines[1:], start=1):
+            if line.strip() in ("---", "..."):
+                start = end + 1
+                break
+
+    fence: tuple[str, int] | None = None
+    block: tuple[str, int] | None = None  # (quote prefix, column of the text)
+    previous = ""
+
+    for lineno, line in enumerate(lines[start:], start=start + 1):
+        match = FENCE.match(line)
+        if match:
+            char, run = match.group(1)[0], len(match.group(1))
+            if fence is None:
+                fence = (char, run)
+            elif char == fence[0] and run >= fence[1] and not line[match.end() :].strip():
+                fence = None
+            block = None
+        elif fence is not None:
+            pass
+        elif not line.strip():
+            block = None
+        else:
+            quote = QUOTE_PREFIX.match(line)
+            prefix = quote.group(0) if quote else ""
+            rest = line[len(prefix) :]
+            indent = len(rest) - len(rest.lstrip(" "))
+            body = rest[indent:]
+            marker = LIST_MARKER.match(body)
+
+            if not body:  # a bare `>` ends the quoted paragraph
+                block = None
+            elif marker:
+                block = (prefix, indent + marker.end())
+            elif any(pattern.match(body) for pattern in BLOCK_STARTS):
+                block = None
+            elif (
+                block == (prefix, indent)
+                and not HARD_BREAK.search(previous)
+                and not _is_image_row(body)
+                and not _is_image_row(previous.strip())
+            ):
+                yield lineno
+            else:
+                block = (prefix, indent)
+        previous = line
+
+
+def check_wrapping(errors: list[str]) -> int:
+    checked = 0
+    for rel, text in iter_text_files():
+        if rel.suffix != ".md":
+            continue
+        checked += 1
+        for lineno in iter_wrapped(text):
+            errors.append(
+                f"wrap: {rel}:{lineno} continues the paragraph above. "
+                "Join it onto the previous line; one line per paragraph."
+            )
+    return checked
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Documentation drift gate.")
     # No-op: this script never writes. Declared so the call sites read the same
@@ -390,7 +501,8 @@ def main() -> int:
     n_citations = check_citations(errors)
     n_orphans = check_orphans(nav_paths, errors)
     n_typography = check_typography(errors)
-    # Scanning nothing is the one way check E passes without checking anything.
+    n_wrapping = check_wrapping(errors)
+    # Scanning nothing is the one way checks E and F pass without checking anything.
     if n_typography == 0:
         errors.append("typography: no text files were scanned; the file walk is broken")
 
@@ -405,7 +517,8 @@ def main() -> int:
         f"Docs OK: {n_coverage} modules/roles covered, "
         f"{n_citations} path citations verified, "
         f"{n_orphans} pages in nav, "
-        f"{n_typography} files free of em dashes."
+        f"{n_typography} files free of em dashes, "
+        f"{n_wrapping} Markdown files free of hard wraps."
     )
     return 0
 

@@ -1,14 +1,12 @@
 # host_setup
 
-Everything that is not Kubernetes. Runs on **every** host in the `cluster` group, control plane and
-workers alike.
+Everything that is not Kubernetes. Runs on **every** host in the `cluster` group, control plane and workers alike.
 
 **Invoked by** play 2 (`hosts: cluster`, `serial: 1`, `become: true`), tag `host_setup`.
 
 ## Task files, in execution order
 
-`tasks/main.yml` includes nine files. The order matters: packages before anything that uses them,
-and the two reboot-capable tasks last.
+`tasks/main.yml` includes nine files. The order matters: packages before anything that uses them, and the two reboot-capable tasks last.
 
 ```mermaid
 flowchart TD
@@ -57,8 +55,7 @@ flowchart TD
 | `host_setup_fail2ban_ignoreips` | Never ban these, put your own subnet here |
 | `host_setup_docker_default_data_path` | Docker data root, for the minikube path |
 
-Full list in `stage1/roles/host_setup/defaults/main.yml`. Values come from the environment via
-[Bitwarden](../../operations/bitwarden-secrets.md).
+Full list in `stage1/roles/host_setup/defaults/main.yml`. Values come from the environment via [Bitwarden](../../operations/bitwarden-secrets.md).
 
 ## Handlers notified
 
@@ -66,36 +63,26 @@ Full list in `stage1/roles/host_setup/defaults/main.yml`. Values come from the e
 
 !!! note "multipathd is masked, not restarted"
 
-    `update-multipath.yml` stops, disables and masks `multipathd.service` and
-    `multipathd.socket` so Longhorn's environment check clears. It notifies nothing: a masked
-    unit cannot be restarted. See [Handlers](../handlers.md).
+    `update-multipath.yml` stops, disables and masks `multipathd.service` and `multipathd.socket` so Longhorn's environment check clears. It notifies nothing: a masked unit cannot be restarted. See [Handlers](../handlers.md).
 
 ## Re-run behaviour
 
-Idempotent. A second run reports no changes unless a package upgrade is available or a config value
-changed.
+Idempotent. A second run reports no changes unless a package upgrade is available or a config value changed.
 
-The exception is `enable-memory-cgroup.yml`: once the kernel command line contains the arguments it
-stops notifying, so the reboot happens exactly once.
+The exception is `enable-memory-cgroup.yml`: once the kernel command line contains the arguments it stops notifying, so the reboot happens exactly once.
 
 ## Gotchas
 
 !!! danger "UFW and your SSH port"
 
-    `setup-ufw.yml` runs on every `cluster` host and enables the firewall. It rate-limits port 22 and
-    opens the host's actual `ansible_port`. If a worker's `port` in `worker_hosts_json` does not
-    match its real sshd port, UFW will lock you out of that host mid-play.
+    `setup-ufw.yml` runs on every `cluster` host and enables the firewall. It rate-limits port 22 and opens the host's actual `ansible_port`. If a worker's `port` in `worker_hosts_json` does not match its real sshd port, UFW will lock you out of that host mid-play.
 
     Fix the inventory before running, not after.
 
 !!! warning "Memory cgroups need a reboot"
 
-    On Raspberry Pi, memory cgroups are off by default. Enabling them requires a kernel command line
-    change and a reboot, which is why play 2 ends with `meta: flush_handlers`. A first run on a Pi
-    will reboot the host. Plan for it.
+    On Raspberry Pi, memory cgroups are off by default. Enabling them requires a kernel command line change and a reboot, which is why play 2 ends with `meta: flush_handlers`. A first run on a Pi will reboot the host. Plan for it.
 
 !!! note "snapd removal is aggressive"
 
-    `remove-snapd.yml` uninstalls every snap, purges snapd, and installs an APT preference blocking
-    reinstallation. It frees memory and removes a source of unattended restarts, but it is not
-    something you want on a host you also use as a desktop.
+    `remove-snapd.yml` uninstalls every snap, purges snapd, and installs an APT preference blocking reinstallation. It frees memory and removes a source of unattended restarts, but it is not something you want on a host you also use as a desktop.

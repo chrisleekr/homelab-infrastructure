@@ -4,8 +4,7 @@ Turns a bare Ubuntu host into a Kubernetes control plane, and joins any workers 
 
 !!! danger "This reconfigures the host"
 
-    Stage 1 enables UFW, removes every snap and purges snapd, disables swap, and may **reboot** to
-    enable memory cgroups. Run it against a machine you are willing to have reconfigured.
+    Stage 1 enables UFW, removes every snap and purges snapd, disables swap, and may **reboot** to enable memory cgroups. Run it against a machine you are willing to have reconfigured.
 
 ## 1. Verify connectivity
 
@@ -13,8 +12,7 @@ Turns a bare Ubuntu host into a Kubernetes control plane, and joins any workers 
 task stage1:ansible:ping
 ```
 
-Every host must answer `pong`. A failure here is SSH or inventory, never Kubernetes. Check that
-`server_ssh_port` matches the port you configured and that your key is in `authorized_keys`.
+Every host must answer `pong`. A failure here is SSH or inventory, never Kubernetes. Check that `server_ssh_port` matches the port you configured and that your key is in `authorized_keys`.
 
 ## 2. Dry run
 
@@ -26,9 +24,7 @@ Runs with `--check --diff`: connects over SSH, changes nothing, shows what would
 
 !!! note "False errors in check mode are expected"
 
-    Bootstrap tasks report errors under `--check` because later tasks read files that earlier tasks
-    would have created. A clean `--check` is not a prerequisite; a clean `task stage1:ansible:syntax`
-    is more informative.
+    Bootstrap tasks report errors under `--check` because later tasks read files that earlier tasks would have created. A clean `--check` is not a prerequisite; a clean `task stage1:ansible:syntax` is more informative.
 
 ## 3. Run it
 
@@ -66,18 +62,15 @@ flowchart TD
 | 5 | Fast, unless it fails, in which case nothing converged. |
 | 6 | Fetches the kubeconfig, installs MetalLB and metrics-server. |
 
-At the end, `.kube/config` is written to `container/root/.kube/config`, which the tooling container
-mounts. `kubectl` inside `task docker:exec` works with no further setup.
+At the end, `.kube/config` is written to `container/root/.kube/config`, which the tooling container mounts. `kubectl` inside `task docker:exec` works with no further setup.
 
 Full detail: [The site.yml playbook](../stage1/playbook.md).
 
 ## If it fails
 
-`any_errors_fatal: true` stops the whole run on the first failure, deliberately: a half-upgraded
-control plane must not be followed by worker plays.
+`any_errors_fatal: true` stops the whole run on the first failure, deliberately: a half-upgraded control plane must not be followed by worker plays.
 
-The playbook is idempotent, so the recovery procedure is almost always: fix the cause, re-run the
-same command. Completed work is detected and skipped.
+The playbook is idempotent, so the recovery procedure is almost always: fix the cause, re-run the same command. Completed work is detected and skipped.
 
 | Symptom | Look at |
 |---|---|

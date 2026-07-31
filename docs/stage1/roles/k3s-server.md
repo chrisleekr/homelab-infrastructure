@@ -2,8 +2,7 @@
 
 Installs and runs k3s as a systemd service. Selected when `kubernetes_cluster_type == 'k3s'`.
 
-**Invoked by** play 3 (`hosts: server`), tag `k3s`, after
-[`k3s_pre_setup`](k3s-pre-setup.md).
+**Invoked by** play 3 (`hosts: server`), tag `k3s`, after [`k3s_pre_setup`](k3s-pre-setup.md).
 
 ## What it does
 
@@ -38,9 +37,7 @@ Installs and runs k3s as a systemd service. Selected when `kubernetes_cluster_ty
 
 ## Version pin
 
-`k3s_version` in `stage1/inventories/inventory.yml`. Note its format differs from every other
-pin. It is a full tag like `v1.34.3+k3s1`, not a bare semver. See
-[Version pins](../../reference/versions.md).
+`k3s_version` in `stage1/inventories/inventory.yml`. Note its format differs from every other pin. It is a full tag like `v1.34.3+k3s1`, not a bare semver. See [Version pins](../../reference/versions.md).
 
 ## Re-run behaviour
 
@@ -50,10 +47,8 @@ Idempotent. The version probe short-circuits the download and install when alrea
 
 !!! danger "Changing `kubernetes_cluster_type` on a live host does not migrate anything"
 
-    Switching from k3s to kubeadm, or back, runs the other path's install against a host that already
-    has a cluster on it. Nothing tears the old one down. Rebuild the host instead.
+    Switching from k3s to kubeadm, or back, runs the other path's install against a host that already has a cluster on it. Nothing tears the old one down. Rebuild the host instead.
 
 !!! note "k3s is not covered by the upgrade automation"
 
-    Plays 4 and 5, the preflight gates, drain ordering and postflight verification are all kubeadm
-    only. Upgrading k3s means bumping `k3s_version` and re-running this role, with no health gates.
+    Plays 4 and 5, the preflight gates, drain ordering and postflight verification are all kubeadm only. Upgrading k3s means bumping `k3s_version` and re-running this role, with no health gates.

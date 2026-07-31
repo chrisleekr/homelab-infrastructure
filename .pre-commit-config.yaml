@@ -48,7 +48,7 @@ repos:
       # is not required, so the only dependency is PyYAML - same contract as the
       # ansible-upgrade-ordering hook above.
       - id: docs-drift
-        name: documentation drift (coverage, citations, orphans, typography)
+        name: documentation drift (coverage, citations, orphans, typography, wrapping)
         entry: python scripts/check-docs.py --check
         language: python
         additional_dependencies:

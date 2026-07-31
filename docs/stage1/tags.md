@@ -1,7 +1,6 @@
 # Tags and partial runs
 
-Stage 1 defines 22 tags. They let you re-run one slice of the playbook instead of the whole thing,
-which matters because a full run reboots hosts and drains workers.
+Stage 1 defines 22 tags. They let you re-run one slice of the playbook instead of the whole thing, which matters because a full run reboots hosts and drains workers.
 
 ```bash
 cd stage1
@@ -70,9 +69,7 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
       --tags k8s_upgrade
     ```
 
-    Runs preflights, upgrades the control plane, rolls the workers one at a time, then verifies
-    convergence. See [Kubernetes upgrades](../operations/kubernetes-upgrades.md) first. This
-    drains workers.
+    Runs preflights, upgrades the control plane, rolls the workers one at a time, then verifies convergence. See [Kubernetes upgrades](../operations/kubernetes-upgrades.md) first. This drains workers.
 
 === "Workers only, leave the control plane alone"
 
@@ -90,8 +87,7 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
 
 !!! warning "Tags on dynamic includes need `apply:`"
 
-    A tag on `include_role` or `include_tasks` selects only the include task, never the tasks it
-    pulls in. Stage 1 therefore writes:
+    A tag on `include_role` or `include_tasks` selects only the include task, never the tasks it pulls in. Stage 1 therefore writes:
 
     ```yaml
     ansible.builtin.include_tasks:
@@ -101,8 +97,7 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
     tags: [k8s_upgrade]
     ```
 
-    Both lines are required. Drop the `apply:` block and `--tags k8s_upgrade` silently becomes a
-    no-op: it matches the include, runs nothing inside it, and reports success.
+    Both lines are required. Drop the `apply:` block and `--tags k8s_upgrade` silently becomes a no-op: it matches the include, runs nothing inside it, and reports success.
 
 ## Listing what a tag would do
 
@@ -110,5 +105,4 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
 ansible-playbook -i inventories/inventory.yml site.yml --list-tasks --tags k8s_upgrade
 ```
 
-Static analysis only, no connection. Note that tasks behind a dynamic include do not appear until
-the include runs, so the list understates the real work.
+Static analysis only, no connection. Note that tasks behind a dynamic include do not appear until the include runs, so the list understates the real work.

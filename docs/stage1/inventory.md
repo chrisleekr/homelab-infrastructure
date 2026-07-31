@@ -1,8 +1,6 @@
 # Inventory and groups
 
-`stage1/inventories/inventory.yml` defines the host groups and pins every component version. Almost
-every value is a `lookup("env", ...)` with a fallback, so the real configuration lives in
-[Bitwarden](../operations/bitwarden-secrets.md) and reaches Ansible as environment variables.
+`stage1/inventories/inventory.yml` defines the host groups and pins every component version. Almost every value is a `lookup("env", ...)` with a fallback, so the real configuration lives in [Bitwarden](../operations/bitwarden-secrets.md) and reaches Ansible as environment variables.
 
 ## Group tree
 
@@ -31,13 +29,9 @@ flowchart TD
 
 !!! note "Why worker vars sit on `all`, not `cluster`"
 
-    The `add_host` play that consumes `worker_hosts_json` runs on `localhost`, which is **not** a
-    member of `cluster`. Declaring the variable on `cluster` would put it out of reach of the very
-    play that reads it.
+    The `add_host` play that consumes `worker_hosts_json` runs on `localhost`, which is **not** a member of `cluster`. Declaring the variable on `cluster` would put it out of reach of the very play that reads it.
 
-    Equally, `agent` must be declared under `cluster` even though it starts empty. `add_host` alone
-    would create the group outside that hierarchy, and workers would not inherit
-    `kubernetes_cluster_type` or `node_architecture`.
+    Equally, `agent` must be declared under `cluster` even though it starts empty. `add_host` alone would create the group outside that hierarchy, and workers would not inherit `kubernetes_cluster_type` or `node_architecture`.
 
 ## Control plane
 
@@ -49,9 +43,7 @@ server_host:
   ansible_python_interpreter: "/usr/bin/python3.12"
 ```
 
-The interpreter is pinned explicitly here. Workers deliberately do **not** pin it:
-`stage1/ansible.cfg` sets `interpreter_python = auto_silent`, which discovers the right one per host.
-That matters when an ARM64 Raspberry Pi worker ships a different Python than the control plane.
+The interpreter is pinned explicitly here. Workers deliberately do **not** pin it: `stage1/ansible.cfg` sets `interpreter_python = auto_silent`, which discovers the right one per host. That matters when an ARM64 Raspberry Pi worker ships a different Python than the control plane.
 
 ## Declaring workers
 
@@ -83,12 +75,9 @@ Unset or `[]` leaves the cluster single-node.
 
 !!! warning "`taints: []` means schedulable, and that is fragile"
 
-    The playbook uses `item.taints | default(worker_default_taints)`, **without** the boolean
-    second argument. That form substitutes only when the key is *absent*, so an explicit
-    `"taints": []` survives and means "schedulable".
+    The playbook uses `item.taints | default(worker_default_taints)`, **without** the boolean second argument. That form substitutes only when the key is *absent*, so an explicit `"taints": []` survives and means "schedulable".
 
-    Passing `true` as the second argument would treat the empty list as falsey and silently
-    reimpose the default, making an untainted worker inexpressible. Do not "tidy" that filter.
+    Passing `true` as the second argument would treat the empty list as falsey and silently reimpose the default, making an untainted worker inexpressible. Do not "tidy" that filter.
 
 The default taint, when a worker declares none, is:
 
@@ -109,14 +98,11 @@ Two distinct variables, easy to confuse:
 
 !!! note
 
-    `node_architecture` is a direct dictionary lookup, so a host reporting an architecture outside
-    `{x86_64, aarch64}` fails with a Jinja `KeyError` rather than a readable message.
+    `node_architecture` is a direct dictionary lookup, so a host reporting an architecture outside `{x86_64, aarch64}` fails with a Jinja `KeyError` rather than a readable message.
 
 ## Version pins
 
-The rest of the file is version pins for kubeadm, kubectl, containerd, runc, CNI, crictl, nerdctl,
-Cilium, pluto, minikube and k3s. These are a source of truth. See
-[Version pins](../reference/versions.md), which is generated from them.
+The rest of the file is version pins for kubeadm, kubectl, containerd, runc, CNI, crictl, nerdctl, Cilium, pluto, minikube and k3s. These are a source of truth. See [Version pins](../reference/versions.md), which is generated from them.
 
 ## Verifying connectivity
 
@@ -124,5 +110,4 @@ Cilium, pluto, minikube and k3s. These are a source of truth. See
 task stage1:ansible:ping
 ```
 
-Failures here are SSH or inventory problems, never Kubernetes ones. See
-[Troubleshooting](../operations/troubleshooting.md).
+Failures here are SSH or inventory problems, never Kubernetes ones. See [Troubleshooting](../operations/troubleshooting.md).

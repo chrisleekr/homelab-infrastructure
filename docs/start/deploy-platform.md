@@ -9,11 +9,9 @@ task docker:exec              # from the host, if you are not already in the con
 task stage2:terraform:init    # terraform init, then select the homelab-k8s workspace
 ```
 
-Every command on this page runs inside the container: that is where the pinned Terraform lives and
-where `.bashrc` has injected the Bitwarden secrets. See [Task commands](../reference/tasks.md).
+Every command on this page runs inside the container: that is where the pinned Terraform lives and where `.bashrc` has injected the Bitwarden secrets. See [Task commands](../reference/tasks.md).
 
-State lives in Terraform Cloud. The workspace must exist and your API token must be present before
-`init` will succeed.
+State lives in Terraform Cloud. The workspace must exist and your API token must be present before `init` will succeed.
 
 ## 2. Plan
 
@@ -21,9 +19,7 @@ State lives in Terraform Cloud. The workspace must exist and your API token must
 task stage2:terraform:plan
 ```
 
-Read it. On a first run this is several hundred resources. Confirm the module set matches what you
-expect, in particular that the gated modules you wanted are present and the ones you did not are
-absent.
+Read it. On a first run this is several hundred resources. Confirm the module set matches what you expect, in particular that the gated modules you wanted are present and the ones you did not are absent.
 
 ## 3. Apply
 
@@ -35,11 +31,9 @@ task stage2:terraform:apply
 
     An hour or more. Two things dominate:
 
-    **Certificate issuance.** cert-manager requests certificates from Let's Encrypt over HTTP-01,
-    which needs DNS to resolve and the ingress to be reachable. Each certificate is a round trip.
+    **Certificate issuance.** cert-manager requests certificates from Let's Encrypt over HTTP-01, which needs DNS to resolve and the ingress to be reachable. Each certificate is a round trip.
 
-    **Longhorn.** Volume creation and initial replica sync happen before dependent modules can bind
-    their PVCs. MinIO waits on Longhorn, GitLab waits on MinIO.
+    **Longhorn.** Volume creation and initial replica sync happen before dependent modules can bind their PVCs. MinIO waits on Longhorn, GitLab waits on MinIO.
 
     Re-running after a timeout is safe. Terraform picks up where it stopped.
 
@@ -61,8 +55,7 @@ Full graph and the reason for every edge: [Module dependency graph](../stage2/de
 
 ## Enabling optional modules
 
-Gated modules use `count = var.<name>_enable ? 1 : 0`, so a disabled module is simply not in the
-plan. Set the flag as a `TF_VAR_*` secret in Bitwarden:
+Gated modules use `count = var.<name>_enable ? 1 : 0`, so a disabled module is simply not in the plan. Set the flag as a `TF_VAR_*` secret in Bitwarden:
 
 | Module | Variable | Default |
 |---|---|---|
@@ -76,13 +69,11 @@ plan. Set the flag as a `TF_VAR_*` secret in Bitwarden:
 | Tailscale | `tailscale_enable` | `false` |
 | WireGuard | `wireguard_enable` | `false` |
 
-GitLab is not flag-gated. It deploys when `host_machine_architecture == "amd64"` and is skipped
-otherwise.
+GitLab is not flag-gated. It deploys when `host_machine_architecture == "amd64"` and is skipped otherwise.
 
 !!! tip "Start small"
 
-    The always-on set plus GitLab is already a lot of cluster. Get that healthy first, then enable
-    optional modules one at a time so a failure is attributable.
+    The always-on set plus GitLab is already a lot of cluster. Get that healthy first, then enable optional modules one at a time so a failure is attributable.
 
 ## Other commands
 
@@ -92,8 +83,7 @@ task stage2:terraform:init:upgrade  # bump providers within their constraints
 task stage2:terraform:init:lock     # regenerate multi-platform provider lock files
 ```
 
-`init:lock` must run inside the container. It produces `darwin_arm64` and `linux_amd64` hashes so
-the same lock file works on macOS and in CI.
+`init:lock` must run inside the container. It produces `darwin_arm64` and `linux_amd64` hashes so the same lock file works on macOS and in CI.
 
 ## Next
 

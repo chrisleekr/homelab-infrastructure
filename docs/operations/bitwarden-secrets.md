@@ -1,31 +1,24 @@
 # Bitwarden Secrets Manager Setup
 
-This repo loads all secrets and configuration from **Bitwarden Secrets Manager** at container
-start, instead of a plaintext `.env`. The only value stored locally is a Bitwarden access token.
+This repo loads all secrets and configuration from **Bitwarden Secrets Manager** at container start, instead of a plaintext `.env`. The only value stored locally is a Bitwarden access token.
 
 ## Why
 
 - Secret **values** never sit in a file on disk. The gitignored `.env` holds just the access token.
 - One central store, rotatable and revocable, shared across machines.
-- `bws run` injects each secret as an environment variable named exactly as the secret, so Terraform
-  (`TF_VAR_*`, `TF_TOKEN_app_terraform_io`) and Ansible (`lookup('env', ...)`) work unchanged.
+- `bws run` injects each secret as an environment variable named exactly as the secret, so Terraform (`TF_VAR_*`, `TF_TOKEN_app_terraform_io`) and Ansible (`lookup('env', ...)`) work unchanged.
 
 ## How it works
 
-When you enter the container (`task docker:exec`), `scripts/container/root/.bashrc` sources the loader
-`scripts/container/root/bws-load.sh`, which:
+When you enter the container (`task docker:exec`), `scripts/container/root/.bashrc` sources the loader `scripts/container/root/bws-load.sh`, which:
 
 1. Reads `BWS_ACCESS_TOKEN` (+ `BWS_PROJECT_ID`) from the mounted `/srv/.env`.
-2. Re-runs bash under `bws run --project-id <id> -- bash`, which authenticates to Bitwarden cloud and
-   injects every secret in the project as a native environment variable.
-3. A `BWS_LOADED` guard prevents the re-run from recursing. Inside the injected shell the access
-   token is unset, so it is not inherited by terraform/ansible or any subprocess.
+2. Re-runs bash under `bws run --project-id <id> -- bash`, which authenticates to Bitwarden cloud and injects every secret in the project as a native environment variable.
+3. A `BWS_LOADED` guard prevents the re-run from recursing. Inside the injected shell the access token is unset, so it is not inherited by terraform/ansible or any subprocess.
 
-If Bitwarden is unreachable or the token is bad, you still get a plain (secret-less) shell with a
-warning, not a lockout. `BWS_SKIP=1` bypasses the auto-load entirely.
+If Bitwarden is unreachable or the token is bad, you still get a plain (secret-less) shell with a warning, not a lockout. `BWS_SKIP=1` bypasses the auto-load entirely.
 
-**Reload without restarting.** After you add or change a secret in Bitwarden, refresh the current shell
-in place, no need to exit the container:
+**Reload without restarting.** After you add or change a secret in Bitwarden, refresh the current shell in place, no need to exit the container:
 
 ```bash
 bws-load        # clears the guard and re-execs bash, pulling the latest secrets
@@ -37,23 +30,19 @@ For a one-off command with secrets injected (host or CI, non-interactive), wrap 
 bws run --project-id <id> -- terraform -chdir=stage2 plan
 ```
 
-> **Important:** Bitwarden **cloud** is required. Vaultwarden does **not** implement Secrets Manager.
-> The free tier covers this repo (unlimited secrets, 3 projects, 3 machine accounts).
+> **Important:** Bitwarden **cloud** is required. Vaultwarden does **not** implement Secrets Manager. The free tier covers this repo (unlimited secrets, 3 projects, 3 machine accounts).
 
 
 ## 1. Install the `bws` CLI locally
 
-You need `bws` on your machine to create and manage secrets. There is no Homebrew formula; use the
-official install script (it detects platform/arch, downloads, and validates the checksum):
+You need `bws` on your machine to create and manage secrets. There is no Homebrew formula; use the official install script (it detects platform/arch, downloads, and validates the checksum):
 
 ```bash
 curl -fsSL https://bws.bitwarden.com/install | sh
 bws --version                            # -> bws 2.1.0
 ```
 
-Pin a version with `BWS_VERSION=2.1.0 curl -fsSL https://bws.bitwarden.com/install | sh`. Or download a
-binary directly from the [releases page](https://github.com/bitwarden/sdk-sm/releases) (macOS:
-`bws-macos-universal-*.zip`; Linux: `bws-<arch>-unknown-linux-musl-*.zip`) and put it on `PATH`.
+Pin a version with `BWS_VERSION=2.1.0 curl -fsSL https://bws.bitwarden.com/install | sh`. Or download a binary directly from the [releases page](https://github.com/bitwarden/sdk-sm/releases) (macOS: `bws-macos-universal-*.zip`; Linux: `bws-<arch>-unknown-linux-musl-*.zip`) and put it on `PATH`.
 
 (The container already has `bws` baked into its image, so you only need it locally for management.)
 
@@ -68,8 +57,7 @@ The project `homelab-infrastructure` already exists. To (re)create the pieces on
 
 ## 3. Configure your local `.env`
 
-Copy the template and fill in only the two Bitwarden values (get the project id from
-`bws project list`):
+Copy the template and fill in only the two Bitwarden values (get the project id from `bws project list`):
 
 ```bash
 cp .env.example .env
@@ -80,8 +68,7 @@ cp .env.example .env
 
 `.env` is gitignored. Neither value is ever committed.
 
-**Optional hardening (no token in any file):** leave `BWS_ACCESS_TOKEN` out of `.env`, keep it in your
-host keychain/`pass`, and pass it in at run time with `docker run -e BWS_ACCESS_TOKEN ...`.
+**Optional hardening (no token in any file):** leave `BWS_ACCESS_TOKEN` out of `.env`, keep it in your host keychain/`pass`, and pass it in at run time with `docker run -e BWS_ACCESS_TOKEN ...`.
 
 ## 4. Create the secrets
 
@@ -91,8 +78,7 @@ Load your ids first so the project id is never typed inline:
 set -a; . .env; set +a
 ```
 
-**Web UI:** Secrets Manager → project `homelab-infrastructure` → *New secret*. Name = the env var,
-Value = the value, assign to the project.
+**Web UI:** Secrets Manager → project `homelab-infrastructure` → *New secret*. Name = the env var, Value = the value, assign to the project.
 
 **CLI:**
 
@@ -104,21 +90,15 @@ bws secret create k3s_token "$(openssl rand -base64 64 | tr -d '\n')" "$BWS_PROJ
 bws secret create TF_VAR_prometheus_grafana_domain "grafana.chrislee.local" "$BWS_PROJECT_ID"
 ```
 
-> **Store literal values.** Bitwarden does not expand `${...}`. Resolve any interpolation before saving,
-> e.g. `grafana.${domain_host}` → `grafana.chrislee.local`, `${server_ssh_host}` → `192.168.1.100`.
+> **Store literal values.** Bitwarden does not expand `${...}`. Resolve any interpolation before saving, e.g. `grafana.${domain_host}` → `grafana.chrislee.local`, `${server_ssh_host}` → `192.168.1.100`.
 
-> JSON values (`worker_hosts_json`, `etc_hosts_json`, `worker_default_taints`) are stored **raw**, with no
-> `\"` escaping. `bws run` injects them natively, which is why the old godotenv escaping rule is gone.
+> JSON values (`worker_hosts_json`, `etc_hosts_json`, `worker_default_taints`) are stored **raw**, with no `\"` escaping. `bws run` injects them natively, which is why the old godotenv escaping rule is gone.
 
-> Never name a secret after a shell-sensitive variable (`PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`,
-> `BASH_ENV`, `ENV`, `IFS`). These are injected into the shell and can enable code execution. Only
-> the documented `TF_VAR_*`, `TF_TOKEN_*`, and lowercase config names below are expected.
+> Never name a secret after a shell-sensitive variable (`PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`, `BASH_ENV`, `ENV`, `IFS`). These are injected into the shell and can enable code execution. Only the documented `TF_VAR_*`, `TF_TOKEN_*`, and lowercase config names below are expected.
 
 ## 5. Variable reference
 
-**Every** variable from the old `.env.sample` becomes a secret in the project (name = env var). 🔑 marks
-sensitive values; the rest is config. Store literal values. Example values use the old template
-defaults, so substitute your own. **Gate** = only needed when that module's `*_enable` flag is `true`.
+**Every** variable from the old `.env.sample` becomes a secret in the project (name = env var). 🔑 marks sensitive values; the rest is config. Store literal values. Example values use the old template defaults, so substitute your own. **Gate** = only needed when that module's `*_enable` flag is `true`.
 
 ### Global / Terraform Cloud
 
@@ -324,8 +304,7 @@ defaults, so substitute your own. **Gate** = only needed when that module's `*_e
 | `TF_VAR_litellm_db_password` | 🔑 | `openssl rand -hex 16` | Postgres password, min 16 chars, only `A-Z a-z 0-9 _ . ~ -`. It is interpolated into a `postgresql://` URI, so reserved characters would corrupt the connection string |
 | `TF_VAR_litellm_provider_secrets` | 🔑 | JSON object, e.g. `{"OPENAI_API_KEY":"sk-…","ANTHROPIC_API_KEY":"sk-ant-…"}` | Provider keys exported to the pod as env vars |
 
-Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` makes every stored
-provider credential permanently unreadable. Treat it as write-once.
+Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` makes every stored provider credential permanently unreadable. Treat it as write-once.
 
 ### Stage 2: OmniRoute (gate: `TF_VAR_omniroute_enable`)
 
@@ -345,14 +324,9 @@ provider credential permanently unreadable. Treat it as write-once.
 | `TF_VAR_omniroute_api_key_secret` | 🔑 | `openssl rand -hex 32` | Encrypts stored provider keys, min 32 chars. **Write once, never rotate** |
 | `TF_VAR_omniroute_storage_encryption_key` | 🔑 | `openssl rand -hex 32` | Encrypts the database at rest, min 32 chars. **Write once, never rotate** |
 
-The four credential variables populate the `omniroute-auth` Kubernetes Secret, mounted into the pod
-with `envFrom` as the keys `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, and
-`STORAGE_ENCRYPTION_KEY`.
+The four credential variables populate the `omniroute-auth` Kubernetes Secret, mounted into the pod with `envFrom` as the keys `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, and `STORAGE_ENCRYPTION_KEY`.
 
-Rotating `TF_VAR_omniroute_api_key_secret` (`API_KEY_SECRET`) or
-`TF_VAR_omniroute_storage_encryption_key` (`STORAGE_ENCRYPTION_KEY`) after providers have been added
-makes every stored credential permanently unreadable. Treat both as write-once.
-`TF_VAR_omniroute_jwt_secret` only signs sessions and may be rotated (it logs everyone out).
+Rotating `TF_VAR_omniroute_api_key_secret` (`API_KEY_SECRET`) or `TF_VAR_omniroute_storage_encryption_key` (`STORAGE_ENCRYPTION_KEY`) after providers have been added makes every stored credential permanently unreadable. Treat both as write-once. `TF_VAR_omniroute_jwt_secret` only signs sessions and may be rotated (it logs everyone out).
 
 ### Stage 2: Cloudflare Tunnel (gate: `TF_VAR_cloudflare_tunnel_enable`)
 
@@ -375,11 +349,9 @@ bws secret edit <secret-id> --value "<new value>"
 bws secret delete <secret-id>
 ```
 
-After editing a secret, run `bws-load` inside the container to pull the change into your current shell
-(see "Reload without restarting" above).
+After editing a secret, run `bws-load` inside the container to pull the change into your current shell (see "Reload without restarting" above).
 
-**Rotate the access token:** create a new token on the machine account, update `.env`, then revoke the
-old one. **Least privilege:** the machine account only needs `can read`.
+**Rotate the access token:** create a new token on the machine account, update `.env`, then revoke the old one. **Least privilege:** the machine account only needs `can read`.
 
 ## 7. Verify
 
@@ -392,6 +364,4 @@ task stage2:terraform:plan                   # authenticates via TF_TOKEN_app_te
 task stage1:ansible:ping                     # reaches the cluster via injected SSH vars
 ```
 
-Run secret-consuming tasks **inside the container**. Host-side terraform is only for no-secret ops
-(`terraform providers lock`, `init -backend=false`, `fmt`, `validate`). For CI/scripted runs, call
-`bws run -- <command>` directly, since `.bashrc` only auto-loads for interactive shells.
+Run secret-consuming tasks **inside the container**. Host-side terraform is only for no-secret ops (`terraform providers lock`, `init -backend=false`, `fmt`, `validate`). For CI/scripted runs, call `bws run -- <command>` directly, since `.bashrc` only auto-loads for interactive shells.
