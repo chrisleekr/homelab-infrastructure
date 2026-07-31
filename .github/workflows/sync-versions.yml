@@ -10,6 +10,9 @@ on:
       - main
     paths:
       - "Dockerfile"
+      # The cluster-components table in docs/reference/versions.md is generated
+      # from the inventory pins, so a version bump there needs the same auto-PR.
+      - "stage1/inventories/inventory.yml"
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +25,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -35,7 +38,7 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet README.md; then
+          if git diff --quiet README.md docs/; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -53,15 +56,16 @@ jobs:
 
       - name: Create Pull Request
         if: steps.changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "docs: sync tool versions from Dockerfile"
-          title: "docs: sync tool versions from Dockerfile"
+          commit-message: "docs: sync versions from Dockerfile and inventory"
+          title: "docs: sync versions from Dockerfile and inventory"
           body: |
-            This PR updates the README.md version table to match the versions in Dockerfile.
+            Regenerates the version tables in `README.md` and `docs/reference/versions.md`
+            from `Dockerfile` ARGs and `stage1/inventories/inventory.yml`.
 
-            **Updated versions:**
+            **Container tools:**
             - kubectl: ${{ steps.versions.outputs.kubectl }}
             - helm: ${{ steps.versions.outputs.helm }}
             - terraform: ${{ steps.versions.outputs.terraform }}

@@ -1,7 +1,6 @@
 # AGENTS.md: AI Agent Context
 
-This document provides essential context for AI models interacting with this codebase.
-For full documentation, see [README.md](README.md).
+This document provides essential context for AI models interacting with this codebase. For full documentation, see <https://chrisleekr.github.io/homelab-infrastructure/>.
 
 ## Quick Reference
 
@@ -38,21 +37,16 @@ For full documentation, see [README.md](README.md).
 
 ## Docs & Comments
 
-Default to terse. Comments and docs explain WHY; the code already shows WHAT. Prefer the shortest
-version that keeps a future reader from reintroducing the bug.
+Default to terse. Comments and docs explain WHY; the code already shows WHAT. Prefer the shortest version that keeps a future reader from reintroducing the bug.
 
-- **State the rule, not the investigation.** Keep the invariant and the non-obvious trap. Drop the
-  reasoning walkthrough that led there.
-- **No evidence transcripts in files.** Probe output, HTTP codes, "verified live", and before/after
-  comparisons belong in the MR description, not in `.tf` or README prose. Git blame links the two.
-- **Say it once.** Each fact gets one home: `.tf` comments explain the mechanism for whoever edits
-  that code; the module README covers operator-facing behavior (what is exposed, how to verify).
-  Cross-reference instead of restating.
-- **No changelogs in docs.** Docs describe current state. Rename a variable and just rewrite the
-  table; git history is the changelog.
-- **Variable descriptions are one or two sentences.** Longer rationale goes in a comment above the
-  block.
+- **State the rule, not the investigation.** Keep the invariant and the non-obvious trap. Drop the reasoning walkthrough that led there.
+- **No evidence transcripts in files.** Probe output, HTTP codes, "verified live", and before/after comparisons belong in the MR description, not in `.tf` or README prose. Git blame links the two.
+- **Say it once.** Each fact gets one home: `.tf` comments explain the mechanism for whoever edits that code; the module README covers operator-facing behavior (what is exposed, how to verify). Cross-reference instead of restating.
+- **No changelogs in docs.** Docs describe current state. Rename a variable and just rewrite the table; git history is the changelog.
+- **Variable descriptions are one or two sentences.** Longer rationale goes in a comment above the block.
 - **Skip caveats about caveats.** If a cited doc needs walking back, cite a better source instead.
+- **No em dashes, U+2014.** In any tracked text file: prose, Mermaid labels, `mkdocs.yml` nav titles, and `.tf` / `.yml` / `.sh` comments. Use a comma, colon, full stop or parentheses. `scripts/check-docs.py` enforces it and names the file, line and column.
+- **Never hard wrap Markdown.** One line per paragraph, list item and quoted line, however long it runs. Wrapping is the reader's editor setting; a reflowed paragraph buries the real edit in a block of changed lines. `scripts/check-docs.py` enforces it and names the continuation line.
 
 ## Version Sources of Truth
 
@@ -67,7 +61,7 @@ version that keeps a future reader from reintroducing the bug.
 - **GitLab AMD64 only**: Check `host_machine_architecture` variable; GitLab skipped on ARM64
 - **Module dependencies**: Defined in `stage2/main.tf` - respect `depends_on` chains
 - **Validation**: Always run `task precommit` before suggesting commits
-- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/bitwarden-secrets-setup.md), injected at runtime; `.env` holds only the bws token
+- **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/operations/bitwarden-secrets.md), injected at runtime; `.env` holds only the bws bootstrap values, `BWS_ACCESS_TOKEN` and the optional `BWS_PROJECT_ID`
 - **Pre-commit hooks**: ansible-lint, terraform_fmt, terraform_validate, trivy, gitleaks
 
 ## Security & Best Practices

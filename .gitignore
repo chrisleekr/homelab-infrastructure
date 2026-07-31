@@ -15,3 +15,12 @@ container/root
 .cursor
 tmp
 .claude/*
+
+# MkDocs build output and its virtualenv. sync-versions.sh uses `sed -i.bak`.
+site/
+.venv-docs/
+*.bak
+
+# Taskfile checksum cache, written by the docs:install sources/generates guard
+.task/
+__pycache__/

@@ -13,7 +13,7 @@ resource "kubernetes_manifest" "argocd_apps_root" {
     metadata = {
       name      = "argocd-apps-root"
       namespace = kubernetes_namespace_v1.argocd.metadata[0].name
-      # No cascading delete finalizer — child apps are orphaned on Terraform teardown (safer default)
+      # No cascading delete finalizer. Child apps are orphaned on Terraform teardown (safer default)
     }
 
     spec = {

@@ -1,0 +1,178 @@
+site_name: Homelab Infrastructure
+site_description: >-
+  Two-stage IaC for a single-node Kubernetes homelab. Ansible bootstraps the
+  cluster, Terraform deploys the platform.
+site_url: https://chrisleekr.github.io/homelab-infrastructure/
+repo_url: https://github.com/chrisleekr/homelab-infrastructure
+repo_name: chrisleekr/homelab-infrastructure
+edit_uri: edit/main/docs/
+copyright: MIT
+
+# Warnings become errors. This is the internal link checker: nothing else in the
+# repo validates that a relative .md link still resolves.
+strict: true
+
+extra_css:
+  - stylesheets/extra.css
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.sections
+    # Each */index.md becomes both the section header and a real page, so the
+    # nav needs no separate "Overview:" rows.
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    # Keeps a kubeadm/k3s/minikube or amd64/arm64 choice sticky across pages.
+    - content.tabs.link
+    - content.action.edit
+
+plugins:
+  - search:
+      # The default separator does not split on `_`, so searching "fail2ban"
+      # would not match `host_setup_fail2ban_bantime`. Most identifiers in this
+      # repo are snake_case Ansible vars and Terraform variables.
+      separator: '[\s​\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        # Material renders diagrams off the `mermaid` class. Do not add
+        # mkdocs-mermaid2 as well, the two integrations conflict.
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.snippets:
+      # Surfaces CONTRIBUTING.md, SECURITY.md and AGENTS.md on the site while
+      # they stay at the repo root, where GitHub's community-profile features
+      # and the five AGENTS.md symlinks need them.
+      #
+      # Base paths resolve against the working directory, so `mkdocs build`
+      # must run from the repo root. `task docs:build` guarantees that.
+      base_path:
+        - .
+        - docs
+      check_paths: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
+
+nav:
+  - Home: index.md
+  - Get started:
+      - start/index.md
+      - Prerequisites: start/prerequisites.md
+      - "Stage 0: environment and secrets": start/environment.md
+      - "Stage 1: provision the cluster": start/provision-cluster.md
+      - "Stage 2: deploy the platform": start/deploy-platform.md
+      - Verify the install: start/verify.md
+  - Cluster (Stage 1):
+      - stage1/index.md
+      - Architecture: stage1/architecture.md
+      - The site.yml playbook: stage1/playbook.md
+      - Inventory and groups: stage1/inventory.md
+      - Tags and partial runs: stage1/tags.md
+      - Handlers: stage1/handlers.md
+      - Roles:
+          - stage1/roles/index.md
+          - host_setup: stage1/roles/host-setup.md
+          - kubeadm_pre_setup: stage1/roles/kubeadm-pre-setup.md
+          - kubeadm_node: stage1/roles/kubeadm-node.md
+          - kubeadm_server: stage1/roles/kubeadm-server.md
+          - kubeadm_agent: stage1/roles/kubeadm-agent.md
+          - localhost_post_setup: stage1/roles/localhost-post-setup.md
+          - k3s_pre_setup: stage1/roles/k3s-pre-setup.md
+          - k3s_server: stage1/roles/k3s-server.md
+          - minikube_pre_setup: stage1/roles/minikube-pre-setup.md
+          - minikube_server: stage1/roles/minikube-server.md
+  # Stage 2 groups are cuts of the real depends_on DAG in stage2/main.tf, not
+  # alphabetical. Foundation is the always-on chain every other module declares.
+  - Platform (Stage 2):
+      - stage2/index.md
+      - Module dependency graph: stage2/dependency-graph.md
+      - Foundation:
+          - Kubernetes: stage2/kubernetes.md
+          - NGINX Ingress: stage2/nginx.md
+          - Cert-Manager and Let's Encrypt: stage2/cert-manager-letsencrypt.md
+      - Storage:
+          - Longhorn: stage2/longhorn-storage.md
+          - MinIO: stage2/minio-object-storage.md
+      - Delivery:
+          - GitLab Platform: stage2/gitlab-platform.md
+          - ArgoCD: stage2/argocd.md
+          - ArgoCD Image Updater: stage2/argocd-updater.md
+      - Observability:
+          - Monitoring: stage2/monitoring.md
+          - Logging: stage2/logging.md
+          - Kubecost: stage2/monitoring-kubecost.md
+          - Datadog: stage2/datadog.md
+      - Access and networking:
+          - OAuth2 Proxy: stage2/auth.md
+          - VPN: stage2/vpn.md
+          - Cloudflare Tunnel: stage2/cloudflare-tunnel.md
+      - Cluster utilities:
+          - Stakater Reloader: stage2/stakater-reloader.md
+          - Sealed Secrets: stage2/bitnami-sealed-secrets.md
+      - AI gateways:
+          - LiteLLM: stage2/litellm.md
+          - OmniRoute: stage2/omniroute-gateway.md
+  - Operations:
+      - operations/index.md
+      - Kubernetes upgrades: operations/kubernetes-upgrades.md
+      - Adding a worker node: operations/adding-a-worker-node.md
+      - Bitwarden secrets: operations/bitwarden-secrets.md
+      - Troubleshooting: operations/troubleshooting.md
+  - Reference:
+      - reference/index.md
+      - Version pins: reference/versions.md
+      - Task commands: reference/tasks.md
+      - Repository layout: reference/repository-layout.md
+      - Terraform variables: reference/terraform-variables.md
+  - Contribute:
+      - Contributing: contribute/contributing.md
+      - Security policy: contribute/security.md
+      - Conventions for AI agents: contribute/agents.md

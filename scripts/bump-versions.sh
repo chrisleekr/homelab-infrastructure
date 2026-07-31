@@ -208,7 +208,7 @@ fi
 
 echo -e "${BOLD}Applying updates to Dockerfile…${NC}"
 
-# Tool ARGs — iterate with positional args to avoid associative arrays
+# Tool ARGs: iterate with positional args to avoid associative arrays
 apply_tool_update() {
   local var="$1" current="$2" latest="$3"
   if [[ "$current" != "$latest" ]]; then

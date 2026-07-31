@@ -11,7 +11,7 @@
 # on auth/offline failure it returns without replacing the shell, so the container is never
 # locked out. Set BWS_SKIP=1 (before entry) to bypass entirely.
 #
-# Must be SOURCED, not executed — it exec's into the injected shell in place.
+# Must be SOURCED, not executed. It exec's into the injected shell in place.
 
 set -a
 # shellcheck source=/dev/null
@@ -19,7 +19,7 @@ set -a
 set +a
 
 if [ -z "$BWS_ACCESS_TOKEN" ]; then
-  echo "WARN: BWS_ACCESS_TOKEN not set; secrets NOT loaded (see docs/bitwarden-secrets-setup.md)" >&2
+  echo "WARN: BWS_ACCESS_TOKEN not set; secrets NOT loaded (see docs/operations/bitwarden-secrets.md)" >&2
 elif bws run ${BWS_PROJECT_ID:+--project-id "$BWS_PROJECT_ID"} -- true >/dev/null 2>&1; then
   # Probe (`-- true`) succeeded, so bws can authenticate: hand off to the injected shell.
   export BWS_LOADED=1

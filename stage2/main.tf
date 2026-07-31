@@ -245,7 +245,7 @@ module "argocd" {
 }
 
 
-# ArgoCD Image Updater — resolves mutable image tags to digests and commits them back to the
+# ArgoCD Image Updater: resolves mutable image tags to digests and commits them back to the
 # GitOps repository, so a CI push under an unchanged tag still reaches the cluster.
 # Reference: https://argocd-image-updater.readthedocs.io/en/stable/
 module "argocd_image_updater" {
@@ -279,7 +279,7 @@ module "reloader" {
   source     = "./stakater-reloader"
 }
 
-# Sealed Secrets — destination cluster secret management for GitOps
+# Sealed Secrets: destination cluster secret management for GitOps
 # Decrypts SealedSecret CRDs committed to Git into regular K8s Secrets
 # Reference: https://argo-cd.readthedocs.io/en/stable/operator-manual/secret-management/
 module "sealed_secrets" {
