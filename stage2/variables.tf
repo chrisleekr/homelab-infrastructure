@@ -556,8 +556,9 @@ variable "tailscale_advertise_routes" {
   default     = "192.86.0.0/24"
 }
 
-# Shared with stage0 and stage1. Set it once via TF_VAR_hostname_prefix; the per-device
-# suffix (-gateway here, -cp-01 and -worker-NN in stage1) is fixed by each module.
+# Shared with stage1. Set it once via TF_VAR_hostname_prefix; the per-device suffix
+# (-gateway here, -cp-01 and -worker-NN in stage1) is fixed by each module. Stage 0 has no
+# equivalent: its node map keys are the tailnet hostnames verbatim.
 variable "hostname_prefix" {
   description = "Prefix for tailnet machine names, without a trailing dash."
   type        = string

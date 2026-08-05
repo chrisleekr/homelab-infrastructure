@@ -30,7 +30,7 @@ Every key is documented once, in [Inventory and groups](inventory.md#declaring-w
 
 Renaming a worker means changing `name`, which is a new Kubernetes identity rather than a rename: the node must be drained, deleted, `kubeadm reset` run, and rejoined. `NodeRestriction` ties a kubelet's client certificate to one node name, so no shortcut exists.
 
-An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. Play 5 targets `server`, so postflight verification still runs. That is the single-node cluster.
+An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. Play 5 still targets `server`, but its postflight verification is gated on `kubeadm_upgrade_enabled`, so it runs only during an upgrade. That is the single-node cluster.
 
 ### 2. Server setup on cluster
 

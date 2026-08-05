@@ -109,7 +109,7 @@ This is the step that proves the node is not exposed to the internet. Run the fi
 
 ```bash
 nc -vz -w 5 <oci-tailnet-ip> 10250                     # must TIME OUT
-nc -vz -w 5 <oci-public-ip> 22                         # must TIME OUT
+nc -vz -w 5 <oci-public-ip> 22                         # must TIME OUT, run from outside every stage0_ssh_ingress_cidrs source
 sudo ufw status verbose                                # must report Status: active
 sudo sshd -T | grep -E 'passwordauthentication|kbdinteractiveauthentication'   # both no
 sudo systemctl is-enabled netfilter-persistent         # must be enabled, or rules.v4 is inert at boot

@@ -178,7 +178,9 @@ Separate from the Stage 2 Tailscale block below, and the two keys are not interc
 | `tailscale_auth_key` | 🔑 | admin console, tagged `tag:k8s-node` | Node join, read only on a node's first run |
 | `hostname_prefix` | | `homelab` | Prefix for tailnet machine names, no trailing dash |
 
-`hostname_prefix` is the stage 1 half of a value shared with stage 2's `TF_VAR_hostname_prefix` and stage 0. Keep the two in step; they are separate secrets only because stage 1 reads lowercase environment variables and Terraform reads `TF_VAR_*`. The per-device suffix is not a secret: the control plane's is set in `inventory.yml`, each worker's in `worker_hosts_json`, and the gateway's is fixed by the stage 2 module.
+`hostname_prefix` is the stage 1 half of a value shared with stage 2's `TF_VAR_hostname_prefix`. Keep the two in step; they are separate secrets only because stage 1 reads lowercase environment variables and Terraform reads `TF_VAR_*`. The per-device suffix is not a secret: the control plane's is set in `inventory.yml`, each worker's in `worker_hosts_json`, and the gateway's is fixed by the stage 2 module.
+
+Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the tailnet hostname verbatim, so name the keys to match the prefix by hand.
 
 ### Stage 2: Kubernetes / ingress
 

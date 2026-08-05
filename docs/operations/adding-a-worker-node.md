@@ -99,12 +99,15 @@ Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escapin
 [{"name":"worker-01","host":"192.168.1.102","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
-Every key is documented in [Inventory and groups](../stage1/inventory.md#declaring-workers). Two of them have to agree with what you seeded in step 2:
+Every key is documented in [Inventory and groups](../stage1/inventory.md#declaring-workers). Three of them have to agree with what you seeded in step 2:
 
 | Key | Must match |
 |---|---|
 | `name` | The cloud-init `hostname`. It also becomes the Kubernetes node name |
-| `port` | `ListenStream` in the seed |
+| `host` | `addresses` in `network-config` |
+| `user` | `users: - name:` in `user-data` |
+
+`port` is not one of them. Leave it out, or set it to `22`, as step 2 explains.
 
 Adding a second worker means appending a second object. No YAML changes.
 

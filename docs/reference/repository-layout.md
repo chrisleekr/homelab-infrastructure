@@ -3,7 +3,7 @@
 ```text
 homelab-infrastructure/
 ├── stage0/                       # Terraform: optional cloud machines, off by default
-│   ├── main.tf                   # one module block per provider, gated on account membership
+│   ├── main.tf                   # one module block per account, since providers cannot be iterated
 │   ├── variables.tf              # one account map per provider
 │   ├── providers.tf              # required_providers and one aliased oci provider per account
 │   ├── outputs.tf                # re-exports the module outputs so `terraform output` sees them

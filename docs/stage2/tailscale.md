@@ -60,7 +60,7 @@ Defaults are the ones in `stage2/variables.tf`, since `stage2/main.tf` always pa
 
 `tailscale_timezone` exists only in `stage2/vpn/variables.tf`. `stage2/main.tf` does not pass it and `stage2/variables.tf` declares no matching root variable, so `TF_VAR_tailscale_timezone` has no effect. Changing it means editing the module default.
 
-The module's own `tailscale_advertise_routes` default differs from the root's. It is dead, for the same reason: the root value always wins.
+Neither `tailscale_advertise_routes` default is this homelab's LAN. Set `TF_VAR_tailscale_advertise_routes` to the real `/24`, `192.168.1.0/24` in the diagram above, or the pod advertises a subnet nothing is on. The module's own default differs from the root's and is dead either way: the root value always wins.
 
 ## Machine name and tag
 

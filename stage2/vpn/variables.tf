@@ -16,9 +16,9 @@ variable "tailscale_advertise_routes" {
   default     = "192.168.0.0/24"
 }
 
-# Shared with stage0 and stage1 so every device this homelab owns sorts together in the
-# tailnet. The separator is supplied by the template, not the value, so a prefix missing its
-# trailing dash cannot silently produce "homelabgateway".
+# Shared with stage1 so every device this homelab owns sorts together in the tailnet. The
+# separator is supplied by the template, not the value, so a prefix missing its trailing
+# dash cannot silently produce "homelabgateway".
 variable "hostname_prefix" {
   description = "Prefix for tailnet machine names, without a trailing dash."
   type        = string

@@ -34,7 +34,7 @@ A cloud machine is exposed from the instant it exists, and nothing can reach it 
 
 | Guarantee | Why |
 |---|---|
-| No inbound rule at any cloud network layer | The instance holds a public IP for egress. Nothing should be reachable on it, so the closed state is the default rather than something a rule has to undo |
+| No inbound rule at any cloud network layer by default | The instance holds a public IP for egress. Nothing should be reachable on it, so the closed state is the default rather than something a rule has to undo. `stage0_ssh_ingress_cidrs` is the one opt-in exception: a non-empty list opens TCP/22 to those sources in both the cloud rules and the host firewall |
 | The host firewall closes **before** the tailnet join, not after | That is the safe failure direction. The machine is never sitting on a public IP with an open door, at the cost of the lockout below |
 | The auth key never appears in a command line, and the tmpfs copy is deleted whether the join succeeded or not | cloud-init records every command it runs verbatim in `/var/log/cloud-init-output.log`. A key that reached a log outlives the boot that used it. The copy inside `user_data` still survives in IMDS, so revoke the key once the node has joined |
 | The module emits a `worker_hosts_json` entry per node | The handoff to stage 1 is data you paste, not prose you follow |

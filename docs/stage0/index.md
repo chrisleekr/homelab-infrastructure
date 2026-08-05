@@ -9,11 +9,11 @@ It is entirely optional and is a separate Terraform root you run on its own. A L
 | Layer | Component |
 |---|---|
 | Quota ceiling | A compartment quota capping the account at the free tier allowance. The compartment itself is created by hand during [account setup](oci-freetier.md#account-setup), not by Terraform |
-| Network | Provider networking with **no inbound rule anywhere**. Egress only |
+| Network | Provider networking with **no inbound rule anywhere** by default. Egress only, unless `stage0_ssh_ingress_cidrs` opts TCP/22 in |
 | Machine | One free tier instance per node you declare |
-| Host firewall | Host rules permitting SSH only over the tailnet interface |
+| Host firewall | Host rules permitting SSH over the tailnet interface, plus any `stage0_ssh_ingress_cidrs` sources |
 | Transport | The node joined to your tailnet as `tag:k8s-node`, reachable on its `100.x` address |
-| Handoff | A `worker_hosts_json` entry per node, ready for Stage 1 to join to the cluster |
+| Handoff | A `worker_hosts_json` entry per node. Terraform cannot know the tailnet address, so you add `node_ip` by hand before Stage 1 joins the node |
 
 It does **not** produce a control plane. A stage 0 node is a worker added to a cluster that already exists.
 

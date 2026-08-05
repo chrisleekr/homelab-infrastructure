@@ -93,7 +93,7 @@ flowchart LR
 
 | Stage | Tool | Produces |
 |---|---|---|
-| Stage 0 (optional) | Terraform | Ampere A1 machines in an Oracle Cloud Always Free tenancy, joined to a Tailscale tailnet with no inbound ports open. They become worker entries for Stage 1 to join to a cluster that already exists. Skip it entirely for a LAN-only homelab. |
+| Stage 0 (optional) | Terraform | Ampere A1 machines in an Oracle Cloud Always Free tenancy, joined to a Tailscale tailnet with no inbound ports open by default. They become worker entries for Stage 1 to join to a cluster that already exists. Skip it entirely for a LAN-only homelab. |
 | Stage 1 | Ansible | A hardened Ubuntu host running Kubernetes via kubeadm (recommended), k3s, or minikube (experimental). Cilium CNI, containerd, MetalLB, metrics-server. |
 | Stage 2 | Terraform | GitLab, ArgoCD, Prometheus and Grafana, Elasticsearch and Kibana, Longhorn, MinIO, cert-manager, OAuth2 proxy, VPN, and more. |
 

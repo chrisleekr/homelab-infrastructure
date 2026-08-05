@@ -15,6 +15,6 @@ output "worker_hosts_json_entries" {
 }
 
 output "public_ips" {
-  description = "Ephemeral public IPs, keyed by node name. Present for egress via the internet gateway; nothing listens on them."
+  description = "Ephemeral public IPs, keyed by node name. Present for egress via the internet gateway; nothing is reachable on them unless ssh_ingress_cidrs opens TCP/22."
   value       = { for k, v in oci_core_instance.worker : k => v.public_ip }
 }
