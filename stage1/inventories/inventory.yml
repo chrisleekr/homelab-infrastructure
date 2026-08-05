@@ -29,6 +29,9 @@ cluster:
           ansible_user: '{{ lookup("env", "server_ssh_user") or "ubuntu" }}'
           ansible_port: '{{ lookup("env", "server_ssh_port") or 22 }}'
           ansible_python_interpreter: "/usr/bin/python3.12" # Explicitly specify the Python interpreter
+          # Tailnet name suffix for the control plane. Workers carry their own in
+          # worker_hosts_json. Read only when tailscale_node_enable is true.
+          tailscale_hostname_suffix: "cp-01"
 
     # Worker nodes. Declared empty here and populated at runtime from worker_hosts_json
     # by the first play in site.yml. The group must exist under `cluster` for workers to
@@ -69,6 +72,40 @@ cluster:
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
     cilium_version: "1.19.6" # https://github.com/cilium/cilium/releases
     cilium_cli_version: "0.19.7" # https://github.com/cilium/cilium-cli/releases
+
+    # This is the *underlying network* MTU, not the pod MTU. Cilium subtracts its own
+    # 50-byte VXLAN overhead to derive the route MTU it installs for pods, so 1500 here
+    # yields 1450 in the pod. Putting the pod figure here costs a second 50 bytes and the
+    # symptom is subtle: the veth still reports the configured value while every route to
+    # another node carries 50 less. Chart value is `MTU`, default 0.
+    #
+    # Pin rather than auto-detect. Detection follows the lowest-MTU device on the host and
+    # re-runs at runtime, so tailscale0 at 1280 drags every pod in the cluster to 1230 the
+    # moment the tailscale_node role runs, whether or not any worker is reached over
+    # Tailscale. Pods then cannot emit cloudflared's 1308-byte QUIC Initial and every tunnel
+    # handshake times out.
+    #
+    # Cluster-wide, so the lowest path between any two nodes wins. A worker reached over the
+    # tailnet rather than the LAN needs its own measurement against that peer.
+    #
+    # Applied by `cilium install`, which only runs when there is no cilium-operator yet.
+    # `cilium upgrade` carries the value forward (--reset-then-reuse-values defaults true)
+    # but never introduces a new one, so changing this on a live cluster takes:
+    #   cilium upgrade --version <cilium_version> --wait --helm-set MTU=<value>
+    #   kubectl -n kube-system rollout restart ds/cilium
+    # The restart is required: the agents read MTU once at start, so the ConfigMap alone
+    # changes nothing.
+    cilium_mtu: "1500" # LAN NIC MTU. Cilium derives the 1450 pod route MTU from it
+
+    # Host-level Tailscale for node-to-node transport. Distinct from the stage2 vpn pod,
+    # which does LAN access and exit-node duty and stays as it is.
+    tailscale_node_enable: '{{ lookup("env", "tailscale_node_enable") | default(false, true) | bool }}'
+    host_setup_ufw_tailnet_ports: >-
+      {{ [{"port": "6443", "proto": "tcp"},
+          {"port": "10250", "proto": "tcp"},
+          {"port": "8472", "proto": "udp"},
+          {"port": "4240", "proto": "tcp"}]
+         if tailscale_node_enable | bool else [] }}
 
     # Deprecated-API scanner run as an upgrade preflight.
     pluto_version: "5.24.1" # https://github.com/FairwindsOps/pluto/releases

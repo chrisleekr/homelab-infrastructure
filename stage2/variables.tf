@@ -556,10 +556,18 @@ variable "tailscale_advertise_routes" {
   default     = "192.86.0.0/24"
 }
 
-variable "tailscale_hostname" {
-  description = "The hostname of the tailscale, which will show up in the tailnet"
+# Shared with stage1. Set it once via TF_VAR_hostname_prefix; the per-device suffix
+# (-gateway here, -cp-01 and -worker-NN in stage1) is fixed by each module. Stage 0 has no
+# equivalent: its node map keys are the tailnet hostnames verbatim.
+variable "hostname_prefix" {
+  description = "Prefix for tailnet machine names, without a trailing dash."
   type        = string
-  default     = "tailscale-kubernetes"
+  default     = "homelab"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", var.hostname_prefix))
+    error_message = "hostname_prefix must be lowercase alphanumeric with optional inner dashes, and no trailing dash."
+  }
 }
 
 variable "wireguard_enable" {
@@ -1035,7 +1043,7 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.1.1"
+  default     = "0.2.0"
 }
 
 variable "omniroute_image_tag" {

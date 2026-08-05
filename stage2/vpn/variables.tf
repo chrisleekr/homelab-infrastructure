@@ -16,10 +16,18 @@ variable "tailscale_advertise_routes" {
   default     = "192.168.0.0/24"
 }
 
-variable "tailscale_hostname" {
-  description = "The hostname of the tailscale"
+# Shared with stage1 so every device this homelab owns sorts together in the tailnet. The
+# separator is supplied by the template, not the value, so a prefix missing its trailing
+# dash cannot silently produce "homelabgateway".
+variable "hostname_prefix" {
+  description = "Prefix for tailnet machine names, without a trailing dash."
   type        = string
-  default     = "tailscale-kubernetes"
+  default     = "homelab"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", var.hostname_prefix))
+    error_message = "hostname_prefix must be lowercase alphanumeric with optional inner dashes, and no trailing dash."
+  }
 }
 
 variable "tailscale_timezone" {

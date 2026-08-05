@@ -1,6 +1,6 @@
 # Roles
 
-Ten roles under `stage1/roles/`. Nine are named directly in [`site.yml`](../playbook.md); `kubeadm_node` is not. It arrives as a `meta` dependency.
+Eleven roles under `stage1/roles/`. Ten are named directly in [`site.yml`](../playbook.md); `kubeadm_node` is not. It arrives as a `meta` dependency.
 
 ```mermaid
 flowchart TD
@@ -10,6 +10,7 @@ flowchart TD
     p6["Play 6: localhost"]:::aux
 
     hostsetup["host_setup"]
+    tsnode["tailscale_node"]
     kpre["kubeadm_pre_setup"]
     kserver["kubeadm_server"]
     kagent["kubeadm_agent"]
@@ -21,6 +22,7 @@ flowchart TD
     post["localhost_post_setup"]
 
     p2 --> hostsetup
+    p2 --> tsnode
     p3 -->|"kubeadm"| kpre
     p3 -->|"kubeadm"| kserver
     p3 -->|"k3s"| k3spre
@@ -41,9 +43,10 @@ flowchart TD
 
 | Role | Invoked by | Tags | Task files excl. `main.yml` | Defaults |
 |---|---|---|---|---|
-| [`host_setup`](host-setup.md) | play 2 | `host_setup`, `packages`, `network`, `storage`, `security`, `system` | 10 | 38 |
+| [`host_setup`](host-setup.md) | play 2 | `host_setup`, `packages`, `network`, `storage`, `security`, `system` | 10 | 39 |
+| [`tailscale_node`](tailscale-node.md) | play 2 | `tailscale_node` | 0 | 12 |
 | [`kubeadm_pre_setup`](kubeadm-pre-setup.md) | plays 3, 4 | `bootstrap`, `system_upgrade` | 1 | 0 |
-| [`kubeadm_node`](kubeadm-node.md) | **meta dependency** of `kubeadm_server` and `kubeadm_agent` | `always`, `container_runtime`, `container_tools`, `k8s_install` | 11 | 3 |
+| [`kubeadm_node`](kubeadm-node.md) | **meta dependency** of `kubeadm_server` and `kubeadm_agent` | `always`, `container_runtime`, `container_tools`, `k8s_install` | 12 | 5 |
 | [`kubeadm_server`](kubeadm-server.md) | play 3, play 5 | `kubeadm`, `k8s_upgrade`, `k8s_install`, `cni`, `k8s_config`, `kubeconfig` | 14 | 2 |
 | [`kubeadm_agent`](kubeadm-agent.md) | play 4 | `kubeadm_agent`, `k8s_upgrade` | 1 | 5 |
 | [`localhost_post_setup`](localhost-post-setup.md) | play 6 | `post_setup`, `kubeconfig`, `network`, `monitoring` | 3 | 0 |

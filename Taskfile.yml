@@ -102,6 +102,64 @@ tasks:
         --exit-code 1
         chrisleekr/homelab-infrastructure:latest
 
+  # One workspace holds every cloud account, matching stage2. Accounts are selected in
+  # code, one provider alias and module block each, so a single apply covers all of them.
+  stage0:terraform:init:
+    desc: Initialize stage0 and select the workspace
+    dir: stage0
+    cmds:
+      - terraform init
+      - terraform workspace select homelab-stage0
+
+  stage0:terraform:plan:
+    desc: Plan the cloud provisioning
+    dir: stage0
+    deps: [stage0:terraform:init]
+    cmds:
+      - terraform plan
+
+  stage0:terraform:apply:
+    desc: Apply the cloud provisioning
+    dir: stage0
+    deps: [stage0:terraform:init]
+    cmds:
+      - terraform apply
+
+  stage0:terraform:apply:retry:
+    desc: Apply, retrying while Oracle reports out of host capacity. Always Free A1 capacity is frequently unavailable.
+    cmds:
+      - ./scripts/oci-apply-retry.sh homelab-stage0
+
+  stage0:terraform:output:
+    desc: Print the worker_hosts_json entries to paste into Bitwarden
+    dir: stage0
+    deps: [stage0:terraform:init]
+    cmds:
+      - terraform output -json worker_hosts_json_entries
+
+  stage0:terraform:init:lock:
+    desc: Regenerate stage0 provider lock files with multi-platform hashes. Run inside Docker container
+    vars:
+      # Three platforms, not two: darwin_arm64 for the host, linux_amd64 for CI runners,
+      # linux_arm64 for the tooling container on an Apple Silicon Mac. terraform_validate
+      # runs -lockfile=readonly, so a platform missing its h1 hash fails the hook rather
+      # than recording one.
+      PLATFORMS: -platform=darwin_arm64 -platform=linux_amd64 -platform=linux_arm64
+    cmds:
+      # Provider caches are per platform and .terraform is gitignored, so a cache built on
+      # the host is stale the moment this runs in the container.
+      - find stage0 -mindepth 1 -maxdepth 2 -name ".terraform" -type d -exec rm -rf {} +
+      # The root lock must cover the child module's requirements too, so the module tree
+      # has to be installed before locking. `providers lock` does not install modules.
+      - cd stage0 && terraform init -backend=false && terraform providers lock {{.PLATFORMS}}
+      - |
+        for dir in stage0/*/; do
+          if [ -f "${dir}provider.tf" ]; then
+            echo "Locking providers in ${dir}..."
+            (cd "${dir}" && terraform providers lock {{.PLATFORMS}})
+          fi
+        done
+
   stage1:test:
     desc: Assert the kubeadm upgrade ordering statically. Needs a python3 with PyYAML, which the ansible install already provides. No cluster, no network.
     cmds:
@@ -142,7 +200,7 @@ tasks:
     dir: stage2
     cmds:
       - terraform init
-      - terraform workspace select homelab-k8s
+      - terraform workspace select homelab-stage2
 
   stage2:terraform:init:upgrade:
     desc: Upgrade Terraform providers to latest versions satisfying constraints. Run in root and all child modules.

@@ -10,7 +10,7 @@ The shared node role: container runtime, kubelet, kubeadm binary, and the drain/
 
 ## Task files
 
-`tasks/main.yml` is short: three steps and an assertion:
+`tasks/main.yml` is short: four steps and an assertion:
 
 | Step | File | Tags | Condition |
 |---|---|---|---|
@@ -18,6 +18,7 @@ The shared node role: container runtime, kubelet, kubeadm binary, and the drain/
 | Detect installed versions and node state | `detect-versions.yml` | `always` | always |
 | Install container runtime and kubelet | `apply-node-runtime-and-kubelet.yml` | `container_runtime`, `container_tools`, `k8s_install` | `not kubeadm_node_bootstrapped` |
 | Install the kubeadm binary | `apply-kubeadm-binary.yml` | `k8s_install` | `not kubeadm_node_bootstrapped` |
+| Pin kubelet to the node IP | `pin-node-ip.yml` | `always` | always |
 
 The remaining eight files are not entered from `main.yml`. Five are pulled in by `apply-node-runtime-and-kubelet.yml`; three are reachable only through `tasks_from:`:
 
@@ -76,6 +77,20 @@ Three from the control plane, five from the worker. The payoff: installing a nod
 | `kubeadm_node_drain_timeout` | How long `kubectl drain` may take before failing |
 | `kubeadm_node_wait_ready_retries` | Polls for the node to report `Ready` after an upgrade |
 | `kubeadm_node_wait_ready_delay` | Seconds between polls |
+| `kubeadm_node_node_ip` | Address kubelet registers as the Node `InternalIP`. `node_ip` from `worker_hosts_json`, else the host's default IPv4. Never empty |
+| `kubeadm_node_kubelet_env_path` | `/etc/default/kubelet`, where the pin is reconciled. Survives `kubeadm upgrade`, unlike `kubeadm-flags.env` |
+
+## The node IP pin
+
+`pin-node-ip.yml` writes `KUBELET_EXTRA_ARGS="--node-ip=<addr>"` on every pass, on the control plane and on every worker alike. It lives here rather than in [`kubeadm_agent`](kubeadm-agent.md) because play 2 puts a `tailscale0` on every cluster host, so the control plane needs the same guard a worker does. See [`kubeadm_agent`](kubeadm-agent.md#the-node-ip-is-pinned-not-detected) for what goes wrong without it.
+
+It runs before `kubeadm init` or `kubeadm join`, so the flag is in place the first time kubelet starts.
+
+## Handlers notified
+
+`Restart kubelet`, in this role's own `handlers/main.yml`, notified by name when the node-IP pin changes `/etc/default/kubelet`. Role handler files load automatically, so no play imports it.
+
+Cilium is deliberately left alone. It reads the tunnel endpoint from the Node object once at agent start, so changing a joined node's IP also needs `kubectl -n kube-system rollout restart ds/cilium` by hand. That is a cluster-wide action, not something one node's play should trigger.
 
 ## Architecture detection
 

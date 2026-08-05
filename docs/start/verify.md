@@ -83,5 +83,5 @@ Every kubelet on the version pinned in `stage1/inventories/inventory.yml`. See [
 ## If something is wrong
 
 - [Troubleshooting](../operations/troubleshooting.md)
-- [Stage 1 architecture](../stage1/architecture.md) for what should be running on a node
+- [Cluster architecture](../stage1/architecture.md) for what should be running on a node
 - [Module dependency graph](../stage2/dependency-graph.md) for what should have deployed before what

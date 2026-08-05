@@ -33,3 +33,9 @@
   ansible.builtin.include_tasks: apply-kubeadm-binary.yml
   when: not kubeadm_node_bootstrapped
   tags: [k8s_install]
+
+# Unconditional, unlike the two above: this reconciles on every pass rather than only on a
+# fresh install, and it must be in place before kubeadm init or join starts kubelet.
+- name: Pin kubelet to the node IP
+  ansible.builtin.include_tasks: pin-node-ip.yml
+  tags: [always]

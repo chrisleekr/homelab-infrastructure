@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TD
     play1["Play 1: localhost<br/>Register worker hosts<br/>from worker_hosts_json"]:::aux
-    play2["Play 2: cluster<br/>host_setup<br/>serial: 1, become"]
+    play2["Play 2: cluster<br/>host_setup, tailscale_node<br/>serial: 1, become"]
     barrier["flush_handlers<br/>reboot happens HERE"]:::danger
     play3["Play 3: server<br/>kubeadm | k3s | minikube<br/>any_errors_fatal"]
     play4["Play 4: agent<br/>Worker join and upgrade<br/>serial: 1, any_errors_fatal"]
@@ -26,11 +26,15 @@ flowchart TD
 
 Reads `worker_hosts_json` and `add_host`s each entry into the `agent` group. Workers are therefore *not* static inventory entries: the fleet scales by editing one Bitwarden secret.
 
-An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. Play 5 targets `server`, so postflight verification still runs. That is the single-node cluster.
+Every key is documented once, in [Inventory and groups](inventory.md#declaring-workers).
+
+Renaming a worker means changing `name`, which is a new Kubernetes identity rather than a rename: the node must be drained, deleted, `kubeadm reset` run, and rejoined. `NodeRestriction` ties a kubelet's client certificate to one node name, so no shortcut exists.
+
+An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. Play 5 still targets `server`, but its postflight verification is gated on `kubeadm_upgrade_enabled`, so it runs only during an upgrade. That is the single-node cluster.
 
 ### 2. Server setup on cluster
 
-`hosts: cluster`, `serial: 1`, `become: true`, role [`host_setup`](roles/host-setup.md), tag `host_setup`
+`hosts: cluster`, `serial: 1`, `become: true`, roles [`host_setup`](roles/host-setup.md) then [`tailscale_node`](roles/tailscale-node.md), tags `host_setup` and `tailscale_node`
 
 Everything that is not Kubernetes: packages, snapd removal, `/etc/hosts`, multipath blacklist, sysctl, fail2ban, UFW, swap, memory cgroups.
 

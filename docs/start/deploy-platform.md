@@ -6,12 +6,12 @@ Terraform deploys 19 modules onto the cluster Stage 1 built.
 
 ```bash
 task docker:exec              # from the host, if you are not already in the container
-task stage2:terraform:init    # terraform init, then select the homelab-k8s workspace
+task stage2:terraform:init    # terraform init, then select the homelab-stage2 workspace
 ```
 
 Every command on this page runs inside the container: that is where the pinned Terraform lives and where `.bashrc` has injected the Bitwarden secrets. See [Task commands](../reference/tasks.md).
 
-State lives in Terraform Cloud. The workspace must exist and your API token must be present before `init` will succeed.
+State lives in Terraform Cloud, in the workspace `homelab-stage2`, tagged `homelab` and `stage2`. If yours predates that name, rename it under **Workspace** then **Settings** then **General**, and add the `stage2` tag, before running `init`. Otherwise the CLI offers to create a new empty workspace and the next apply plans the whole platform from scratch. Your API token must also be present before `init` will succeed.
 
 ## 2. Plan
 
@@ -58,7 +58,7 @@ Full graph and the reason for every edge: [Module dependency graph](../stage2/de
 Gated modules use `count = var.<name>_enable ? 1 : 0`, so a disabled module is simply not in the plan. Set the flag as a `TF_VAR_*` secret in Bitwarden:
 
 | Module | Variable | Default |
-|---|---|---|
+| --- | --- | --- |
 | Logging (ECK) | `logging_module_enable` | `true` |
 | ArgoCD Image Updater | `argocd_image_updater_enable` | `false` |
 | Datadog | `datadog_enable` | `false` |

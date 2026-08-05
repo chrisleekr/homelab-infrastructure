@@ -4,8 +4,9 @@
 Five static checks over the docs tree. None of them needs MkDocs installed, so the
 only dependency is PyYAML.
 
-  A. Coverage    every stage2 module and stage1 role has a doc page AND a nav entry,
-                 and every such page maps back to a real module or role.
+  A. Coverage    every stage0 provider, stage2 module and stage1 role has a doc page
+                 AND a nav entry, every such page maps back to a real source directory,
+                 and a module listed in `split` has one page per backend.
   B. Citations   every repo path cited in inline code under docs/ actually exists.
   D. Orphans     every .md under docs/ appears in the mkdocs.yml nav.
   E. Typography  no em dash in any tracked text file.
@@ -55,6 +56,10 @@ COVERAGE_RULES = (
         # this to pages about the section itself; anything module-shaped belongs in
         # the generated set instead.
         "section_pages": frozenset({"index", "dependency-graph"}),
+        # A module that bundles independently-gated backends earns a page per
+        # backend, because one page named after the directory would misname half
+        # its own content. Every listed slug is then required, not optional.
+        "split": {"vpn": ("tailscale", "wireguard")},
     },
     {
         "label": "stage1 role",
@@ -63,6 +68,15 @@ COVERAGE_RULES = (
         "doc_dir": "stage1/roles",
         "slug": lambda name: name.replace("_", "-"),
         "section_pages": frozenset({"index"}),
+    },
+    {
+        "label": "stage0 provider",
+        "source_dir": "stage0",
+        # Same test as stage2: a directory is a provider module when it holds Terraform.
+        "is_source": lambda d: any(d.glob("*.tf")),
+        "doc_dir": "stage0",
+        "slug": lambda name: name,
+        "section_pages": frozenset({"index", "architecture"}),
     },
 )
 
@@ -75,7 +89,7 @@ ROOT_DOCS = ("README.md", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md")
 #
 # `container/` and `site/` are deliberately absent: both are gitignored, so they
 # exist on a working machine and not in a fresh CI clone.
-CITATION_PREFIXES = ("stage1/", "stage2/", "scripts/", "docs/", ".github/")
+CITATION_PREFIXES = ("stage0/", "stage1/", "stage2/", "scripts/", "docs/", ".github/")
 CITATION_FILES = frozenset(
     {
         "Dockerfile",
@@ -191,27 +205,30 @@ def check_coverage(nav_paths: set[str], errors: list[str]) -> int:
             errors.append(f"coverage: {rule['source_dir']} does not exist")
             continue
 
-        expected: dict[str, str] = {}
+        split = rule.get("split", {})
+        expected: dict[str, tuple[str, ...]] = {}
         for entry in sorted(source_root.iterdir()):
             if not entry.is_dir() or not rule["is_source"](entry):
                 continue
-            expected[entry.name] = f"{rule['doc_dir']}/{rule['slug'](entry.name)}.md"
+            slugs = split.get(entry.name, (rule["slug"](entry.name),))
+            expected[entry.name] = tuple(f"{rule['doc_dir']}/{slug}.md" for slug in slugs)
 
-        for name, doc_path in expected.items():
-            checked += 1
-            if not (DOCS_DIR / doc_path).is_file():
-                errors.append(
-                    f"coverage: {rule['label']} '{name}' has no page at docs/{doc_path}"
-                )
-            elif doc_path not in nav_paths:
-                errors.append(
-                    f"coverage: docs/{doc_path} exists but is not in the mkdocs.yml nav"
-                )
+        for name, doc_paths in expected.items():
+            for doc_path in doc_paths:
+                checked += 1
+                if not (DOCS_DIR / doc_path).is_file():
+                    errors.append(
+                        f"coverage: {rule['label']} '{name}' has no page at docs/{doc_path}"
+                    )
+                elif doc_path not in nav_paths:
+                    errors.append(
+                        f"coverage: docs/{doc_path} exists but is not in the mkdocs.yml nav"
+                    )
 
         # And the reverse: a page whose module or role has been deleted or renamed.
         doc_root = DOCS_DIR / rule["doc_dir"]
         if doc_root.is_dir():
-            valid_slugs = {rule["slug"](name) for name in expected}
+            valid_slugs = {Path(path).stem for paths in expected.values() for path in paths}
             for page in sorted(doc_root.glob("*.md")):
                 if page.stem in rule["section_pages"] or page.stem in valid_slugs:
                     continue
@@ -514,7 +531,7 @@ def main() -> int:
         return 1
 
     print(
-        f"Docs OK: {n_coverage} modules/roles covered, "
+        f"Docs OK: {n_coverage} module/role pages covered, "
         f"{n_citations} path citations verified, "
         f"{n_orphans} pages in nav, "
         f"{n_typography} files free of em dashes, "

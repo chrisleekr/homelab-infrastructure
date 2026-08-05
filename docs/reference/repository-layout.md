@@ -2,6 +2,13 @@
 
 ```text
 homelab-infrastructure/
+├── stage0/                       # Terraform: optional cloud machines, off by default
+│   ├── main.tf                   # one module block per account, since providers cannot be iterated
+│   ├── variables.tf              # one account map per provider
+│   ├── providers.tf              # required_providers and one aliased oci provider per account
+│   ├── outputs.tf                # re-exports the module outputs so `terraform output` sees them
+│   ├── backend.tf                # Terraform Cloud, the single homelab-stage0 workspace
+│   └── oci-freetier/             # Oracle Always Free A1 provider module
 ├── stage1/                       # Ansible: host setup and Kubernetes bootstrap
 │   ├── ansible.cfg               # local_tmp is set to /tmp, see below
 │   ├── site.yml                  # the six plays
@@ -26,6 +33,7 @@ homelab-infrastructure/
 │   ├── sync-versions.sh          # version drift gate
 │   ├── check-docs.py             # docs coverage, citation and nav gate
 │   ├── tests/                    # self-test for check-docs.py
+│   ├── oci-apply-retry.sh        # retries stage0 apply while Oracle is out of capacity
 │   ├── bump-versions.sh
 │   ├── docker-build.sh, docker-run.sh, repo-setup.sh
 │   └── container/root/           # files baked into the image
@@ -42,7 +50,7 @@ homelab-infrastructure/
 
 | File | Note |
 |---|---|
-| Module documentation | Under `docs/stage2/`, **not** in the module directories. The directories hold `.tf` only. |
+| Module documentation | Under `docs/stage2/` and `docs/stage0/`, **not** in the module directories. The directories hold `.tf` only. |
 | Version pins | Split across `Dockerfile` and `stage1/inventories/inventory.yml`. See [Version pins](versions.md). |
 | `AGENTS.md` | Stays at the repo root, with `CLAUDE.md`, `AGENT.md`, `GEMINI.md`, `.cursorrules` and `.github/copilot-instructions.md` as symlinks to it. Mirrored onto this site. |
 | `CONTRIBUTING.md`, `SECURITY.md` | Stay at the root, where GitHub's community-profile features read them. Mirrored onto this site. |

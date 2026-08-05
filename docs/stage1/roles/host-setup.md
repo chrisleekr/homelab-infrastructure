@@ -41,13 +41,15 @@ flowchart TD
 
 ## Variables
 
-38 defaults, all prefixed `host_setup_`. The ones you are most likely to change:
+39 defaults, all prefixed `host_setup_`. The ones you are most likely to change:
 
 | Variable | Purpose |
 |---|---|
 | `host_setup_sshd_port` | The SSH port UFW must keep open |
 | `host_setup_install_packages` | Package list |
 | `host_setup_ufw_rules` | Firewall rules |
+| `host_setup_ufw_tailnet_ports` | Kubernetes ports opened inbound on `tailscale0`. Empty unless `tailscale_node_enable` is true |
+| `host_setup_snapd_purge` | `false` keeps a cloud provider's agent snap. See the snapd gotcha below |
 | `host_setup_etc_hosts_json` | Static `/etc/hosts` entries |
 | `host_setup_boot_cmdline_paths` | Where to look for the kernel command line, differs between Pi and generic Ubuntu |
 | `host_setup_cgroup_kernel_args` | The arguments appended to enable memory cgroups |
@@ -79,6 +81,14 @@ The exception is `enable-memory-cgroup.yml`: once the kernel command line contai
 
     Fix the inventory before running, not after.
 
+!!! danger "The tailnet rules are not the security boundary"
+
+    With `tailscale_node_enable` true, `setup-ufw.yml` opens 6443/tcp, 10250/tcp, 8472/udp and 4240/tcp inbound on `tailscale0`. That interface carries traffic from every device on the tailnet, not only cluster nodes, and 8472 is Cilium's VXLAN, which authenticates nothing and hands the decapsulated frame straight to the pod network.
+
+    The tailnet policy file scoping `tag:k8s-node` is what actually decides which devices can reach those ports. A tailnet with no policy is flat. See [`tailscale_node`](tailscale-node.md).
+
+    The rules are add-only. Setting `tailscale_node_enable` back to `false` stops new hosts getting them but leaves them on hosts that already have them, matching `tailscale_node`, which also never un-joins a node.
+
 !!! warning "Memory cgroups need a reboot"
 
     On Raspberry Pi, memory cgroups are off by default. Enabling them requires a kernel command line change and a reboot, which is why play 2 ends with `meta: flush_handlers`. A first run on a Pi will reboot the host. Plan for it.
@@ -86,3 +96,5 @@ The exception is `enable-memory-cgroup.yml`: once the kernel command line contai
 !!! note "snapd removal is aggressive"
 
     `remove-snapd.yml` uninstalls every snap, purges snapd, and installs an APT preference blocking reinstallation. It frees memory and removes a source of unattended restarts, but it is not something you want on a host you also use as a desktop.
+
+    It is gated at the include, not inside the file: the file's own purge blocks check `host_setup_snapd_purge`, but its "Shutdown services, sockets and timers" step does not, and would stop and disable `snapd.service` regardless. Set `snapd_purge: false` in `worker_hosts_json` for a cloud node. On OCI the Oracle Cloud Agent is a snap, and it reports the memory metric that A1 idle reclamation measures. Keeping it also means OCI IAM is a command-execution path onto the node, via the agent's Run Command plugin.

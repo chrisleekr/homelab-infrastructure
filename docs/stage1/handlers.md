@@ -1,8 +1,8 @@
 # Handlers
 
-Handlers live in `stage1/handlers/` as six standalone task files. Plays pull them in with `import_tasks` under their own `handlers:` key, so a handler is only reachable from a play that imports it.
+Six shared handler files live in `stage1/handlers/`. Plays pull them in with `import_tasks` under their own `handlers:` key, so one of these is only reachable from a play that imports it. [`kubeadm_node`](roles/kubeadm-node.md) also carries a role-local handler, which needs no import.
 
-Every handler except `reboot.yml` uses `listen:` rather than being notified by name, which is why the notify strings below are lowercase and do not match the task names.
+Every shared handler except `reboot.yml` uses `listen:` rather than being notified by name, which is why the notify strings below are lowercase and do not match the task names.
 
 ```mermaid
 flowchart LR
@@ -14,7 +14,7 @@ flowchart LR
     changed --> notify --> listen --> run
 ```
 
-## The six handler files
+## The six shared handler files
 
 | File | Handler | `listen` | Imported by |
 |---|---|---|---|
@@ -25,6 +25,10 @@ flowchart LR
 | `sysctl.yml` | Reload sysctl | `reload sysctl` | plays 3, 4 |
 | `systemd.yml` | Reload systemd daemon | `reload systemd daemon` | plays 3, 4 |
 | `minikube.yml` | Enable/Start minikube, Enable/Start minitunnel | `enable minikube`, `start minikube`, `enable minitunnel`, `start minitunnel` | play 3 |
+
+## The one role-local handler
+
+`stage1/roles/kubeadm_node/handlers/main.yml` defines `Restart kubelet`, notified by name from the node-IP pin task. Role handler files load automatically for the role, so no play imports it, and because `kubeadm_node` is a `meta` dependency of both `kubeadm_server` and `kubeadm_agent` it is in scope on every cluster host.
 
 !!! note "There is no multipathd handler"
 

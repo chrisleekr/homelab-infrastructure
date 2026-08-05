@@ -8,6 +8,7 @@ kubernetes==36.0.3
 # Pin urllib3 to fix CVE-2025-66418, CVE-2025-66471, CVE-2026-21441
 # Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
 urllib3>=2.7.0
-# Pin cryptography to fix CVE-2026-26007 (HIGH) - Subgroup Attack on SECT Curves
-# Reference: https://seclists.org/oss-sec/2026/q1/161
-cryptography>=49.0.0
+# Pin cryptography to fix CVE-2026-69247 (HIGH) - Bleichenbacher oracle in PKCS#7
+# EnvelopedData decryption. Supersedes the 49.0.0 pin for CVE-2026-26007.
+# Reference: https://avd.aquasec.com/nvd/cve-2026-69247
+cryptography>=50.0.0

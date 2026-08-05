@@ -73,6 +73,8 @@ Skip this for a single-node cluster.
 
 Workers may be AMD64 or ARM64. A Raspberry Pi works. Each needs the same treatment as above: a reachable IP, a non-default SSH port, and your public key installed.
 
+A cloud worker created by [Stage 0](../stage0/index.md) needs none of this: its cloud-init sets the SSH port and installs your key at first boot. Stage 0 has its own prerequisites, listed on that page.
+
 For Raspberry Pi there are cloud-init examples in the repository that do all of this at first boot:
 
 - [`user-data.example`](https://github.com/chrisleekr/homelab-infrastructure/blob/main/stage1/cloud-init/raspberry-pi/user-data.example)
@@ -82,4 +84,4 @@ Full walkthrough: [Adding a worker node](../operations/adding-a-worker-node.md).
 
 ## Next
 
-[Stage 0: environment and secrets](environment.md)
+[Environment and secrets](environment.md)

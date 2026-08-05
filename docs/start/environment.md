@@ -1,4 +1,4 @@
-# Stage 0: environment and secrets
+# Environment and secrets
 
 No secrets live in this repository. They live in Bitwarden Secrets Manager and are injected into the tooling container at runtime.
 
@@ -16,7 +16,7 @@ sequenceDiagram
     C->>BWS: authenticate with BWS_ACCESS_TOKEN
     BWS-->>C: secrets for BWS_PROJECT_ID
     Note over C: exported as environment variables
-    C->>Tools: inventory.yml reads them with an env lookup;<br/>Terraform maps TF_VAR_* onto the variables.tf inputs
+    C->>Tools: inventory.yml reads them with an env lookup.<br/>Terraform maps TF_VAR_* onto the variables.tf inputs
 ```
 
 ## 1. Create the `.env`

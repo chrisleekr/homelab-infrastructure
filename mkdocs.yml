@@ -106,10 +106,16 @@ nav:
   - Get started:
       - start/index.md
       - Prerequisites: start/prerequisites.md
-      - "Stage 0: environment and secrets": start/environment.md
+      - Environment and secrets: start/environment.md
       - "Stage 1: provision the cluster": start/provision-cluster.md
       - "Stage 2: deploy the platform": start/deploy-platform.md
       - Verify the install: start/verify.md
+  # Optional and off by default. Stage 0 creates cloud machines; stage 1 assumes a host
+  # already exists, so a LAN-only cluster never touches this section.
+  - Cloud (Stage 0):
+      - stage0/index.md
+      - Architecture: stage0/architecture.md
+      - Oracle Cloud free tier: stage0/oci-freetier.md
   - Cluster (Stage 1):
       - stage1/index.md
       - Architecture: stage1/architecture.md
@@ -120,6 +126,7 @@ nav:
       - Roles:
           - stage1/roles/index.md
           - host_setup: stage1/roles/host-setup.md
+          - tailscale_node: stage1/roles/tailscale-node.md
           - kubeadm_pre_setup: stage1/roles/kubeadm-pre-setup.md
           - kubeadm_node: stage1/roles/kubeadm-node.md
           - kubeadm_server: stage1/roles/kubeadm-server.md
@@ -152,7 +159,8 @@ nav:
           - Datadog: stage2/datadog.md
       - Access and networking:
           - OAuth2 Proxy: stage2/auth.md
-          - VPN: stage2/vpn.md
+          - Tailscale: stage2/tailscale.md
+          - WireGuard: stage2/wireguard.md
           - Cloudflare Tunnel: stage2/cloudflare-tunnel.md
       - Cluster utilities:
           - Stakater Reloader: stage2/stakater-reloader.md
@@ -164,6 +172,7 @@ nav:
       - operations/index.md
       - Kubernetes upgrades: operations/kubernetes-upgrades.md
       - Adding a worker node: operations/adding-a-worker-node.md
+      - Oracle free tier worker: operations/oracle-free-tier-worker.md
       - Bitwarden secrets: operations/bitwarden-secrets.md
       - Troubleshooting: operations/troubleshooting.md
   - Reference:

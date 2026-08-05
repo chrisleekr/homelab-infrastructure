@@ -62,16 +62,23 @@ The interpreter is pinned explicitly here. Workers deliberately do **not** pin i
 ]
 ```
 
-| Key | Required | Default |
-|---|---|---|
-| `name` | yes | n/a (becomes the Kubernetes node name) |
-| `host` | yes | n/a |
-| `user` | no | `ubuntu` |
-| `port` | no | `22` |
-| `taints` | no | `worker_default_taints` |
-| `labels` | no | `{}` |
+| Key | Required | Default | Purpose |
+|---|---|---|---|
+| `name` | yes | n/a | Ansible inventory name, **and** the Kubernetes node name via `nodeRegistration.name` |
+| `host` | yes | n/a | Address Ansible connects to |
+| `user` | no | `ubuntu` | SSH user, needs passwordless sudo |
+| `port` | no | `22` | SSH port |
+| `taints` | no | `worker_default_taints` | An explicit `[]` means schedulable and survives the default |
+| `labels` | no | `{}` | Node labels, applied from the control plane after join |
+| `node_ip` | no | host's default IPv4 | Address kubelet registers as the Node `InternalIP`. Cloud workers set their tailnet address, the only one other nodes can route to |
+| `snapd_purge` | no | `true` | `false` preserves a cloud provider's agent snap. OCI ships the Oracle Cloud Agent this way, and it reports the memory metric idle reclamation measures |
+| `tailscale_hostname_suffix` | when `tailscale_node_enable` | none | Appended to `hostname_prefix` for the tailnet machine name. The role fails before joining rather than registering a bare `<prefix>-` |
 
 Unset or `[]` leaves the cluster single-node.
+
+For a cloud worker, `task stage0:terraform:output` emits the object ready to paste, with `snapd_purge`, the taint and the labels already set. Only `node_ip` has to be filled in by hand, because Terraform does not know the tailnet address. See [Oracle free tier worker](../operations/oracle-free-tier-worker.md).
+
+`tailscale_hostname_suffix` is absent from that object on purpose. A cloud worker is already on the tailnet from its own cloud-init, so the `tailscale_node` role skips its join block entirely and never reaches the suffix check. It is needed only if such a node is later logged out, and re-joining through the role runs `tailscale up --reset`, which drops the `--accept-routes` a cloud node depends on.
 
 !!! warning "`taints: []` means schedulable, and that is fragile"
 

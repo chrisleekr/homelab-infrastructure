@@ -8,7 +8,7 @@ terraform {
     workspaces {
       # Using tags instead of prefix for better workspace management
       # Existing workspaces with "homelab-" prefix will need to be tagged
-      tags = ["homelab"]
+      tags = ["homelab", "stage2"]
     }
   }
 }
