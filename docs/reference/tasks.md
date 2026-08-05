@@ -14,7 +14,7 @@ task --list-all      # including the undescribed ones
 ## Repository setup
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `task repo:setup:mac` | Homebrew prerequisites, macOS only |
 | `task repo:setup` | `pre-commit autoupdate`, Ansible Galaxy collections, Python requirements |
 | `task precommit` | `pre-commit run --all-files`. Run before every commit. |
@@ -24,7 +24,7 @@ task --list-all      # including the undescribed ones
 Host-only: the image has no Docker CLI.
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `task docker:build` | Build the Alpine tooling image. Accepts CLI args, e.g. `-- --no-cache`. |
 | `task docker:run` | Start the container with the repo and kubeconfig mounted |
 | `task docker:exec` | Start if needed, then drop into bash |
@@ -33,7 +33,7 @@ Host-only: the image has no Docker CLI.
 ## Documentation
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `task docs:install` | Create `.venv-docs/` from `docs/requirements.txt`. Re-runs only when the pin file changes. |
 | `task docs:serve` | Live-reload server on <http://127.0.0.1:8000> |
 | `task docs:build` | `mkdocs build --strict`. Any warning is an error, so this is the link checker. |
@@ -42,16 +42,31 @@ Host-only: the image has no Docker CLI.
 ## Versions
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `task versions:check` | Report newer tool and Alpine package versions available |
 | `task versions:bump` | Apply them to the `Dockerfile`, then regenerate the docs version tables |
 
 See [Version pins](versions.md).
 
+## Stage 0: Terraform
+
+Optional. Only relevant when provisioning cloud machines. See [Cloud (Stage 0)](../stage0/index.md).
+
+| Command | Does |
+| --- | --- |
+| `task stage0:terraform:init` | `terraform init` and select the `homelab-stage0` workspace |
+| `task stage0:terraform:plan` | |
+| `task stage0:terraform:apply` | |
+| `task stage0:terraform:apply:retry` | Apply through `scripts/oci-apply-retry.sh`, looping while Oracle reports out of host capacity |
+| `task stage0:terraform:output` | Print the `worker_hosts_json` entries for every provisioned node |
+| `task stage0:terraform:init:lock` | Regenerate provider lock files with `darwin_arm64`, `linux_amd64` and `linux_arm64` hashes |
+
+One workspace holds every cloud account, so these take no account argument. A single apply provisions all of them, see [the account model](../stage0/architecture.md#the-account-model).
+
 ## Stage 1: Ansible
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `task stage1:test` | Static assertion of the kubeadm upgrade ordering. No cluster, no network. |
 | `task stage1:ansible:syntax` | Parse every play and role without connecting |
 | `task stage1:ansible:ping` | Verify SSH reachability of every host |
@@ -64,8 +79,8 @@ All but `stage1:test` and `stage1:ansible:syntax` need SSH access. The two `play
 ## Stage 2: Terraform
 
 | Command | Does |
-|---|---|
-| `task stage2:terraform:init` | `terraform init` and select the `homelab-k8s` workspace |
+| --- | --- |
+| `task stage2:terraform:init` | `terraform init` and select the `homelab-stage2` workspace |
 | `task stage2:terraform:init:upgrade` | Upgrade providers within their constraints, in the root and every child module |
 | `task stage2:terraform:init:lock` | Regenerate provider lock files with `darwin_arm64` and `linux_amd64` hashes |
 | `task stage2:terraform:plan` | |
@@ -74,4 +89,6 @@ All but `stage1:test` and `stage1:ansible:syntax` need SSH access. The two `play
 
 !!! warning "`init:lock` must run inside the container"
 
-    It first deletes darwin-built provider caches from the child modules, because they cannot be used inside a `linux_amd64` container. Producing both platforms' hashes is what lets the same lock file work on macOS and in CI.
+    Both variants first delete darwin-built provider caches, because a cache built on the host cannot be used inside the container. Stage 2 locks two platforms; stage 0 locks three, adding `linux_arm64` for the tooling container on an Apple Silicon Mac. A lock file missing the platform it runs on fails `terraform_validate`, which uses `-lockfile=readonly` and so cannot record the missing hash.
+
+    Stage 0 also deletes the root's own `.terraform` and runs `terraform init -backend=false` before locking, because the root lock must cover the child module's provider requirements and `providers lock` does not install modules on its own.

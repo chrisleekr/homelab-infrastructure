@@ -14,3 +14,12 @@ nodeRegistration:
   # Taints are applied by kubelet at registration, so there is no window in which a pod
   # can be scheduled here before the node is tainted. An empty list means schedulable.
   taints: {{ kubeadm_agent_taints | to_json }}
+{% if kubeadm_node_node_ip %}
+  # Cloud workers are reached over the tailnet. Left unset, kubelet registers the provider's
+  # private address, which no other node can route to, so kubectl logs, exec and metrics all
+  # break. kubeadm_node also pins this in /etc/default/kubelet, which is what keeps it after
+  # a restart; this only covers the join itself.
+  kubeletExtraArgs:
+    - name: node-ip
+      value: "{{ kubeadm_node_node_ip }}"
+{% endif %}

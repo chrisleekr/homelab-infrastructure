@@ -3,8 +3,13 @@
   ansible.builtin.include_tasks: install-packages.yml
   tags: [packages]
 
+# Gated at the include, not inside the file. remove-snapd.yml guards its purge blocks with
+# host_setup_snapd_purge, but "Shutdown services, sockets and timers" runs unconditionally
+# and would stop and disable snapd.service. On OCI Ubuntu images the Oracle Cloud Agent is
+# a snap, and it reports the memory metric that idle reclamation measures.
 - name: Remove snapd
   ansible.builtin.include_tasks: remove-snapd.yml
+  when: host_setup_snapd_purge | bool
   tags: [packages]
 
 - name: Update /etc/hosts

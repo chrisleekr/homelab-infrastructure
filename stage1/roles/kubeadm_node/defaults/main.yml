@@ -10,3 +10,16 @@ kubeadm_node_drain_timeout: 300s
 # plus CNI re-attach, otherwise a healthy node is reported as failed.
 kubeadm_node_wait_ready_retries: 30
 kubeadm_node_wait_ready_delay: 10
+
+# Never left empty. kubelet with no --node-ip falls back to resolving its own node name
+# through the host resolver, and MagicDNS answers for tailnet names, so a node whose
+# Kubernetes name matches its tailnet name would register a 100.64.0.0/10 address and move
+# every pod's cross-node path onto a 1280-MTU tunnel. A cloud worker sets node_ip in
+# worker_hosts_json because its tailnet address is the only one other nodes can route to; a
+# LAN node pins the address it already uses.
+kubeadm_node_node_ip: "{{ node_ip | default(ansible_facts['default_ipv4']['address'], true) }}"
+
+# kubeadm's systemd drop-in sources this and appends $KUBELET_EXTRA_ARGS to ExecStart last,
+# so it wins over the --node-ip kubeadm writes into kubeadm-flags.env. It also survives
+# `kubeadm upgrade`, which regenerates kubeadm-flags.env.
+kubeadm_node_kubelet_env_path: /etc/default/kubelet

@@ -6,6 +6,7 @@ Runbooks for a cluster that already exists.
 |---|---|
 | [Kubernetes upgrades](kubernetes-upgrades.md) | Moving the cluster to a new Kubernetes minor or patch |
 | [Adding a worker node](adding-a-worker-node.md) | Growing the cluster |
+| [Oracle free tier worker](oracle-free-tier-worker.md) | Adding or removing a cloud node created by Stage 0 |
 | [Bitwarden secrets](bitwarden-secrets.md) | Adding, rotating or debugging a secret |
 | [Troubleshooting](troubleshooting.md) | Something is broken |
 

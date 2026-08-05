@@ -1,0 +1,17 @@
+---
+# Runs on the control plane and on every worker, because both need it: play 2 puts a
+# tailscale0 on every cluster host, and kubelet with no --node-ip re-derives its address on
+# every restart. The join config pins it only at join time, so a node that joined before
+# this existed would keep re-detecting.
+#
+# This task owns the KUBELET_EXTRA_ARGS line outright rather than merging into it. The file
+# is kubeadm's, ships empty, and a second writer would make the effective flag set depend on
+# task order.
+- name: Pin kubelet to the node IP
+  ansible.builtin.lineinfile:
+    path: "{{ kubeadm_node_kubelet_env_path }}"
+    regexp: '^KUBELET_EXTRA_ARGS='
+    line: 'KUBELET_EXTRA_ARGS="--node-ip={{ kubeadm_node_node_ip }}"'
+    create: true
+    mode: "0644"
+  notify: Restart kubelet

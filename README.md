@@ -12,8 +12,9 @@
 
 ## Overview
 
-A two-stage infrastructure-as-code solution for provisioning a single-node Kubernetes cluster and deploying a complete application stack on it.
+Infrastructure-as-code for provisioning a single-node Kubernetes cluster and deploying a complete application stack on it.
 
+- **Stage 0 (Terraform, optional)**: Oracle Cloud Always Free ARM machines joined to a tailnet as workers
 - **Stage 1 (Ansible)**: server hardening and Kubernetes bootstrap via kubeadm, k3s or minikube
 - **Stage 2 (Terraform)**: 19 modules, including GitLab, ArgoCD, monitoring, logging, storage, VPN, ingress
 - **Containerised tooling**: one Alpine image with kubectl, helm, terraform, ansible and bws
@@ -28,7 +29,8 @@ Supported platforms:
 
 | Section | Covers |
 |---------|--------|
-| [Get started](docs/start/index.md) | Prerequisites, secrets, both stages, verification |
+| [Get started](docs/start/index.md) | Prerequisites, secrets, every stage, verification |
+| [Cloud (Stage 0)](docs/stage0/index.md) | Optional cloud workers: architecture, Oracle Always Free, account setup |
 | [Cluster (Stage 1)](docs/stage1/index.md) | Architecture, the `site.yml` plays, inventory, tags, handlers, all 10 roles |
 | [Platform (Stage 2)](docs/stage2/index.md) | All 19 Terraform modules and the dependency graph |
 | [Operations](docs/operations/index.md) | Kubernetes upgrades, adding a worker, secrets, troubleshooting |

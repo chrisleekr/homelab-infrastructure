@@ -16,6 +16,7 @@ This document provides essential context for AI models interacting with this cod
 | Task | Location | Pattern |
 |------|----------|---------|
 | Add Terraform module | `stage2/<name>/` | Create `*.tf`, add to `main.tf` with dependencies |
+| Add stage0 cloud provider | `stage0/<provider>/` | Create `*.tf`, add an account map to `stage0/variables.tf`, add a `module` block to `stage0/main.tf` gated on map membership, add `docs/stage0/<provider>.md` |
 | Add Helm chart | Module's `.tf` | Use `helm_release` resource with version pinning |
 | Add Ansible role | `stage1/roles/<role>/` | Create `tasks/main.yml`, `defaults/main.yml`, `templates/` |
 | Add variable | `stage2/variables.tf` | Include type, description, default, validation |
@@ -60,6 +61,7 @@ Default to terse. Comments and docs explain WHY; the code already shows WHAT. Pr
 
 - **GitLab AMD64 only**: Check `host_machine_architecture` variable; GitLab skipped on ARM64
 - **Module dependencies**: Defined in `stage2/main.tf` - respect `depends_on` chains
+- **stage0 is optional**: a separate root, one Terraform Cloud workspace `homelab-stage0` holding every cloud account, each selected in code by an aliased provider and a module block. A LAN-only cluster never runs it. New Terraform directories need a committed `.terraform.lock.hcl` covering every platform that stage locks (stage0 locks three, including `linux_arm64`)
 - **Validation**: Always run `task precommit` before suggesting commits
 - **Secrets**: Never hardcode; store in Bitwarden Secrets Manager (see docs/operations/bitwarden-secrets.md), injected at runtime; `.env` holds only the bws bootstrap values, `BWS_ACCESS_TOKEN` and the optional `BWS_PROJECT_ID`
 - **Pre-commit hooks**: ansible-lint, terraform_fmt, terraform_validate, trivy, gitleaks

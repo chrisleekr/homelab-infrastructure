@@ -37,6 +37,10 @@ host_setup_ufw_rules:
   - rule: limit
     port: "{{ lookup('env', 'wireguard_port') or 51820 }}"
     proto: udp
+
+# Empty by default: a LAN-only cluster has no tailnet and needs none of these. Set on
+# cluster hosts only when tailscale_node_enable is true.
+host_setup_ufw_tailnet_ports: []
 # Finish: ufw
 
 # Start: fail2ban
@@ -53,6 +57,14 @@ host_setup_fail2ban_ignoreips:
   - 192.168.0.0/16
   - 10.0.0.0/8
   - 172.16.0.0/12
+  # Tailnet, CGNAT space, not covered by the RFC1918 entries above. The whole /10, because
+  # Tailscale allocates across it: this cluster's nodes sit in 100.68/16 and 100.70/16.
+  # https://tailscale.com/docs/reference/ip-pool
+  #
+  # The trade is deliberate: every tailnet device, not only cluster nodes, gets unlimited SSH
+  # attempts against every host. SSH is key-only, so this removes a rate limit rather than an
+  # authentication control, and the tailnet ACL is what decides who can reach port 22 at all.
+  - 100.64.0.0/10
 host_setup_fail2ban_bantime: 600
 host_setup_fail2ban_bantime_factor: 24
 host_setup_fail2ban_bantime_maxtime: 5w

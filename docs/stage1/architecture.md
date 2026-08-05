@@ -1,4 +1,4 @@
-# Stage 1 architecture
+# Cluster architecture
 
 ## The node stack
 
@@ -107,3 +107,26 @@ Eight `tasks_from:` call sites in total: three from `upgrade-control-plane.yml`,
 - **UFW** runs on every host in the `cluster` group. It rate-limits port 22 and opens the actual `ansible_port`, so a non-standard SSH port keeps working.
 
 Cilium carries two independent pins, `cilium_version` and `cilium_cli_version`. See [Version pins](../reference/versions.md) for why they must not be compared to each other.
+
+### MTU and the Cilium pin
+
+`cilium_mtu` in `stage1/inventories/inventory.yml` is pinned at `1500`, the LAN NIC MTU, from which Cilium derives a 1450-byte pod route MTU. It is pinned rather than auto-detected, and the reason is specific.
+
+Detection follows the lowest-MTU device on the host and re-runs at runtime. `tailscale0` is 1280, so the moment the [`tailscale_node`](roles/tailscale-node.md) role runs, detection would drag every pod in the cluster down to 1230, whether or not any worker is actually reached over Tailscale. Pods could then no longer emit cloudflared's 1308-byte QUIC Initial, and every tunnel handshake would time out.
+
+The value is cluster-wide, so the lowest path between any two nodes wins.
+
+!!! warning "Unresolved: a tailnet-reached worker does not fit the pin"
+
+    A [Stage 0 cloud worker](../stage0/index.md) is reached over the tailnet, where the path is 1280. Pod traffic to it above roughly 1230 bytes therefore has nowhere to go, and the failure mode is a stall rather than an error.
+
+    Dropping `cilium_mtu` to `1230` cluster-wide is not available: that is the exact breakage the pin exists to prevent. The remaining options are to raise the Tailscale MTU above 1280 and set `cilium_mtu` to match, which depends on the real path MTU between home and the cloud provider and is unverified here, or to keep the cloud node off any path carrying large pod-to-pod payloads.
+
+    **Neither is chosen yet. Decide before relying on a cloud node for real traffic.** How to provoke the failure deliberately is step 7 of the [Oracle free tier worker](../operations/oracle-free-tier-worker.md#7-check-mtu-across-the-tunnel) runbook.
+
+Cilium reads MTU once at agent start, and `cilium upgrade` carries an existing value forward but never introduces a new one. Changing it on a live cluster therefore takes both of these:
+
+```bash
+cilium upgrade --version <cilium_version> --wait --helm-set MTU=<value>
+kubectl -n kube-system rollout restart ds/cilium
+```

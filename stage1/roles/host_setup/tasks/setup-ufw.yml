@@ -43,6 +43,28 @@
     port: "443"
     proto: tcp
 
+# Before the operator-editable rules below, per the first-match-wins note above: a `deny` on
+# one of these ports added to host_setup_ufw_rules would otherwise shadow them silently.
+#
+# The tailnet is 100.64.0.0/10, CGNAT space, so the RFC1918 allows above do not cover it and
+# every Kubernetes port from a tailnet peer is dropped. Named ports rather than
+# `allow in on tailscale0`, so a tailnet device reaches these four and nothing else.
+#
+# UFW is not the boundary here. 8472/udp is VXLAN, which authenticates nothing and hands the
+# inner frame straight to the pod network, and every tailnet device can reach this interface.
+# The tailnet policy file scoping tag:k8s-node is what actually constrains the peer set.
+#
+# Add-only. Setting tailscale_node_enable back to false leaves these rules in place, matching
+# the tailscale_node role, which also never un-joins a node it has joined.
+- name: Allow Kubernetes ports from the tailnet
+  community.general.ufw:
+    rule: allow
+    interface: tailscale0
+    direction: in
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop: "{{ host_setup_ufw_tailnet_ports }}"
+
 - name: Allow defined rules
   community.general.ufw:
     rule: "{{ item.rule }}"

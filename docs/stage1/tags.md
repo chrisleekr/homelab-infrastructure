@@ -13,6 +13,7 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
 |---|---|
 | `always` | Play 1, worker registration. Runs regardless of `--tags`, so the `agent` group is always populated. |
 | `host_setup` | Play 2, the whole `host_setup` role |
+| `tailscale_node` | Play 2, the `tailscale_node` role. A no-op unless `tailscale_node_enable` is true |
 | `kubeadm` | The kubeadm block in play 3, plus postflight verification in play 5 |
 | `k3s` | The k3s block in play 3 |
 | `minikube` | The minikube block in play 3 |

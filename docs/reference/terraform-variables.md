@@ -18,7 +18,7 @@ Variables are prefixed by the module that consumes them.
 | `minio_*` | 9 | [minio-object-storage](../stage2/minio-object-storage.md) |
 | `auth_*` | 7 | [auth](../stage2/auth.md) |
 | `elasticsearch_*`, `kibana_*` | 10 | [logging](../stage2/logging.md) |
-| `wireguard_*`, `tailscale_*` | 9 | [vpn](../stage2/vpn.md) |
+| `wireguard_*`, `tailscale_*` | 8 | [tailscale](../stage2/tailscale.md), [wireguard](../stage2/wireguard.md) |
 | `datadog_*` | 5 | [datadog](../stage2/datadog.md) |
 | `cloudflare_*` | 5 | [cloudflare-tunnel](../stage2/cloudflare-tunnel.md) |
 | `nginx_*`, `ingress_*` | 5 | [nginx](../stage2/nginx.md) |
@@ -54,6 +54,7 @@ GitLab has no flag. It is gated on `host_machine_architecture == "amd64"`.
 |---|---|
 | `host_machine_architecture` | Gates GitLab; also read by Stage 1 |
 | `container_*` | Shared image registry and pull settings |
+| `hostname_prefix` | Tailnet machine names in the [vpn](../stage2/tailscale.md) module. Deliberately not prefixed by a module: Stage 0 and Stage 1 read the same value, so every device sorts together in the tailnet |
 
 ## Conventions
 

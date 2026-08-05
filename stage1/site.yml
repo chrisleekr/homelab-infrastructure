@@ -21,6 +21,14 @@
         # silently reimpose the default, making an untainted worker inexpressible.
         node_taints: "{{ item.taints | default(worker_default_taints) }}"
         node_labels: "{{ item.labels | default({}) }}"
+        # Cloud workers only. node_ip pins kubelet to the tailnet address. snapd_purge
+        # false preserves the Oracle Cloud Agent snap, which is what reports the A1 memory
+        # metric that idle reclamation measures.
+        node_ip: "{{ item.node_ip | default('') }}"
+        host_setup_snapd_purge: "{{ item.snapd_purge | default(true) }}"
+        # Tailnet name suffix, appended to the shared hostname prefix. Required whenever
+        # tailscale_node_enable is true; the role fails fast rather than joining as "<prefix>-".
+        tailscale_hostname_suffix: "{{ item.tailscale_hostname_suffix | default('') }}"
       loop: "{{ worker_hosts_json }}"
       loop_control:
         label: "{{ item.name }}"
@@ -38,6 +46,12 @@
   roles:
     - role: host_setup
       tags: [host_setup]
+    # After host_setup, so the firewall is in a known state before the node joins a mesh.
+    # The tailnet UFW rules host_setup writes reference tailscale0 before it exists, which
+    # iptables accepts. Runs on every cluster node: Cilium is a full node-to-node VXLAN
+    # mesh, so the workers need a path to the cloud nodes as much as the control plane does.
+    - role: tailscale_node
+      tags: [tailscale_node]
   handlers:
     - name: Fail2ban handlers
       ansible.builtin.import_tasks:

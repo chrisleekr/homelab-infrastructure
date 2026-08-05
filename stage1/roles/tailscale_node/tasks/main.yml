@@ -1,0 +1,134 @@
+---
+- name: Configure host Tailscale
+  when: tailscale_node_enable | bool
+  block:
+    # tailscaled writes this on its first run and keeps it through a logout, so its absence
+    # is the one reliable "this host has never joined" signal. It is also the gate for the
+    # status read below, since a host with no state file has no tailscale binary either.
+    - name: Check whether this node has ever joined the tailnet
+      ansible.builtin.stat:
+        path: "{{ tailscale_node_state_path }}"
+      register: tailscale_node_state_file
+
+    # --json, not bare `status`, because the exit code cannot tell "never joined" from
+    # "joined, currently down": `tailscale status` exits 1 for Stopped and NeedsMachineAuth
+    # as well as NeedsLogin. --json exits 0 in every backend state and puts the distinction
+    # in BackendState.
+    - name: Read the Tailscale backend state
+      ansible.builtin.command: tailscale status --json
+      register: tailscale_node_status
+      changed_when: false
+      failed_when: false
+      when: tailscale_node_state_file.stat.exists
+
+    # Join once, never reconcile. Runs in exactly two states: the host has never joined, or
+    # it joined and is now logged out. Everything else is left alone,
+    # including a node whose tailscaled is merely stopped, awaiting device approval, or dead
+    # (empty stdout). Cloud workers come up from their own cloud-init with a flag set of
+    # their own, and `tailscale up --reset` would wipe it, --accept-routes among it.
+    #
+    # Changing tags or routes on a joined node later is a deliberate manual
+    # `tailscale up --reset` on that host.
+    - name: Install and authenticate Tailscale
+      when: >-
+        not tailscale_node_state_file.stat.exists
+        or (tailscale_node_status.stdout | default('') | length > 0
+            and (tailscale_node_status.stdout | from_json).BackendState in ['NeedsLogin', 'NoState'])
+      block:
+        - name: Fail early when no auth key is available
+          ansible.builtin.fail:
+            msg: >-
+              tailscale_node_enable is true but tailscale_auth_key is empty. Generate a
+              pre-approved key tagged {{ tailscale_node_tags }} before running this play.
+          when: tailscale_node_auth_key | length == 0
+
+        # Without this the node would join as a bare "<prefix>-", and Tailscale would then
+        # suffix every subsequent node to keep names unique.
+        - name: Fail early when no hostname suffix is set
+          ansible.builtin.fail:
+            msg: >-
+              tailscale_hostname_suffix is empty for {{ inventory_hostname }}. Set it in the
+              inventory for the control plane, or per worker in worker_hosts_json.
+          when: tailscale_node_hostname_suffix | length == 0
+
+        - name: Add Tailscale apt keyring
+          ansible.builtin.get_url:
+            url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_facts['distribution_release'] }}.noarmor.gpg"
+            dest: "{{ tailscale_node_keyring_path }}"
+            mode: "0644"
+
+        - name: Add Tailscale apt repository
+          ansible.builtin.get_url:
+            url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_facts['distribution_release'] }}.tailscale-keyring.list"
+            dest: "{{ tailscale_node_repo_list_path }}"
+            mode: "0644"
+
+        - name: Install tailscale
+          ansible.builtin.apt:
+            name: tailscale
+            state: present
+            update_cache: true
+
+        - name: Enable and start tailscaled
+          ansible.builtin.service:
+            name: tailscaled
+            state: started
+            enabled: true
+
+        # The key goes through a file, never argv. /proc/<pid>/cmdline is world readable on a
+        # stock Ubuntu host, so `ps`, any unprivileged process and any process-accounting
+        # agent would read a key passed on the command line. no_log does not help: it
+        # redacts Ansible's output, not the kernel's. `file:` is Tailscale's documented form
+        # for a path to the secret. /run is tmpfs, so nothing survives a reboot either.
+        - name: Join the tailnet
+          block:
+            - name: Stage the auth key out of argv
+              ansible.builtin.copy:
+                content: "{{ tailscale_node_auth_key }}"
+                dest: "{{ tailscale_node_auth_key_path }}"
+                owner: root
+                group: root
+                mode: "0600"
+              no_log: true
+
+            # --hostname is explicit rather than left to the OS hostname. The stage2 vpn pod
+            # registers with a name of its own choosing, and whichever device joins second
+            # gets suffixed "-1" permanently, so the OS hostname is not collision-free.
+            # inventory_hostname is no help either, the control plane is `server_host`.
+            #
+            # Route advertisement needs net.ipv4.ip_forward=1, which kubeadm_pre_setup sets
+            # on every cluster node. On a host that has never been bootstrapped tailscale
+            # warns rather than fails, and the forward flag arrives before the node joins.
+            #
+            # --reset because `tailscale up` refuses to run when the prefs already on disk
+            # carry a non-default flag the command does not mention. A join that applied its
+            # prefs and then failed at authentication leaves exactly that state, and the
+            # stale pref is most likely --accept-routes, which is fatal on a node inside the
+            # vpn pod's advertised /24.
+            - name: Bring Tailscale up
+              ansible.builtin.command:
+                argv: "{{ ['tailscale', 'up', '--reset',
+                           '--auth-key=file:' ~ tailscale_node_auth_key_path,
+                           '--hostname=' ~ tailscale_node_hostname,
+                           '--advertise-tags=' ~ tailscale_node_tags,
+                           '--accept-dns=' ~ (tailscale_node_accept_dns | bool | ternary('true', 'false'))]
+                       + (['--accept-routes'] if tailscale_node_accept_routes | bool else [])
+                       + (['--advertise-routes=' ~ ansible_facts['default_ipv4']['address'] ~ '/32']
+                          if tailscale_node_advertise_self | bool else []) }}"
+              register: tailscale_node_up
+              failed_when: false
+              changed_when: tailscale_node_up.rc == 0
+
+            # An expired key, a spent one-off key and an undefined tag are all rc=1, so the
+            # stderr is the only thing that tells them apart. Nothing here is redacted: with
+            # the key in a file, it is not in argv and not in tailscale's output.
+            - name: Fail with the tailscale error
+              ansible.builtin.fail:
+                msg: "tailscale up failed (rc={{ tailscale_node_up.rc }}): {{ tailscale_node_up.stderr }}"
+              when: tailscale_node_up.rc != 0
+          always:
+            # `always`, so a failed join does not leave the key readable on disk.
+            - name: Remove the staged auth key
+              ansible.builtin.file:
+                path: "{{ tailscale_node_auth_key_path }}"
+                state: absent

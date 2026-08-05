@@ -81,7 +81,7 @@ sequenceDiagram
 ## Variables
 
 | Name | Description | Default |
-|------|-------------|---------|
+| ------ | ------------- | --------- |
 | `datadog_cluster_name` | Cluster identifier in Datadog | (required) |
 | `datadog_site` | Datadog site (e.g., datadoghq.com, datadoghq.eu) | (required) |
 | `datadog_api_key` | Datadog API key | (required, sensitive) |
@@ -102,7 +102,7 @@ Set in Terraform Cloud or `.env`:
 
 ```bash
 TF_VAR_datadog_enable=true
-TF_VAR_datadog_cluster_name="homelab-k8s"
+TF_VAR_datadog_cluster_name="homelab"
 TF_VAR_datadog_site="datadoghq.com"  # or datadoghq.eu for EU
 TF_VAR_datadog_api_key="your-api-key"
 TF_VAR_datadog_app_key="your-app-key"
@@ -130,7 +130,7 @@ task stage2:terraform:apply
 ## Features Enabled
 
 | Feature | Description |
-|---------|-------------|
+| --------- | ------------- |
 | Infrastructure Monitoring | Node, pod, and container metrics |
 | Log Collection | Container log aggregation |
 | APM | Distributed tracing (requires app instrumentation) |
@@ -141,7 +141,7 @@ task stage2:terraform:apply
 ## Datadog Sites
 
 | Site | URL | Region |
-|------|-----|--------|
+| ------ | ----- | -------- |
 | US1 | datadoghq.com | US |
 | US3 | us3.datadoghq.com | US |
 | US5 | us5.datadoghq.com | US |
@@ -158,6 +158,7 @@ Datadog pricing is based on:
 - Custom metrics
 
 For homelab use, consider:
+
 - Free tier: 5 hosts, limited retention
 - Reducing log volume with filtering
 - Disabling APM if not needed

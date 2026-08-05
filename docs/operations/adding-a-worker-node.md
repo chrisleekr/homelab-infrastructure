@@ -6,6 +6,7 @@ The join itself is generic: any Ubuntu machine reachable over SSH with passwordl
 
 - **Raspberry Pi**: start at step 1. After flashing, the only manual action is copying two files onto the SD card.
 - **Any other machine** (an amd64 mini-PC, a VM): install Ubuntu Server however you normally would, ensure SSH plus passwordless sudo for your user, then **skip to step 4**.
+- **A cloud machine**: this page does not apply. Stage 0 creates the host and puts it on the tailnet, and the ordering differs enough to warrant its own page. See [Oracle free tier worker](oracle-free-tier-worker.md).
 
 ## How it works
 
@@ -98,14 +99,12 @@ Set the `worker_hosts_json` secret in Bitwarden (raw JSON value, no `\"` escapin
 [{"name":"worker-01","host":"192.168.1.102","user":"ubuntu","labels":{"node.homelab/class":"low-power"}}]
 ```
 
-| Key | Required | Default | Notes |
-|---|---|---|---|
-| `name` | yes | n/a | Must match the cloud-init `hostname`. Becomes the Kubernetes node name. |
-| `host` | yes | n/a | IP or resolvable hostname. |
-| `port` | no | `22` | SSH port. Must match `ListenStream` in the seed. |
-| `user` | no | `ubuntu` | SSH user, needs passwordless sudo. |
-| `taints` | no | `worker_default_taints` | Per-node taints. `[]` means schedulable. |
-| `labels` | no | `{}` | Per-node labels, applied from the control plane. |
+Every key is documented in [Inventory and groups](../stage1/inventory.md#declaring-workers). Two of them have to agree with what you seeded in step 2:
+
+| Key | Must match |
+|---|---|
+| `name` | The cloud-init `hostname`. It also becomes the Kubernetes node name |
+| `port` | `ListenStream` in the seed |
 
 Adding a second worker means appending a second object. No YAML changes.
 
@@ -172,9 +171,14 @@ ssh -o PasswordAuthentication=no ubuntu@192.168.1.102 true && echo "key auth OK"
 
 # then disable password auth and lock the password
 sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config.d/*.conf 2>/dev/null
-echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/99-hardening.conf
+# 00-, not 99-: sshd takes the first value it reads for a keyword and expands Include
+# globs in lexical order, so a high number loses to cloud-init's own 50-cloud-init.conf.
+echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/00-hardening.conf
 sudo passwd -l ubuntu
 sudo systemctl restart ssh
+
+# confirm it actually took effect, rather than being shadowed by another drop-in
+sudo sshd -T | grep passwordauthentication   # must be no
 ```
 
 ## Changing the SSH port later

@@ -47,14 +47,17 @@ def run_checker(root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def build_fixture(root: Path, nav: str, pages: dict[str, str], modules=(), roles=()) -> None:
+def build_fixture(
+    root: Path, nav: str, pages: dict[str, str], modules=(), roles=(), providers=()
+) -> None:
     """Minimal repo-shaped tree: mkdocs.yml + docs/ + optional sources.
 
-    Both source roots are always created. check-docs.py treats a missing
-    stage2/ or stage1/roles as an error in its own right, so a fixture without
-    them would fail for a reason unrelated to what the test is asserting.
+    Every source root is always created. check-docs.py treats a missing
+    stage0/, stage2/ or stage1/roles as an error in its own right, so a fixture
+    without them would fail for a reason unrelated to what the test is asserting.
     """
     (root / "docs").mkdir(parents=True, exist_ok=True)
+    (root / "stage0").mkdir(parents=True, exist_ok=True)
     (root / "stage2").mkdir(parents=True, exist_ok=True)
     (root / "stage1" / "roles").mkdir(parents=True, exist_ok=True)
     (root / "mkdocs.yml").write_text(nav, encoding="utf-8")
@@ -67,6 +70,9 @@ def build_fixture(root: Path, nav: str, pages: dict[str, str], modules=(), roles
         (root / "stage2" / name / "main.tf").touch()
     for name in roles:
         (root / "stage1" / "roles" / name / "tasks").mkdir(parents=True, exist_ok=True)
+    for name in providers:
+        (root / "stage0" / name).mkdir(parents=True, exist_ok=True)
+        (root / "stage0" / name / "main.tf").touch()
 
 
 def test_clean_tree_passes() -> None:
@@ -113,6 +119,50 @@ def test_page_without_module_fails() -> None:
         check("names the stale page", "ghost.md" in result.stderr, result.stderr.strip())
 
 
+def test_split_module_requires_every_backend_page() -> None:
+    """Every slug under `split` is required, not one-of."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        build_fixture(
+            root,
+            nav="nav:\n  - Home: index.md\n  - Tailscale: stage2/tailscale.md\n",
+            pages={"index.md": "# Home\n", "stage2/tailscale.md": "# Tailscale\n"},
+            modules=("vpn",),
+        )
+        result = run_checker(root)
+        check("split module missing one backend page fails", result.returncode == 1)
+        check(
+            "names the missing backend page",
+            "docs/stage2/wireguard.md" in result.stderr,
+            result.stderr.strip(),
+        )
+
+
+def test_split_module_page_named_after_directory_is_stale() -> None:
+    """Splitting `vpn` retires docs/stage2/vpn.md; it no longer maps to anything."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        build_fixture(
+            root,
+            nav=(
+                "nav:\n  - Home: index.md\n"
+                "  - Tailscale: stage2/tailscale.md\n"
+                "  - WireGuard: stage2/wireguard.md\n"
+                "  - VPN: stage2/vpn.md\n"
+            ),
+            pages={
+                "index.md": "# Home\n",
+                "stage2/tailscale.md": "# Tailscale\n",
+                "stage2/wireguard.md": "# WireGuard\n",
+                "stage2/vpn.md": "# VPN\n",
+            },
+            modules=("vpn",),
+        )
+        result = run_checker(root)
+        check("page named after a split directory fails", result.returncode == 1)
+        check("names the stale page", "vpn.md" in result.stderr, result.stderr.strip())
+
+
 def test_page_on_disk_but_not_in_nav_fails() -> None:
     """Exercises the coverage `elif` branch, distinct from the orphan check."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -145,6 +195,51 @@ def test_role_slug_uses_dashes() -> None:
         )
         result = run_checker(root)
         check("role underscore maps to dashed page", result.returncode == 0, result.stderr.strip())
+
+
+def test_stage0_provider_requires_a_page() -> None:
+    """The rule that keeps stage0 extendability self-enforcing.
+
+    Adding a second cloud provider directory is meant to cost a docs page. Without
+    this the third COVERAGE_RULES entry could stop matching and the gate would pass
+    having checked nothing in stage0.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        build_fixture(
+            root,
+            nav="nav:\n  - Home: index.md\n",
+            pages={"index.md": "# Home\n"},
+            providers=("aws-freetier",),
+        )
+        result = run_checker(root)
+        check("stage0 provider with no page fails", result.returncode == 1)
+        check(
+            "names the missing stage0 page",
+            "docs/stage0/aws-freetier.md" in result.stderr,
+            result.stderr.strip(),
+        )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        # Carries both section_pages entries, so each exemption is asserted: without one
+        # of them that page reports as a provider with no source directory.
+        build_fixture(
+            root,
+            nav=(
+                "nav:\n  - Home: index.md\n  - Cloud: stage0/index.md\n"
+                "  - Arch: stage0/architecture.md\n  - OCI: stage0/oci-freetier.md\n"
+            ),
+            pages={
+                "index.md": "# Home\n",
+                "stage0/index.md": "# Cloud\n",
+                "stage0/architecture.md": "# Cloud architecture\n",
+                "stage0/oci-freetier.md": "# OCI free tier\n",
+            },
+            providers=("oci-freetier",),
+        )
+        result = run_checker(root)
+        check("stage0 provider with a page passes", result.returncode == 0, result.stderr.strip())
 
 
 def test_citation_outside_fence_fails_inside_fence_passes() -> None:

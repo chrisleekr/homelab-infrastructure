@@ -47,6 +47,35 @@ Labelling runs on **every** pass, not just on join, so relabelling an existing w
 
 The `changed_when` keys off `kubectl label` printing `not labeled` when the value is already set, which keeps re-runs honest.
 
+## The node IP is pinned, not detected
+
+`kubeadm_node_node_ip` is written into the join config as `kubeletExtraArgs: node-ip`. The reconcile into `/etc/default/kubelet` lives in [`kubeadm_node`](kubeadm-node.md), so the control plane gets the same pin. The join config alone would only cover the join, so a node that joined before the value existed keeps whatever kubelet detected and re-detects on every kubelet restart.
+
+A cloud worker sets `node_ip` in `worker_hosts_json`, because its tailnet address is the only one other nodes can route to. A LAN worker falls back to `ansible_facts.default_ipv4.address`, pinning the address it already uses.
+
+Confirm the pin took by reading the flag kubelet is actually running with, on the node:
+
+```bash
+sudo tr '\0' '\n' < /proc/$(pidof kubelet)/cmdline | grep -- --node-ip
+kubectl get node <name> -o jsonpath='{.status.addresses}'
+```
+
+!!! warning "`alpha.kubernetes.io/provided-node-ip` is not the check"
+
+    kubelet sets that annotation only when a cloud provider is configured, and deletes it otherwise. This cluster configures none, so it is absent on every node whether or not the pin is in place, and reading it during an incident points at a problem that is not there.
+
+!!! danger "Detection picks the tailnet address when the two names collide"
+
+    With no `--node-ip`, kubelet resolves its own node name through the host resolver to choose an address. MagicDNS answers for tailnet machine names, so this bites whenever a node's Kubernetes name and its tailnet name are the same string. They are independent today, `<prefix>-<suffix>` against the `name` from `worker_hosts_json`, but nothing keeps them apart and a cloud worker named after its tailnet machine is the obvious collision.
+
+    Cilium reads its VXLAN tunnel endpoint from the Node's `InternalIP`, so the whole cross-node pod datapath moves onto a 1280-MTU tunnel with nothing in the cluster changed to explain it. Small packets keep flowing, which is what makes it hard to spot: DNS answers fit, large responses and TLS handshakes do not.
+
+    The pin is the guard. `tailscale_node_accept_dns: false` removes the trigger, but only from the next `tailscale up`, so do not rely on it alone.
+
+!!! warning "The task owns the `KUBELET_EXTRA_ARGS` line"
+
+    It replaces the line rather than merging into it. Anything else that needs a kubelet flag has to go through `kubeadm_node_node_ip` or a second, differently-named variable, not a hand edit of `/etc/default/kubelet`.
+
 ## The rolling upgrade
 
 `upgrade-node.yml` is included last, so a worker that joined during this same run is already registered and labelled before anything considers draining it. It reaches into [`kubeadm_node`](kubeadm-node.md) five times:
@@ -77,6 +106,8 @@ Before draining, the worker reads `kubeadm_server_preflight_passed` off the cont
 | `kubeadm_agent_cri_socket` | containerd's CRI socket path |
 | `kubeadm_agent_taints` | Per-node, from `worker_hosts_json`'s `taints` key |
 | `kubeadm_agent_labels` | Per-node, from `worker_hosts_json`'s `labels` key |
+
+`kubeadm_node_node_ip` and `kubeadm_node_kubelet_env_path` are read from here but owned by [`kubeadm_node`](kubeadm-node.md).
 
 ## Re-run behaviour
 

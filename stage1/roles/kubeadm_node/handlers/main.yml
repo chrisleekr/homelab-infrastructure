@@ -1,0 +1,9 @@
+---
+# kubelet reports the new address on its next status sync, but Cilium reads the tunnel
+# endpoint from the Node object once at agent start, so the agents need a restart before the
+# datapath actually follows. That is left manual: it is a cluster-wide change, not something
+# a single node's play should trigger.
+- name: Restart kubelet
+  ansible.builtin.service:
+    name: kubelet
+    state: restarted

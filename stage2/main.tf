@@ -209,7 +209,7 @@ module "vpn" {
   tailscale_enable           = var.tailscale_enable
   tailscale_auth_key         = var.tailscale_auth_key
   tailscale_advertise_routes = var.tailscale_advertise_routes
-  tailscale_hostname         = var.tailscale_hostname
+  hostname_prefix            = var.hostname_prefix
 
   wireguard_enable       = var.wireguard_enable
   wireguard_ingress_host = var.wireguard_ingress_host

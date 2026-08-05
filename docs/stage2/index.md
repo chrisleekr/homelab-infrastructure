@@ -19,7 +19,6 @@ These have no `count`, so they deploy on every apply.
 | [Kubecost](monitoring-kubecost.md) | Cluster cost attribution |
 | [OAuth2 Proxy](auth.md) | Auth0-backed authentication in front of the web UIs |
 | [ArgoCD](argocd.md) | GitOps continuous deployment |
-| [VPN](vpn.md) | Tailscale and WireGuard |
 | [Stakater Reloader](stakater-reloader.md) | Restarts workloads when a Secret or ConfigMap changes |
 
 ## Gated modules
@@ -36,8 +35,10 @@ Controlled by an enable flag. The Terraform idiom is `count = var.<name>_enable 
 | [Sealed Secrets](bitnami-sealed-secrets.md) | `sealed_secrets_enable` | `true` |
 | [LiteLLM](litellm.md) | `litellm_enable` | `false` |
 | [OmniRoute](omniroute-gateway.md) | `omniroute_enable` | `false` |
+| [Tailscale](tailscale.md) | `tailscale_enable` | `false` |
+| [WireGuard](wireguard.md) | `wireguard_enable` | `false` |
 
-The [VPN](vpn.md) module has no module-level gate, so it is always in the plan and its `vpn` namespace is always created. The two backends are gated per resource by `tailscale_enable` and `wireguard_enable`, both `false` by default and independent of each other.
+The `stage2/vpn/` module has no module-level gate, so it is always in the plan and its `vpn` namespace is always created. Its two backends, [Tailscale](tailscale.md) and [WireGuard](wireguard.md), are gated per resource by `tailscale_enable` and `wireguard_enable`, both `false` by default and independent of each other.
 
 !!! warning "GitLab is AMD64 only"
 

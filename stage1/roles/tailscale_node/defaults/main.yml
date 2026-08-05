@@ -1,0 +1,57 @@
+---
+# Host-level Tailscale for node-to-node transport. Distinct from the stage2 vpn pod, which
+# does LAN access and exit-node duty. Default false: with the toggle off this role installs
+# nothing and a LAN-only cluster is byte-for-byte unchanged.
+tailscale_node_enable: '{{ lookup("env", "tailscale_node_enable") | default(false, true) | bool }}'
+
+# Pre-approved, short-expiry key tagged tailscale_node_tags. Required only on the first run
+# of a node; an already-joined node never reads it.
+tailscale_node_auth_key: '{{ lookup("env", "tailscale_auth_key") or "" }}'
+
+# Where the key is staged so it stays out of argv and therefore out of /proc/<pid>/cmdline.
+# tmpfs, and the join removes it either way.
+tailscale_node_auth_key_path: /run/tailscale-authkey
+
+# The --state path in tailscale's own systemd unit. Its absence is what the role reads as
+# "this host has never joined"; tailscaled keeps the file through a logout.
+tailscale_node_state_path: /var/lib/tailscale/tailscaled.state
+
+# The tailnet ACL scopes what this tag can reach. Joining untagged would put a cluster node
+# under the personal-device policy, which grants far more than 6443/10250/8472/4240.
+tailscale_node_tags: "tag:k8s-node"
+
+# Tailnet machine name, shared prefix plus a per-host suffix. The prefix is the same value
+# stage0 and stage2 use, so every device this homelab owns sorts together. Bitwarden supplies
+# the real one; `homelab` keeps a clone of this repo working unconfigured.
+tailscale_node_hostname_prefix: '{{ lookup("env", "hostname_prefix") or "homelab" }}'
+tailscale_node_hostname_suffix: "{{ tailscale_hostname_suffix | default('') }}"
+tailscale_node_hostname: "{{ tailscale_node_hostname_prefix }}-{{ tailscale_node_hostname_suffix }}"
+
+# Only correct for a node outside the LAN the stage2 vpn pod advertises. On a node inside
+# that /24 it routes the node's own directly-connected subnet through the tunnel, via a pod
+# running on itself, and the node loses its LAN path entirely. Tailscale documents the case
+# at https://tailscale.com/kb/1019/subnets under high availability. Cloud nodes need it to
+# reach the home nodes' /32s; they are already up from cloud-init, so in practice this stays
+# false for every node the role actually joins.
+tailscale_node_accept_routes: false
+
+# kubelet with no --node-ip resolves its own node name through the host resolver to choose a
+# node IP. MagicDNS answers for tailnet machine names, so the moment a node's Kubernetes name
+# and its tailnet name are the same string, that lookup returns the tailnet address and the
+# whole pod datapath moves onto the tunnel. The two names are independent here, the tailnet
+# name is <prefix>-<suffix> while kubeadm registers inventory_hostname, but nothing keeps
+# them apart and a cloud worker named after its tailnet machine is the obvious collision.
+# Tailscale defaults this on. kubeadm_agent and kubeadm_server pinning --node-ip is the real
+# guard; this removes the trigger.
+tailscale_node_accept_dns: false
+
+# Advertising the host's own address as a /32 wins longest-prefix over the vpn pod's /24,
+# so every node is reached directly rather than forwarded through the pod. Forwarding would
+# make return paths asymmetric and rp_filter would drop them.
+tailscale_node_advertise_self: true
+
+# The list file served by pkgs.tailscale.com hardcodes
+# signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg, so the keyring must land on
+# exactly this path or apt rejects the repository.
+tailscale_node_keyring_path: /usr/share/keyrings/tailscale-archive-keyring.gpg
+tailscale_node_repo_list_path: /etc/apt/sources.list.d/tailscale.list

@@ -5,6 +5,7 @@ This document covers common issues and their solutions.
 ## Table of Contents
 
 - [Development Environment](#development-environment)
+- [Stage 0: cloud workers](#stage-0-cloud-workers)
 - [Stage 1: Ansible](#stage-1-ansible)
 - [Stage 2: Terraform](#stage-2-terraform)
 - [Architecture Compatibility](#architecture-compatibility)
@@ -27,6 +28,24 @@ ssh-add
 ```
 
 This process is added to the `.bashrc` file and automatically executes when you launch the Docker container.
+
+## Stage 0: cloud workers
+
+### Traffic to a cloud pod stalls, small requests are fine
+
+Symptom: DNS answers and health checks work, then large responses and TLS handshakes hang with no error and nothing in the cluster changed to explain it. Only traffic crossing to a [Stage 0](../stage0/index.md) node is affected.
+
+Cause: the tailnet path is 1280 bytes while Cilium is pinned to a 1500-byte cluster MTU, so pod payloads above roughly 1230 bytes are black-holed rather than rejected. This is a known unresolved limit, not a misconfiguration.
+
+Confirm it with the probe in step 7 of the [Oracle free tier worker](oracle-free-tier-worker.md#7-check-mtu-across-the-tunnel) runbook. Background and the available options: [MTU and the Cilium pin](../stage1/architecture.md#mtu-and-the-cilium-pin).
+
+### A newly provisioned node never appears on the tailnet
+
+There is no way back into it. UFW closes before Tailscale is installed and the auth key is deleted whether the join succeeded or not, so a failed first boot leaves no reachable SSH path. Destroy and re-provision. Reasoning: [Stage 0 first boot](../stage0/architecture.md#first-boot).
+
+### `stage0_oci_accounts must contain an account1 entry`
+
+The top-level key in `TF_VAR_stage0_oci_accounts` is not exactly `account1`, or that secret did not inject. `stage0/providers.tf` looks the key up by that literal. A missing secret rather than a mis-keyed one reads `No value for required variable` instead. See [Confirm the credentials work](../stage0/oci-freetier.md#12-confirm-the-credentials-work).
 
 ## Stage 1: Ansible
 

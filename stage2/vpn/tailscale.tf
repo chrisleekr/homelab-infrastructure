@@ -120,12 +120,14 @@ resource "kubernetes_deployment_v1" "tailscale" {
 
           env {
             name  = "TS_EXTRA_ARGS"
-            value = "--advertise-tags=tag:kubernetes --accept-routes --advertise-exit-node --advertise-routes=${var.tailscale_advertise_routes}"
+            value = "--advertise-tags=tag:k8s-gateway --accept-routes --advertise-exit-node --advertise-routes=${var.tailscale_advertise_routes}"
           }
 
+          # Names the device for what it is, a gateway, rather than after the host it happens
+          # to run on. Naming it after the host makes the host itself lose the name.
           env {
             name  = "TS_HOSTNAME"
-            value = var.tailscale_hostname
+            value = "${var.hostname_prefix}-gateway"
           }
 
           env {

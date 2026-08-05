@@ -1,0 +1,92 @@
+#cloud-config
+# Managed by Terraform (stage0/oci-freetier). Runs once, before Ansible can reach the host.
+package_update: true
+packages:
+  - ufw
+  # Explicit rather than assumed: the rules.v4 baseline below is only a real boot-time
+  # guarantee if something loads it, and Canonical does not document this package as
+  # shipping on the OCI image.
+  - iptables-persistent
+
+write_files:
+  # REPLACE the image's rules, do not flush them. The OCI Ubuntu image ships a REJECT
+  # ruleset that stage1 cannot work through. Deny by default rather than accept: UFW
+  # rewrites these chains wholesale once it comes up, so this file only decides what
+  # happens when UFW does not, and on every reboot via netfilter-persistent.
+  #
+  # defer, because the iptables-persistent postinst runs `iptables-save > rules.v4`
+  # unconditionally when iptables-persistent/autosave_v4 is unset, and its debconf
+  # default is true. write_files is a Network-stage module and package installs are the
+  # first Final-stage module, so an undeferred write here is overwritten by the image's
+  # own ruleset before runcmd restores it. defer moves this to write_files_deferred,
+  # after the install and before runcmd.
+  - path: /etc/iptables/rules.v4
+    permissions: "0644"
+    defer: true
+    content: |
+      *filter
+      :INPUT DROP [0:0]
+      :FORWARD DROP [0:0]
+      :OUTPUT ACCEPT [0:0]
+      -A INPUT -i lo -j ACCEPT
+      -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      -A INPUT -i tailscale0 -p tcp --dport 22 -j ACCEPT
+      COMMIT
+  # 00-, not 99-: sshd takes the FIRST value it reads for a keyword and expands Include
+  # globs in lexical order, so a high number loses to cloud-init's own 50-cloud-init.conf.
+  - path: /etc/ssh/sshd_config.d/00-hardening.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      # Not redundant: UsePAM yes routes keyboard-interactive through PAM, which is a
+      # second password path that PasswordAuthentication alone does not close.
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+  # Keeps the key out of argv and out of /var/log/cloud-init-output.log, which records
+  # every runcmd verbatim. Same reason stage1's tailscale_node role stages it to a file.
+  # /run is tmpfs, and the file is removed once the join has been attempted.
+  - path: /run/tailscale-authkey
+    permissions: "0600"
+    content: ${jsonencode(tailscale_auth_key)}
+
+runcmd:
+  # One chained block with set -e, because cloud-init generates the runcmd script with no
+  # error handling: an unchained list would continue past a failed ufw and leave the host
+  # with no firewall at all, silently.
+  # No `ufw --force reset`: ufw is at installation defaults on a first boot anyway, and
+  # reset is the one command that would tear down the baseline just restored.
+  # Each ufw allow line below is emitted per CIDR, matching the NSG at FIRST BOOT ONLY.
+  # metadata is Updatable, so changing ssh_ingress_cidrs later moves the NSG without
+  # re-running cloud-init, and SSH then times out exactly as a correctly closed node does.
+  # Add the matching `ufw allow` on the node by hand, or re-provision.
+  - |
+    set -e
+    # Registered first, not next to `tailscale up`: cloud-init concatenates every runcmd
+    # entry into one script, so an EXIT trap set here fires however the script ends. Set
+    # later, a failure in the apt install would abort before it existed and strand the key.
+    trap 'rm -f /run/tailscale-authkey' EXIT
+    iptables-restore < /etc/iptables/rules.v4
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow in on tailscale0 to any port 22 proto tcp
+%{ for cidr in ssh_ingress_cidrs ~}
+    ufw allow from ${cidr} to any port 22 proto tcp
+%{ endfor ~}
+    ufw --force enable
+    systemctl restart ssh
+  # Signed apt repository rather than piping install.sh to a shell, matching how
+  # stage1's tailscale_node role installs it. noble tracks the 24.04 image pinned in
+  # compute.tf; both move together.
+  - |
+    set -e
+    curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg \
+      -o /usr/share/keyrings/tailscale-archive-keyring.gpg
+    curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list \
+      -o /etc/apt/sources.list.d/tailscale.list
+    apt-get update
+    apt-get install -y tailscale
+  # --accept-routes is required here and only here: a cloud node consumes the /32 each
+  # home node advertises. Home nodes must not set it, because accepting the vpn pod's
+  # /24 sends their own LAN through the tunnel. The key file is removed by the EXIT trap
+  # registered above, however this ends.
+  - tailscale up --auth-key=file:/run/tailscale-authkey --hostname='${tailscale_hostname}' --advertise-tags=tag:k8s-node --accept-routes

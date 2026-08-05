@@ -4,10 +4,6 @@ Stage 1 is Ansible. It takes a freshly installed Ubuntu host, hardens it, and tu
 
 Everything runs from one playbook, `stage1/site.yml`, driven by `stage1/inventories/inventory.yml`.
 
-```bash
-task stage1:ansible:playbook
-```
-
 ## What it produces
 
 | Layer | Component |
@@ -51,3 +47,4 @@ task stage1:ansible:playbook
 | Know what triggers a reboot | [Handlers](handlers.md) |
 | Read what a specific role does | [Roles](roles/index.md) |
 | Upgrade Kubernetes | [Kubernetes upgrades](../operations/kubernetes-upgrades.md) |
+| Look up a command | [Tasks](../reference/tasks.md) |

@@ -7,25 +7,21 @@
 variable "omniroute_enable" {
   description = "Enable the OmniRoute AI gateway deployment"
   type        = bool
-  default     = false
 }
 
 variable "omniroute_domain" {
   description = "Domain name for the OmniRoute ingress. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
   type        = string
-  default     = "omniroute.chrislee.local"
 }
 
 variable "omniroute_ingress_class_name" {
   description = "Ingress class name for the OmniRoute ingresses"
   type        = string
-  default     = "nginx"
 }
 
 variable "omniroute_ingress_enable_tls" {
   description = "Enable TLS on the OmniRoute ingresses. When true, cert-manager issues omniroute-tls from the letsencrypt-prod ClusterIssuer, annotated on the UI ingress only"
   type        = bool
-  default     = true
 }
 
 variable "omniroute_public_paths" {
@@ -72,19 +68,16 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.1.1"
 }
 
 variable "omniroute_image_tag" {
   description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.48-web) for web-cookie providers like gemini-web or claude-web"
   type        = string
-  default     = ""
 }
 
 variable "omniroute_storage_class_name" {
   description = "Storage class name for the OmniRoute SQLite persistent volume"
   type        = string
-  default     = "longhorn"
 }
 
 variable "omniroute_storage_size" {
@@ -104,7 +97,6 @@ variable "omniroute_initial_password" {
   description = "Initial dashboard admin password, injected as INITIAL_PASSWORD. Only used on first boot; change it from the dashboard afterwards. Generate with: openssl rand -base64 24"
   type        = string
   sensitive   = true
-  default     = ""
 
   validation {
     condition     = var.omniroute_initial_password == "" || length(var.omniroute_initial_password) >= 12
@@ -116,7 +108,6 @@ variable "omniroute_jwt_secret" {
   description = "Signs dashboard session tokens, injected as JWT_SECRET. Rotatable: rotating only logs users out. Generate with: openssl rand -hex 32"
   type        = string
   sensitive   = true
-  default     = ""
 
   validation {
     condition     = var.omniroute_jwt_secret == "" || length(var.omniroute_jwt_secret) >= 32
@@ -128,7 +119,6 @@ variable "omniroute_api_key_secret" {
   description = "Encrypts stored provider API keys, injected as API_KEY_SECRET. WRITE ONCE: rotating it makes every stored provider key permanently unreadable. Generate with: openssl rand -hex 32"
   type        = string
   sensitive   = true
-  default     = ""
 
   validation {
     condition     = var.omniroute_api_key_secret == "" || length(var.omniroute_api_key_secret) >= 32
@@ -140,7 +130,6 @@ variable "omniroute_storage_encryption_key" {
   description = "Encrypts the OmniRoute database at rest, injected as STORAGE_ENCRYPTION_KEY. WRITE ONCE: rotating it makes an already-encrypted database unreadable. Generate with: openssl rand -hex 32"
   type        = string
   sensitive   = true
-  default     = ""
 
   validation {
     condition     = var.omniroute_storage_encryption_key == "" || length(var.omniroute_storage_encryption_key) >= 32
@@ -151,5 +140,4 @@ variable "omniroute_storage_encryption_key" {
 variable "auth_oauth2_proxy_host" {
   description = "Hostname of the oauth2-proxy instance guarding the OmniRoute dashboard"
   type        = string
-  default     = ""
 }

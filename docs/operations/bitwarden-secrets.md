@@ -108,6 +108,49 @@ bws secret create TF_VAR_prometheus_grafana_domain "grafana.chrislee.local" "$BW
 | `host_machine_architecture` | | `amd64` (or `arm64`) | Build/target architecture |
 | `domain_host` | | `chrislee.local` | Base domain all service hostnames derive from |
 
+### Stage 0: cloud provisioning
+
+Only needed when provisioning cloud machines; stage 0 is a separate root that a LAN-only cluster never runs. The first four have no Terraform default, so running stage 0 without them fails the plan rather than producing an instance nothing can reach. [Account setup](../stage0/oci-freetier.md#account-setup) walks through obtaining every value below.
+
+| Variable | | Value / how to obtain | Purpose |
+|---|---|---|---|
+| `TF_VAR_stage0_oci_accounts` | | raw JSON object keyed by account label, see below | OCI accounts and their node lists |
+| `TF_VAR_stage0_oci_private_keys` | 🔑 | raw JSON object, same keys, PEM values | OCI API signing keys |
+| `TF_VAR_stage0_ssh_public_key` | | `cat ~/.ssh/id_rsa.pub` | Injected into every provisioned node for the `ubuntu` user. Required: an empty value fails the plan |
+| `TF_VAR_stage0_tailscale_auth_key` | 🔑 | admin console, tagged `tag:k8s-node` | Read by cloud-init on every node in the apply. Required: an empty value fails the plan. More than one node at a time needs a reusable key, see [Security posture](../stage0/oci-freetier.md#security-posture) |
+| `TF_VAR_stage0_ssh_ingress_cidrs` | | `[]` | Sources allowed to reach port 22 from the internet. Empty creates no rule. Entries must be IPv4 CIDRs of `/24` or narrower |
+| `TF_VAR_stage0_budget_enable` | | `false` | Meaningless on an unupgraded Always Free account, which cannot be charged |
+
+One key **must be exactly `account1`**, because `stage0/providers.tf` looks it up by that literal. A second account is one more object here keyed `account2`, plus the two blocks it needs in `stage0/`, described in [the account model](../stage0/architecture.md#the-account-model). One apply covers every account.
+
+```json
+{
+  "account1": {
+    "region": "ap-sydney-1",
+    "tenancy_ocid": "ocid1.tenancy.oc1..aaaaaaaa...",
+    "user_ocid": "ocid1.user.oc1..aaaaaaaa...",
+    "fingerprint": "a1:b2:c3:d4:e5:f6:07:18:29:3a:4b:5c:6d:7e:8f:90",
+    "compartment_ocid": "ocid1.compartment.oc1..aaaaaaaa...",
+    "nodes": {
+      "oci-worker-01": { "ocpus": 2, "memory_gbs": 12, "boot_disk_gbs": 100 }
+    }
+  }
+}
+```
+
+The three shape fields are optional and default to the values shown, so `"oci-worker-01": {}` is equivalent. Each node key becomes the instance name, the Tailscale hostname and the Kubernetes node name.
+
+The private key is multi-line, so build the JSON rather than pasting it. Run this on the host: the container's `$HOME` is a bind mount of `container/root`, so `~/.oci` is empty there.
+
+```bash
+bws secret create TF_VAR_stage0_oci_private_keys "$(python3 -c '
+import json, pathlib
+print(json.dumps({"account1": pathlib.Path.home().joinpath(".oci/oci_api_key.pem").read_text()}))
+')" "$BWS_PROJECT_ID"
+```
+
+`TF_VAR_stage0_oci_accounts` is deliberately **not** marked sensitive in Terraform. OCIDs and fingerprints are identifiers rather than secrets, and Terraform rejects `for_each` derived from a sensitive value, which the `nodes` map depends on.
+
 ### Stage 1: cluster / Ansible
 
 | Variable | | Value / how to obtain | Purpose |
@@ -124,6 +167,18 @@ bws secret create TF_VAR_prometheus_grafana_domain "grafana.chrislee.local" "$BW
 | `wireguard_port` | | `51820` | WireGuard listen port |
 | `docker_default_data_path` | | `/var/lib/docker` | Docker data root |
 | `etc_hosts_json` | | `[]` or raw JSON array | Extra `/etc/hosts` entries (raw JSON) |
+
+### Stage 1: Tailscale node transport (gate: `tailscale_node_enable`)
+
+Separate from the Stage 2 Tailscale block below, and the two keys are not interchangeable: this one must carry `tag:k8s-node`, the stage 2 one carries `tag:k8s-gateway`, and the tailnet ACL grants them different access. See [`tailscale_node`](../stage1/roles/tailscale-node.md) for how to generate the key.
+
+| Variable | | Value / how to obtain | Purpose |
+|---|---|---|---|
+| `tailscale_node_enable` | | `false` | Install host-level tailscaled on every cluster node |
+| `tailscale_auth_key` | 🔑 | admin console, tagged `tag:k8s-node` | Node join, read only on a node's first run |
+| `hostname_prefix` | | `homelab` | Prefix for tailnet machine names, no trailing dash |
+
+`hostname_prefix` is the stage 1 half of a value shared with stage 2's `TF_VAR_hostname_prefix` and stage 0. Keep the two in step; they are separate secrets only because stage 1 reads lowercase environment variables and Terraform reads `TF_VAR_*`. The per-device suffix is not a secret: the control plane's is set in `inventory.yml`, each worker's in `worker_hosts_json`, and the gateway's is fixed by the stage 2 module.
 
 ### Stage 2: Kubernetes / ingress
 
@@ -229,9 +284,13 @@ bws secret create TF_VAR_prometheus_grafana_domain "grafana.chrislee.local" "$BW
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_tailscale_enable` | | `false` | Enable Tailscale |
-| `TF_VAR_tailscale_auth_key` | 🔑 | tailscale.com/kb/1085/auth-keys | Node auth to the Tailnet |
+| `TF_VAR_tailscale_auth_key` | 🔑 | admin console, tagged `tag:k8s-gateway` | Gateway auth to the tailnet |
 | `TF_VAR_tailscale_advertise_routes` | | `192.86.0.0/24` | Subnet routes advertised |
-| `TF_VAR_tailscale_hostname` | | `tailscale-kubernetes` | Tailnet hostname |
+| `TF_VAR_hostname_prefix` | | `homelab` | Prefix for tailnet machine names, no trailing dash |
+
+The gateway registers as `<prefix>-gateway`, so the name is not separately configurable. Keep `TF_VAR_hostname_prefix` equal to stage 1's `hostname_prefix`.
+
+The key must be reusable, because the pod re-authenticates on every container start rather than only on first join, and it must be re-issued before it expires or the pod stops starting. See [issuing the auth key](../stage2/tailscale.md#issuing-the-auth-key) for the console procedure and the expiry trap.
 
 ### Stage 2: WireGuard (gate: `TF_VAR_wireguard_enable`)
 
