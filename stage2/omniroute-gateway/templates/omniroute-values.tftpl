@@ -36,14 +36,9 @@ auth:
 # runtime, native SQLite and off-heap stream buffers lives outside the cap and grows with concurrent
 # streams, so limits.memory below must clear the cap by several hundred MiB.
 #
-# OMNIROUTE_DISABLE_CREDENTIAL_HEALTH_CHECK stops the credential-health scheduler, the only
-# background caller of testSingleConnection(). It re-probes every provider connection 5 at a time
-# on a 5 min floor, doubled for OAuth and backed off to 2h after repeated failures, and each probe
-# bills a real upstream call and writes a "connection-test" row to the Logger tab. Not needed here:
-# a live request that fails auth already flips the connection through markAccountUnavailable(), and
-# the periodic probes burn free-tier provider quota. The flag is read once in
-# initCredentialHealthCheck(), so the chart's checksum/config annotation has to roll the pod for it
-# to take effect.
+# OMNIROUTE_DISABLE_CREDENTIAL_HEALTH_CHECK stops the background credential-health probes. They
+# bill a real upstream call per provider and burn free-tier quota to learn what a failing live
+# request already reports. The flag is read once at startup, so changing it must roll the pod.
 extraConfig:
   REQUIRE_API_KEY: "true"
   STORAGE_ENCRYPTION_KEY_VERSION: "v1"

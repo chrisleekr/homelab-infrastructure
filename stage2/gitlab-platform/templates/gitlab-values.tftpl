@@ -301,7 +301,8 @@ global:
     sessionStore:
       sessionCookieTokenPrefix: ""
   ## GitLab Runner
-  # The parent chart overrides gitlab-runner.runners.secret with this value.
+  # Feeds the parent chart's gitlab-runner.secret helper, which renames the child
+  # chart's token secret. It does not set gitlab-runner.runners.secret directly.
   runner:
     registrationToken:
       secret: ${gitlab_runner_token_secret}

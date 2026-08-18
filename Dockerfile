@@ -56,9 +56,9 @@ RUN set -eux; \
   && \
   \
   # Install kubectl
-  curl -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl && \
+  curl -fsSL https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl && \
   chmod +x /usr/local/bin/kubectl && \
-  kubectl version || true && \
+  kubectl version --client && \
   \
   # Install Helm - https://get.helm.sh/helm-v3.11.1-linux-arm64.tar.gz
   curl -L https://get.helm.sh/helm-v${HELM_VERSION}-linux-${TARGETARCH}.tar.gz | tar xz && \

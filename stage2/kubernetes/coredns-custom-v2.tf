@@ -165,7 +165,7 @@ EOF
 }
 
 # kubeadm creates this ConfigMap, so import it before the first Stage 2 apply:
-# terraform import 'module.kubernetes.kubernetes_config_map_v1.coredns[0]' kube-system/coredns
+# terraform -chdir=stage2 import 'module.kubernetes.kubernetes_config_map_v1.coredns[0]' kube-system/coredns
 resource "kubernetes_config_map_v1" "coredns" {
   count = var.kubernetes_cluster_type == "kubeadm" ? 1 : 0
 

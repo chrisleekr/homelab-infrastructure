@@ -144,9 +144,8 @@ resource "kubernetes_secret_v1" "rails_secret" {
     # matches what the gitlab-shared-secrets pre-upgrade hook writes back via
     # `kubectl apply` with stringData |- (which strips trailing newlines).
     # Without this, the secret reports a perpetual data diff on every plan.
-    # Byte-format and field order verified against gitlab chart 10.2.2
-    # (charts/shared-secrets/templates/_generate_secrets.sh.tpl). Re-verify
-    # if the chart version in gitlab.tf is bumped.
+    # Byte format and field order must match charts/shared-secrets/templates/
+    # _generate_secrets.sh.tpl. Recheck it when the chart pin in gitlab.tf moves.
     "secrets.yml" = chomp(templatefile(
       "${path.module}/templates/rails-secrets.tftpl",
       {

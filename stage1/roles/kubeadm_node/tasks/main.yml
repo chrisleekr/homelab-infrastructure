@@ -23,8 +23,8 @@
 - name: Detect installed versions and node state
   ansible.builtin.include_tasks:
     file: detect-versions.yml
-    # By default, Ansible does not apply tag inheritance to dynamic reuse with include_role and include_tasks. If you add tags to an include, they apply only to the include itself, not to any tasks in the included file or role. This allows you to execute selected tasks within a role or task files.
-    # If you want tag inheritance, you probably want to use imports. However, using both includes and imports in a single playbook can lead to difficult-to-diagnose bugs. For this reason, if your playbook uses include_* to reuse roles or tasks, and you need tag inheritance on one include, Ansible offers two workarounds.
+    # A tag on an include applies to the include alone, so apply: is what keeps `always`
+    # on the detection tasks during a tag-scoped run. Without it the drift facts never get set.
     # https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_tags.html#tag-inheritance-for-includes-blocks-and-the-apply-keyword
     apply:
       tags: [always]
