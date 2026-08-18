@@ -35,30 +35,27 @@ jobs:
           chmod +x hadolint
           mv hadolint /usr/local/bin/
 
-      - name: Read TFLint pins
-        id: tflint_pins
+      - name: Install TFLint
         shell: bash
         run: |
+          # Pins come from the Dockerfile so CI and the image lint with the same build.
+          # Installed from the release archive rather than terraform-linters/setup-tflint:
+          # the repository's allowed-actions policy does not cover that action, and an
+          # uncovered action fails the whole workflow at startup, before any check runs exist.
           version=$(sed -n 's/^ARG TFLINT_VERSION=//p' Dockerfile)
-          arm64=$(sed -n 's/^ARG TFLINT_SHA256_ARM64=//p' Dockerfile)
-          amd64=$(sed -n 's/^ARG TFLINT_SHA256_AMD64=//p' Dockerfile)
+          case "$(uname -m)" in
+            aarch64|arm64) arch=arm64; sha=$(sed -n 's/^ARG TFLINT_SHA256_ARM64=//p' Dockerfile) ;;
+            x86_64|amd64) arch=amd64; sha=$(sed -n 's/^ARG TFLINT_SHA256_AMD64=//p' Dockerfile) ;;
+            *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
           test -n "$version"
-          test -n "$arm64"
-          test -n "$amd64"
-          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
-          # setup-tflint hashes the release archive and accepts any entry in the list,
-          # so both pins can be passed and the runner architecture picks itself.
-          {
-            printf 'checksums<<EOF\n'
-            printf '%s\n%s\n' "$arm64" "$amd64"
-            printf 'EOF\n'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Install TFLint
-        uses: terraform-linters/setup-tflint@6e1e0642c0289bd619021bf6b34e3c08ed1e005a # v6.3.0
-        with:
-          tflint_version: ${{ steps.tflint_pins.outputs.version }}
-          checksums: ${{ steps.tflint_pins.outputs.checksums }}
+          test -n "$sha"
+          archive="tflint_linux_${arch}.zip"
+          curl -fsSL "https://github.com/terraform-linters/tflint/releases/download/${version}/${archive}" -o "$archive"
+          printf '%s  %s\n' "$sha" "$archive" | sha256sum -c -
+          unzip -o "$archive" -d /usr/local/bin
+          rm "$archive"
+          tflint --version
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v4
