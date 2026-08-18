@@ -21,7 +21,13 @@
     quiet: true
 
 - name: Detect installed versions and node state
-  ansible.builtin.include_tasks: detect-versions.yml
+  ansible.builtin.include_tasks:
+    file: detect-versions.yml
+    # A tag on an include applies to the include alone, so apply: is what keeps `always`
+    # on the detection tasks during a tag-scoped run. Without it the drift facts never get set.
+    # https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_tags.html#tag-inheritance-for-includes-blocks-and-the-apply-keyword
+    apply:
+      tags: [always]
   tags: [always]
 
 - name: Install the container runtime and kubelet

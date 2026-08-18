@@ -146,6 +146,7 @@ docs-build:
     - bash scripts/sync-versions.sh --check
     - python3 scripts/tests/test_check_docs.py
     - python3 scripts/check-docs.py --check
+    - python3 stage2/preflight/scripts/check-prometheus-chart-compatibility.py
     - mkdocs build --strict --site-dir site
   artifacts:
     name: "docs-$CI_COMMIT_REF_SLUG"

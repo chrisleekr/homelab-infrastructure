@@ -14,7 +14,7 @@ flowchart LR
     stage0["Stage 0: Terraform, optional<br/>cloud machines on a tailnet"]:::optional
     stage1["Stage 1: Ansible<br/>host hardening,<br/>kubeadm | k3s | minikube"]
     cluster["Kubernetes cluster<br/>control plane +<br/>optional workers"]
-    stage2["Stage 2: Terraform<br/>19 modules"]
+    stage2["Stage 2: Terraform<br/>20 modules"]
     platform["Platform<br/>GitLab, ArgoCD, monitoring,<br/>storage, ingress, VPN"]
 
     bitwarden --> stage0
@@ -59,7 +59,7 @@ flowchart LR
 
     ---
 
-    The Terraform half. 19 modules, what each deploys, and the `depends_on` graph that decides the order.
+    The Terraform half. 20 modules, what each deploys, and the `depends_on` graph that decides the order.
 
     [Read the Stage 2 docs](stage2/index.md)
 

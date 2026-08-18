@@ -61,6 +61,7 @@
     "ignorefile",
     "imds",
     "initdb",
+    "Initialise",
     "inotify",
     "insertafter",
     "interruptible",

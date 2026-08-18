@@ -1,6 +1,6 @@
 # Stage 2: deploy the platform
 
-Terraform deploys 19 modules onto the cluster Stage 1 built.
+Terraform deploys 20 modules onto the cluster Stage 1 built.
 
 ## 1. Initialise
 
@@ -43,7 +43,8 @@ Modules apply in `depends_on` order, not file order:
 
 ```mermaid
 flowchart LR
-    kube["kubernetes"] --> ngx["nginx"] --> certmgr["cert-manager"]
+    preflight["preflight<br/>compatibility gates"] --> kube["kubernetes<br/>CoreDNS + Prometheus CRDs"]
+    kube --> ngx["nginx"] --> certmgr["cert-manager"]
     certmgr --> lhorn["longhorn"] --> minio["minio"] --> gitlab["gitlab"]:::optional
     certmgr --> logging["logging"]:::optional --> monitoring["monitoring"] --> auth["auth"]
     gitlab --> argocd["argocd"]

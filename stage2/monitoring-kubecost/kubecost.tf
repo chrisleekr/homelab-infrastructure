@@ -56,7 +56,7 @@ resource "helm_release" "kubecost" {
   chart      = "kubecost"
   namespace  = kubernetes_namespace_v1.kubecost.metadata[0].name
   # https://github.com/kubecost/kubecost/releases
-  version = "3.2.1"
+  version = "3.2.3"
   wait    = true
   # 3.x splits the single cost-analyzer pod into four workloads, each pulling its own image and
   # waiting on a Longhorn volume. 300s was already marginal and timed out on the 2.9.7 upgrade.

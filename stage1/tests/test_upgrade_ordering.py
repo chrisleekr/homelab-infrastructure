@@ -25,6 +25,7 @@ SITE = STAGE1 / "site.yml"
 SERVER_MAIN = ROLES / "kubeadm_server" / "tasks" / "main.yml"
 SERVER_CONTROL_PLANE = ROLES / "kubeadm_server" / "tasks" / "upgrade-control-plane.yml"
 SERVER_CILIUM = ROLES / "kubeadm_server" / "tasks" / "upgrade-cilium.yml"
+SERVER_CILIUM_INSTALL = ROLES / "kubeadm_server" / "tasks" / "install-cilium.yml"
 NODE_MAIN = ROLES / "kubeadm_node" / "tasks" / "main.yml"
 AGENT_UPGRADE = ROLES / "kubeadm_agent" / "tasks" / "upgrade-node.yml"
 
@@ -38,6 +39,10 @@ WORKER_STEPS = [
     "wait_ready",
 ]
 STEP_VAR = "kubeadm_upgrade_step"
+DRIFT_FACTS = (
+    "kubeadm_node_kubeadm_upgrade_required",
+    "kubeadm_node_kubelet_upgrade_required",
+)
 NODE_TASKS = ROLES / "kubeadm_node" / "tasks"
 DRAIN_FILE = "node-drain.yml"
 UNCORDON_FILE = "node-uncordon.yml"
@@ -126,6 +131,25 @@ def action_value(task, suffixes):
         if key.split(".")[-1] in suffixes:
             return value
     return None
+
+
+def include_spec(value, key):
+    """Include argument as a dict. A bare string is shorthand for `key`."""
+    return {key: value} if isinstance(value, str) else (value or {})
+
+
+def tags_of(owner):
+    """Tag list on a task, block, play or `apply` mapping. YAML allows a bare string."""
+    value = owner.get("tags") or []
+    return [value] if isinstance(value, str) else list(value)
+
+
+def inherited_tags(play, ancestors):
+    """Tags a task inherits from its play and every enclosing block."""
+    tags = tags_of(play)
+    for owner, _ in ancestors:
+        tags.extend(tags_of(owner))
+    return tags
 
 
 def role_entry_files(role_name, tasks_from="main"):
@@ -315,6 +339,25 @@ def upgrade_node_content():
     )
 
 
+def upgrade_node_kubernetes_drift_gated():
+    """Runtime-only drift must not rewrite Kubernetes node configuration."""
+    task, _, _, _ = resolve_marker("upgrade_node", AGENT_UPGRADE)
+    when = task.get("when")
+    if isinstance(when, list):
+        when = " ".join(str(condition) for condition in when)
+    actual = " ".join(str(when or "").split())
+    expected = (
+        "kubeadm_node_kubeadm_upgrade_required | bool "
+        "or kubeadm_node_kubelet_upgrade_required | bool"
+    )
+    if actual != expected:
+        return False, (
+            f"{rel(AGENT_UPGRADE)}: upgrade_node gate is "
+            f"{actual or 'missing'}, expected {expected}"
+        )
+    return True, actual
+
+
 def kubelet_restart_content():
     def restarts_kubelet(_, tasks):
         for task, _ancestors in walk(tasks):
@@ -394,6 +437,114 @@ def play_ordering():
             if play.get("any_errors_fatal") is not True:
                 problems.append(f"{hosts} play is missing any_errors_fatal: true")
     return not problems, f"{rel(SITE)}: {'; '.join(problems)}" if problems else ""
+
+
+def upgrade_tag_enters_roles_narrowly():
+    """The scoped run must enter both roles without tagging their broad blocks."""
+    plays = load_yaml(SITE)
+    if not isinstance(plays, list):
+        raise HarnessError(f"{rel(SITE)} is not a play list")
+
+    required = {("server", "kubeadm_server"), ("agent", "kubeadm_agent")}
+    found = set()
+    problems = []
+    for play in plays:
+        if not isinstance(play, dict):
+            continue
+        hosts = play.get("hosts")
+        for task, ancestors in walk(play.get("tasks")):
+            value = action_value(task, ROLE_INCLUDES)
+            if value is None:
+                continue
+            spec = include_spec(value, "name")
+            if spec.get("tasks_from", "main") != "main":
+                continue
+            role = spec.get("name")
+            entry = (hosts, role)
+            direct_tags = tags_of(task)
+            if entry not in required:
+                if hosts in ("server", "agent") and "k8s_upgrade" in direct_tags:
+                    problems.append(f"{hosts} {role} is unexpectedly tagged k8s_upgrade")
+                continue
+            found.add(entry)
+
+            if "k8s_upgrade" not in direct_tags:
+                problems.append(f"{hosts} {role} include lacks a direct k8s_upgrade tag")
+            if "k8s_upgrade" in inherited_tags(play, ancestors):
+                problems.append(f"{hosts} {role} inherits k8s_upgrade from a broad play or block")
+
+    for hosts, role in sorted(required - found):
+        problems.append(f"{hosts} {role} main include is missing")
+    detail = ", ".join(f"{hosts}:{role}" for hosts, role in sorted(found))
+    return not problems, f"{rel(SITE)}: {'; '.join(problems)}" if problems else detail
+
+
+def version_detection_always_propagated():
+    """Tagged runs need every task that creates the node drift facts."""
+    for task, _ in walk(load_tasks(NODE_MAIN)):
+        if task.get("name") != "Detect installed versions and node state":
+            continue
+        spec = include_spec(action_value(task, TASK_INCLUDES), "file")
+
+        problems = []
+        if spec.get("file") != "detect-versions.yml":
+            problems.append("does not include detect-versions.yml")
+        if "always" not in tags_of(task):
+            problems.append("include lacks the always tag")
+        if "always" not in tags_of(spec.get("apply") or {}):
+            problems.append("included tasks lack apply.tags: always")
+        return not problems, f"{rel(NODE_MAIN)}: {'; '.join(problems)}" if problems else "always"
+    return False, f"{rel(NODE_MAIN)}: detection include is missing"
+
+
+def cni_tag_reaches_cilium_tasks():
+    """A CNI-only run must enter the server role and every Cilium task file."""
+    plays = load_yaml(SITE)
+    if not isinstance(plays, list):
+        raise HarnessError(f"{rel(SITE)} is not a play list")
+
+    problems = []
+    entry_found = False
+    for play in plays:
+        if not isinstance(play, dict) or play.get("hosts") != "server":
+            continue
+        for task, ancestors in walk(play.get("tasks")):
+            value = action_value(task, ROLE_INCLUDES)
+            if value is None:
+                continue
+            spec = include_spec(value, "name")
+            if spec.get("name") != "kubeadm_server" or spec.get("tasks_from", "main") != "main":
+                continue
+            entry_found = True
+            if "cni" not in tags_of(task):
+                problems.append("kubeadm_server include lacks a direct cni tag")
+            if "cni" in inherited_tags(play, ancestors):
+                problems.append("kubeadm_server inherits cni from a broad play or block")
+
+    if not entry_found:
+        problems.append("kubeadm_server main include is missing")
+
+    required = {"download-cilium.yml", "install-cilium.yml", "upgrade-cilium.yml"}
+    found = set()
+    for task, _ in walk(load_tasks(SERVER_MAIN)):
+        value = action_value(task, TASK_INCLUDES)
+        if value is None:
+            continue
+        spec = include_spec(value, "file")
+        name = spec.get("file") or spec.get("_raw_params")
+        if name not in required:
+            continue
+        found.add(name)
+        if "cni" not in tags_of(task):
+            problems.append(f"{name} include lacks the cni tag")
+        if "cni" not in tags_of(spec.get("apply") or {}):
+            problems.append(f"{name} child tasks lack apply.tags: cni")
+
+    for name in sorted(required - found):
+        problems.append(f"missing {name} include")
+
+    detail = ", ".join(sorted(found))
+    return not problems, f"{rel(SITE)}, {rel(SERVER_MAIN)}: {'; '.join(problems)}" if problems else detail
 
 
 def drain_confined_to_workers():
@@ -514,6 +665,35 @@ def cilium_before_control_plane():
         else f"{rel(SERVER_MAIN)}: {SERVER_CILIUM.name} at index {cilium} must precede "
         f"{SERVER_CONTROL_PLANE.name} at index {control}"
     )
+
+
+def cilium_helm_args_applied():
+    """The 1.20 xDS workaround must reach install, dry run and upgrade alike.
+
+    Dropping it from any one site silently reintroduces the agent/Envoy livelock on the
+    next install or upgrade, and nothing else in the tree would notice.
+    """
+    problems, found = [], []
+    for path, expected in ((SERVER_CILIUM_INSTALL, 1), (SERVER_CILIUM, 2)):
+        count = strip_comments(read_text(path)).count("cilium_helm_args")
+        found.append(f"{rel(path)}={count}")
+        if count != expected:
+            problems.append(
+                f"{rel(path)}: cilium_helm_args appears {count} times, expected {expected}"
+            )
+    return not problems, "; ".join(problems) if problems else ", ".join(found)
+
+
+def drift_facts_defined():
+    """The upgrade gates name two facts. Nothing else proves anything ever sets them."""
+    detect = NODE_TASKS / "detect-versions.yml"
+    defined = set()
+    for task, _ in walk(load_tasks(detect)):
+        defined.update((action_value(task, ("set_fact",)) or {}).keys())
+    missing = [name for name in DRIFT_FACTS if name not in defined]
+    if missing:
+        return False, f"{rel(detect)}: never sets {', '.join(missing)}"
+    return True, ", ".join(DRIFT_FACTS)
 
 
 def binary_apply_gated():
@@ -662,15 +842,21 @@ CHECKS = (
     ("C1/C2/C4", worker_step_order),
     ("C1", drain_content),
     ("C2", upgrade_node_content),
+    ("C18", upgrade_node_kubernetes_drift_gated),
+    ("C18", drift_facts_defined),
     ("C4", kubelet_restart_content),
     ("C4", wait_ready_content),
     ("C3", uncordon_in_always),
     ("C5", play_ordering),
+    ("C19", upgrade_tag_enters_roles_narrowly),
+    ("C20", version_detection_always_propagated),
+    ("C21", cni_tag_reaches_cilium_tasks),
     ("C6", drain_confined_to_workers),
     ("C7", upgrade_plan_consumed),
     ("C8/C9", preflight_before_apply),
     ("C10", pluto_version_pinned),
     ("C11", cilium_upgrade_flags),
+    ("C11", cilium_helm_args_applied),
     ("C12", cilium_before_control_plane),
     ("C13", binary_apply_gated),
     ("C13", kubelet_apply_inside_drain_block),

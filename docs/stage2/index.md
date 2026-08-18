@@ -1,6 +1,6 @@
 # Platform (Stage 2)
 
-Stage 2 is Terraform. It assumes a working Kubernetes cluster from [Stage 1](../stage1/index.md) and deploys 19 modules onto it.
+Stage 2 is Terraform. It assumes a working Kubernetes cluster from [Stage 1](../stage1/index.md) and deploys 20 modules onto it.
 
 Every module is a directory under `stage2/`, wired together in `stage2/main.tf`. All input variables live in the root `stage2/variables.tf` and are passed down, so a module never reads a variable directly.
 
@@ -10,6 +10,7 @@ These have no `count`, so they deploy on every apply.
 
 | Module | Deploys |
 |---|---|
+| [Preflight](preflight.md) | Cross-module compatibility checks that must pass before cluster changes |
 | [Kubernetes](kubernetes.md) | CoreDNS configuration, Prometheus CRDs |
 | [NGINX Ingress](nginx.md) | Ingress controller, fronted by MetalLB |
 | [Cert-Manager](cert-manager-letsencrypt.md) | TLS certificates from Let's Encrypt |

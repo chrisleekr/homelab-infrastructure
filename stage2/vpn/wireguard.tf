@@ -67,7 +67,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
         container {
           name  = "wireguard"
-          image = "linuxserver/wireguard:1.0.20250521-r0-ls92"
+          image = "linuxserver/wireguard:1.0.20260223-r0-ls120"
 
           resources {
             requests = {

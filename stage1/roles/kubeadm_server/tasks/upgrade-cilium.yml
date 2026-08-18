@@ -39,12 +39,20 @@
     - name: Dry run the Cilium upgrade
       # Renders what would be applied without touching the cluster. A chart or values
       # problem surfaces here rather than half way through a live datapath upgrade.
-      ansible.builtin.command: "cilium upgrade --version {{ cilium_version }} --dry-run"
+      ansible.builtin.command: >-
+        cilium upgrade
+        --version {{ cilium_version }}
+        --dry-run
+        {{ cilium_helm_args }}
       register: kubeadm_server_cilium_dry_run
       changed_when: false
 
     - name: Upgrade Cilium
-      ansible.builtin.command: "cilium upgrade --version {{ cilium_version }} --wait"
+      ansible.builtin.command: >-
+        cilium upgrade
+        --version {{ cilium_version }}
+        --wait
+        {{ cilium_helm_args }}
       register: kubeadm_server_cilium_upgrade_output
       changed_when: kubeadm_server_cilium_upgrade_output.rc == 0
 

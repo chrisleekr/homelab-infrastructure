@@ -16,10 +16,10 @@ What the Docker image ships. Bump with `task versions:bump`, which edits the `Do
 | Tool | Version |
 |------|---------|
 | kubectl | 1.36.3 |
-| helm | 4.2.3 |
+| helm | 4.2.4 |
 | terraform | 1.15.8 |
 | taskfile | 3.52.0 |
-| trivy | 0.72.0 |
+| trivy | 0.74.0 |
 | tflint | v0.64.0 |
 | bws | 2.1.0 |
 <!-- VERSIONS_END:container-tools -->
@@ -34,15 +34,15 @@ What Stage 1 installs on the nodes.
 | kubeadm | 1.36.3 | <https://kubernetes.io/releases/> |
 | kubectl | 1.36.3 | <https://kubernetes.io/releases/> |
 | kubelet systemd unit | 0.21.1 | <https://github.com/kubernetes/release/releases> |
-| containerd | 2.3.3 | <https://github.com/containerd/containerd/releases> |
+| containerd | 2.3.4 | <https://github.com/containerd/containerd/releases> |
 | runc | 1.5.1 | <https://github.com/opencontainers/runc/releases> |
 | crictl | 1.36.0 | <https://github.com/kubernetes-sigs/cri-tools/releases> |
 | nerdctl | 2.3.5 | <https://github.com/containerd/nerdctl/releases> |
 | CNI plugins | 1.9.1 | <https://github.com/containernetworking/plugins/releases> |
-| Cilium | 1.19.6 | <https://github.com/cilium/cilium/releases> |
+| Cilium | 1.20.0 | <https://github.com/cilium/cilium/releases> |
 | Cilium CLI | 0.19.7 | <https://github.com/cilium/cilium-cli/releases> |
 | pluto | 5.24.1 | <https://github.com/FairwindsOps/pluto/releases> |
-| minikube | 1.37.0 | |
+| minikube | 1.38.1 | |
 | k3s | v1.34.3+k3s1 | |
 <!-- VERSIONS_END:cluster-components -->
 

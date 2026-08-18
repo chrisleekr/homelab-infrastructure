@@ -4,7 +4,7 @@ resource "helm_release" "reloader" {
   name       = "stakater"
   repository = "https://stakater.github.io/stakater-charts"
   chart      = "reloader"
-  version    = "2.2.14"
+  version    = "2.2.16"
   namespace  = kubernetes_namespace_v1.reloader_namespace.metadata[0].name
   wait       = true
   timeout    = 300

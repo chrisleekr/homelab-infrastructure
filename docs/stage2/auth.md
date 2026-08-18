@@ -25,7 +25,6 @@ flowchart TB
             Grafana[Grafana]
             Longhorn[Longhorn UI]
             Kibana[Kibana]
-            ArgoCD[ArgoCD]
             MinIO[MinIO Console]
         end
     end

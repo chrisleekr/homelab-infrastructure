@@ -8,6 +8,7 @@ Dashed nodes are gated by an enable flag and may be absent from the plan entirel
 
 ```mermaid
 flowchart TD
+    preflight["preflight<br/>chart compatibility gate"]
     kubernetes["kubernetes"]
     nginx["nginx"]
     certmanager["cert_manager_letsencrypt"]
@@ -28,6 +29,7 @@ flowchart TD
     litellm["litellm<br/>litellm_enable"]:::optional
     omniroute["omniroute<br/>omniroute_enable"]:::optional
 
+    preflight --> kubernetes
     kubernetes --> nginx
     kubernetes --> vpn
     kubernetes --> reloader
@@ -62,6 +64,7 @@ flowchart TD
 
 | Edge | Reason |
 |---|---|
+| `preflight → kubernetes` | Prevents the cluster dependency chain from starting unless independently pinned components pass their compatibility checks. |
 | `kubernetes → *` | Installs the Prometheus CRDs and CoreDNS config that later modules' manifests reference. A CRD must exist before a CR that uses it. |
 | `nginx → cert_manager_letsencrypt` | The HTTP-01 solver needs a working ingress controller to answer the ACME challenge. |
 | `cert_manager_letsencrypt → *` | Anything terminating TLS needs the `ClusterIssuer` to exist before it requests a `Certificate`. |

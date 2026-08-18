@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install hadolint
         run: |
@@ -36,8 +36,26 @@ jobs:
           mv hadolint /usr/local/bin/
 
       - name: Install TFLint
+        shell: bash
         run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          # Pins come from the Dockerfile so CI and the image lint with the same build.
+          # Installed from the release archive rather than terraform-linters/setup-tflint:
+          # the repository's allowed-actions policy does not cover that action, and an
+          # uncovered action fails the whole workflow at startup, before any check runs exist.
+          version=$(sed -n 's/^ARG TFLINT_VERSION=//p' Dockerfile)
+          case "$(uname -m)" in
+            aarch64|arm64) arch=arm64; sha=$(sed -n 's/^ARG TFLINT_SHA256_ARM64=//p' Dockerfile) ;;
+            x86_64|amd64) arch=amd64; sha=$(sed -n 's/^ARG TFLINT_SHA256_AMD64=//p' Dockerfile) ;;
+            *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+          test -n "$version"
+          test -n "$sha"
+          archive="tflint_linux_${arch}.zip"
+          curl -fsSL "https://github.com/terraform-linters/tflint/releases/download/${version}/${archive}" -o "$archive"
+          printf '%s  %s\n' "$sha" "$archive" | sha256sum -c -
+          unzip -o "$archive" -d /usr/local/bin
+          rm "$archive"
+          tflint --version
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v4

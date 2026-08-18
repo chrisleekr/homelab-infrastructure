@@ -74,7 +74,10 @@
   tags: [k8s_install]
 
 - name: Download cilium
-  ansible.builtin.include_tasks: download-cilium.yml
+  ansible.builtin.include_tasks:
+    file: download-cilium.yml
+    apply:
+      tags: [cni]
   tags: [cni]
 
 - name: Initialise kubeadm
@@ -82,11 +85,17 @@
   tags: [k8s_install]
 
 - name: Install cilium
-  ansible.builtin.include_tasks: install-cilium.yml
+  ansible.builtin.include_tasks:
+    file: install-cilium.yml
+    apply:
+      tags: [cni]
   tags: [cni]
 
 - name: Upgrade cilium
-  ansible.builtin.include_tasks: upgrade-cilium.yml
+  ansible.builtin.include_tasks:
+    file: upgrade-cilium.yml
+    apply:
+      tags: [cni]
   tags: [cni]
 
 - name: Upgrade kubeadm control plane

@@ -301,11 +301,11 @@ global:
     sessionStore:
       sessionCookieTokenPrefix: ""
   ## GitLab Runner
-  # Should set to arbitrary value; otherwise, Gitlab chart will generate the secret with registration token, which is not compatible with Gitlab Runner chart.
-  # Here: https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/templates/shared-secrets/_generate_secrets.sh.tpl?ref_type=heads#L105
+  # Feeds the parent chart's gitlab-runner.secret helper, which renames the child
+  # chart's token secret. It does not set gitlab-runner.runners.secret directly.
   runner:
     registrationToken:
-      secret: "gitlab-gitlab-runner-secret-deprecated"
+      secret: ${gitlab_runner_token_secret}
 
   ## https://docs.gitlab.com/charts/charts/globals#outgoing-email
   ## Outgoing email server settings
@@ -722,10 +722,8 @@ gitlab-runner:
     - name: RUNNER_ENV
       value: "DOCKER_TLS_CERTDIR=/certs"
   gitlabUrl: ${gitlab_runner_gitlab_url}
-  # Must define runnerToken; so, the chart can generate the secret. Cannot use pre-generated secret.
-  runnerToken: ${gitlab_runner_authentication_token}
-  # secret: ${gitlab_runner_token_secret}
   runners:
+    secret: ${gitlab_runner_token_secret}
     privileged: true
     config: |
       [[runners]]
@@ -822,7 +820,7 @@ gitlab:
         # concurrencyPolicy Replace then deletes it nightly, leaving no failed job behind to notice.
         # Generous against a healthy run, which finishes well inside this.
         activeDeadlineSeconds: 10800
-        extraArgs: "--skip registry --skip artifacts"
+        extraArgs: "--skip registry --skip artifacts --maximum-backups 7"
         suspend: false
         backoffLimit: 6
         safeToEvict: false

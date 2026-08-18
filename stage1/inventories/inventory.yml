@@ -57,7 +57,7 @@ cluster:
     runc_version: "1.5.1" # https://github.com/opencontainers/runc/releases
     cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
     crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
-    containerd_version: "2.3.3" # https://github.com/containerd/containerd/releases
+    containerd_version: "2.3.4" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.3.5" # https://github.com/containerd/nerdctl/releases
     # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
     # A bump is what arms the upgrade path; see docs/operations/kubernetes-upgrades.md.
@@ -70,8 +70,15 @@ cluster:
     # move independently, so gating an agent upgrade on the CLI version compares unrelated
     # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_version: "1.19.6" # https://github.com/cilium/cilium/releases
+    cilium_version: "1.20.0" # https://github.com/cilium/cilium/releases
     cilium_cli_version: "0.19.7" # https://github.com/cilium/cilium-cli/releases
+
+    # Split avoids Cilium 1.20.0 ADS livelock; one-at-a-time rolls preserve node networking.
+    # https://github.com/cilium/cilium/issues/47624
+    cilium_helm_args: >-
+      --helm-set envoy.xdsMode=split
+      --helm-set updateStrategy.rollingUpdate.maxUnavailable=1
+      --helm-set envoy.updateStrategy.rollingUpdate.maxUnavailable=1
 
     # This is the *underlying network* MTU, not the pod MTU. Cilium subtracts its own
     # 50-byte VXLAN overhead to derive the route MTU it installs for pods, so 1500 here
@@ -145,7 +152,7 @@ cluster:
     minikube_download_filename: "{{ minikube_redis_filename }}-{{ minikube_version }}"
 
     # minikube version number
-    minikube_version: "1.37.0"
+    minikube_version: "1.38.1"
 
     # Directory to store files downloaded for minikube
     minikube_download_dir: "{{ x_ansible_download_dir | default(ansible_facts.env.HOME + '/.ansible/tmp/downloads') }}"

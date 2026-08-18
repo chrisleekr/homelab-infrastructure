@@ -55,6 +55,16 @@ tasks:
       - bash ./scripts/sync-versions.sh --check
       - ./.venv-docs/bin/python scripts/check-docs.py --check
 
+  stage2:preflight:check:
+    desc: Assert the Prometheus CRD and stack charts package the same Operator version. Needs outbound HTTPS to GitHub.
+    cmds:
+      - python3 stage2/preflight/scripts/check-prometheus-chart-compatibility.py
+
+  stage2:preflight:test:
+    desc: Assert the chart compatibility gate itself. No network.
+    cmds:
+      - python3 stage2/preflight/tests/test_check_prometheus_chart_compatibility.py
+
   docs:test:
     desc: Assert the documentation drift gate itself. No network.
     # The test re-runs check-docs.py with sys.executable, which imports yaml, so
@@ -110,6 +120,18 @@ tasks:
     cmds:
       - terraform init
       - terraform workspace select homelab-stage0
+
+  stage0:terraform:init:upgrade:
+    desc: Upgrade Terraform providers to latest versions satisfying constraints. Run in root and all child modules.
+    cmds:
+      - cd stage0 && terraform init -upgrade
+      - |
+        for dir in stage0/*/; do
+          if [ -f "${dir}provider.tf" ]; then
+            echo "Upgrading providers in ${dir}..."
+            (cd "${dir}" && terraform init -upgrade -backend=false)
+          fi
+        done
 
   stage0:terraform:plan:
     desc: Plan the cloud provisioning

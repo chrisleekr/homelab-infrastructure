@@ -22,13 +22,13 @@ flowchart TB
         subgraph resources [Managed Resources]
             Cert1[Certificate: gitlab-tls]
             Cert2[Certificate: grafana-tls]
-            Cert3[Certificate: argocd-tls]
+            Cert3[Certificate: argocd-server-tls]
         end
 
         subgraph secrets [TLS Secrets]
             Secret1[Secret: gitlab-tls]
             Secret2[Secret: grafana-tls]
-            Secret3[Secret: argocd-tls]
+            Secret3[Secret: argocd-server-tls]
         end
 
         Ingress[Ingress Resources]

@@ -1,4 +1,10 @@
+module "preflight" {
+  source = "./preflight"
+}
+
 module "kubernetes" {
+  depends_on = [module.preflight]
+
   source = "./kubernetes"
 
   kubernetes_cluster_type     = var.kubernetes_cluster_type

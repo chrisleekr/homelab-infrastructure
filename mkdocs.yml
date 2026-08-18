@@ -142,6 +142,7 @@ nav:
       - stage2/index.md
       - Module dependency graph: stage2/dependency-graph.md
       - Foundation:
+          - Preflight checks: stage2/preflight.md
           - Kubernetes: stage2/kubernetes.md
           - NGINX Ingress: stage2/nginx.md
           - Cert-Manager and Let's Encrypt: stage2/cert-manager-letsencrypt.md
