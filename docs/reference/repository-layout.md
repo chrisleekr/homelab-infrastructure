@@ -25,7 +25,7 @@ homelab-infrastructure/
 │   ├── output.tf
 │   ├── providers.tf
 │   ├── backend.tf                # Terraform Cloud
-│   └── <module>/                 # 19 module directories
+│   └── <module>/                 # 20 module directories
 ├── docs/                         # this site
 │   ├── requirements.txt          # the MkDocs pin
 │   └── stylesheets/extra.css

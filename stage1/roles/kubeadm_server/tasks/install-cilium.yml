@@ -18,6 +18,7 @@
         --version {{ cilium_version }}
         --helm-set securityContext.privileged=true
         {% if cilium_mtu %}--helm-set MTU={{ cilium_mtu }}{% endif %}
+        {{ cilium_helm_args }}
       register: kubeadm_server_cilium_install
       changed_when: kubeadm_server_cilium_install.rc == 0
 

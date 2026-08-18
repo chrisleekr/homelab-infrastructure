@@ -47,10 +47,8 @@ aggregator:
   aggregatorDbStorage:
     # Chart default 128Gi is sized for multi-cluster enterprise federation.
     storageRequest: 32Gi
-  # Chart default 91 would trim the backfilled ETL, which starts 2024-10-05, down to a rolling
-  # quarter. Only daily resolution is worth keeping this long; retention1h and retention10m stay at
-  # their defaults because the agent's hourly files age out within two days anyway.
-  retention1d: 700
+  # Keep a rolling quarter of daily history to limit ClickHouse part count.
+  retention1d: 90
   resources:
     # Chart leaves limits empty, so ETL bursts are unbounded. Capping costs ETL wall-clock on the
     # tail, not readiness. The chart's 100m/3Gi requests are left alone. Raise if ingestion lags.

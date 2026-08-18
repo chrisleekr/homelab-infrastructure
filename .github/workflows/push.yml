@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install hadolint
         run: |
@@ -35,9 +35,22 @@ jobs:
           chmod +x hadolint
           mv hadolint /usr/local/bin/
 
-      - name: Install TFLint
+      - name: Read TFLint pins
+        id: tflint_pins
+        shell: bash
         run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          version=$(sed -n 's/^ARG TFLINT_VERSION=//p' Dockerfile)
+          checksum=$(sed -n 's/^ARG TFLINT_SHA256_ARM64=//p' Dockerfile)
+          test -n "$version"
+          test -n "$checksum"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'checksum=%s\n' "$checksum" >> "$GITHUB_OUTPUT"
+
+      - name: Install TFLint
+        uses: terraform-linters/setup-tflint@6e1e0642c0289bd619021bf6b34e3c08ed1e005a # v6.3.0
+        with:
+          tflint_version: ${{ steps.tflint_pins.outputs.version }}
+          checksums: ${{ steps.tflint_pins.outputs.checksum }}
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v4

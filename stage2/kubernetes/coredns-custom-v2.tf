@@ -164,19 +164,8 @@ EOF
   modified_corefile = "${local.base_corefile}${local.all_custom_config}"
 }
 
-# Manage the existing CoreDNS ConfigMap
-# Note: you must import the existing resource first before applying the modified version.
-#       It may not work if the cluster is new cluster. Comment out first and then rerun the command.
-# $ cd stage2
-# $ terraform import 'module.kubernetes.kubernetes_config_map.coredns[0]' kube-system/coredns
-# Acquiring state lock. This may take a few moments...
-
-# Import successful!
-
-# The resources that were imported are shown above. These resources are now in
-# your Terraform state and will henceforth be managed by Terraform.
-# $ terraform state list | grep coredns
-# module.kubernetes.kubernetes_config_map.coredns[0]
+# kubeadm creates this ConfigMap, so import it before the first Stage 2 apply:
+# terraform import 'module.kubernetes.kubernetes_config_map_v1.coredns[0]' kube-system/coredns
 resource "kubernetes_config_map_v1" "coredns" {
   count = var.kubernetes_cluster_type == "kubeadm" ? 1 : 0
 

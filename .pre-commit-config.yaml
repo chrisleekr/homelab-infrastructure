@@ -12,8 +12,6 @@ repos:
     rev: v26.6.0
     hooks:
       - id: ansible-lint
-        # Override Python 3.13 requirement - Alpine 3.21 has Python 3.12
-        language_version: python3.12
         args:
           - --project-dir=./stage1
           - --exclude=container/
@@ -70,6 +68,16 @@ repos:
         pass_filenames: false
         files: ^scripts/(check-docs\.py|tests/test_check_docs\.py)$
 
+      # Guards the Prometheus chart compatibility gate. Both of its failure directions
+      # are silent: the wrong pin fails open, an unowned pin fails closed on every plan.
+      # The gate itself needs network, so only its self-test runs here.
+      - id: preflight-compat-tests
+        name: prometheus chart compatibility gate self-test
+        entry: python stage2/preflight/tests/test_check_prometheus_chart_compatibility.py
+        language: python
+        pass_filenames: false
+        files: ^stage2/preflight/(scripts/check-prometheus-chart-compatibility\.py|tests/)
+
       # Version-pin drift. Regenerates the sentinel blocks in README.md and
       # docs/reference/versions.md from Dockerfile ARGs and inventory.yml, and
       # rewrites every <!--v:key--> span, then diffs.
@@ -100,6 +108,8 @@ repos:
           # Use --ignorefile for suppression rules, not --config (which is for trivy.yaml)
           # Ref: https://trivy.dev/docs/latest/configuration/filtering/#trivyignoreyaml
           - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore.yaml
+          # Ignore generated local state; its tracked source remains under scripts/container.
+          - --args=--skip-dirs=__GIT_WORKING_DIR__/container
       - id: terraform_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl

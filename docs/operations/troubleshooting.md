@@ -76,18 +76,80 @@ If Ansible fails to connect to the target server:
 Error: unable to build kubernetes objects from release manifest: resource mapping not found for name: "nginx-ingress-nginx-controller" namespace: "nginx" from "": no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"
 ```
 
-This error occurs when Prometheus CRDs are not installed.
+This error means the Kubernetes API used by Terraform cannot discover the required Prometheus Operator CRD. The CRD may be missing, its Helm release may have failed, or the command may be inspecting a different kubeconfig context.
 
-**Solution:**
+```mermaid
+flowchart TD
+    Error["Terraform reports no matches<br/>for ServiceMonitor"]
+    ReleaseCheck["Check prometheus-operator-crds<br/>Helm release status"]
+    CRDCheck["Check servicemonitors.monitoring.coreos.com<br/>CRD discovery"]
+    ReleaseState{"Release missing or failed?"}
+    CRDState{"Required CRD present?"}
+    NormalPlan["Run the normal Stage 2 plan"]
+    PlansRepair{"Plan creates or repairs<br/>the CRD release?"}
+    NormalApply["Review and run the normal apply"]
+    StateCheck["Check whether Terraform state tracks<br/>the CRD release"]
+    StatePresent{"Release present in Terraform state?"}
+    ReplacePlan["Plan replacement of only<br/>helm_release.prometheus_operator_crds"]
+    ReplaceReview{"Replacement plan contains<br/>only the expected release action?"}
+    ReplaceApply["Apply the reviewed replacement"]
+    Verify["Verify Helm status, CRD discovery,<br/>and the original Terraform plan"]
+    ContextCheck["Confirm Terraform and kubectl<br/>use the same cluster context"]
+    Stop["Stop and inspect unexpected changes"]
 
-1. Go to `stage2/kubernetes/prometheus-crd.tf`
-2. Uncomment the following line:
+    Error --> ReleaseCheck
+    Error --> CRDCheck
+    ReleaseCheck --> ReleaseState
+    CRDCheck --> CRDState
+    ReleaseState -->|yes| NormalPlan
+    ReleaseState -->|no| CRDState
+    CRDState -->|no| NormalPlan
+    CRDState -->|yes| ContextCheck
+    NormalPlan --> PlansRepair
+    PlansRepair -->|yes| NormalApply
+    PlansRepair -->|no| StateCheck
+    StateCheck --> StatePresent
+    StatePresent -->|yes| ReplacePlan
+    StatePresent -->|no| Stop
+    NormalApply --> Verify
+    ReplacePlan --> ReplaceReview
+    ReplaceReview -->|yes| ReplaceApply
+    ReplaceReview -->|no| Stop
+    ReplaceApply --> Verify
+    ContextCheck --> Verify
+```
 
-   ```text
-   # always_run          = "${timestamp()}"
-   ```
+Check the standalone release and the required CRD:
 
-3. Re-run: `terraform apply`
+```bash
+kubectl config current-context
+helm status prometheus-operator-crds --namespace kube-system
+kubectl get crd servicemonitors.monitoring.coreos.com
+```
+
+Run the normal Stage 2 plan. If Terraform proposes creating or repairing `module.kubernetes.helm_release.prometheus_operator_crds`, review the plan and run the normal apply:
+
+```bash
+task stage2:terraform:plan
+task stage2:terraform:apply
+```
+
+If Helm reports the release as deployed but the CRD remains missing and the normal plan proposes no repair, confirm that Terraform state tracks the release:
+
+```bash
+terraform -chdir=stage2 state show module.kubernetes.helm_release.prometheus_operator_crds
+```
+
+If the state lookup succeeds, preview and apply an explicit replacement of only the CRD release:
+
+```bash
+terraform -chdir=stage2 plan -replace=module.kubernetes.helm_release.prometheus_operator_crds
+terraform -chdir=stage2 apply -replace=module.kubernetes.helm_release.prometheus_operator_crds
+```
+
+The release retains surviving CRDs through `helm.sh/resource-policy=keep` and adopts them again through `take_ownership=true`. Do not delete a Prometheus Operator CRD to repair this error because deleting a CRD also deletes every custom resource stored under it.
+
+If both the release and CRD are healthy, confirm that Terraform and kubectl use the same cluster and rerun the original plan. The error is not caused by a missing CRD in the cluster you inspected.
 
 ### GitLab registry storage full
 
@@ -176,7 +238,7 @@ echo "$host_machine_architecture"    # amd64 or arm64
 
 If your issue is not covered here:
 
-1. Check the [module-specific READMEs](stage2/) for detailed configuration
+1. Check the [Stage 2 module documentation](../stage2/index.md) for detailed configuration
 2. Review the [GitHub Issues](https://github.com/chrisleekr/homelab-infrastructure/issues) for similar problems
 3. Open a new issue with:
    - Description of the problem

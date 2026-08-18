@@ -144,7 +144,7 @@ resource "kubernetes_secret_v1" "rails_secret" {
     # matches what the gitlab-shared-secrets pre-upgrade hook writes back via
     # `kubectl apply` with stringData |- (which strips trailing newlines).
     # Without this, the secret reports a perpetual data diff on every plan.
-    # Byte-format and field order verified against gitlab chart 9.11.3
+    # Byte-format and field order verified against gitlab chart 10.2.2
     # (charts/shared-secrets/templates/_generate_secrets.sh.tpl). Re-verify
     # if the chart version in gitlab.tf is bumped.
     "secrets.yml" = chomp(templatefile(
@@ -157,7 +157,7 @@ resource "kubernetes_secret_v1" "rails_secret" {
         production_active_record_encryption_primary_key         = random_password.active_record_encryption_primary_key.result,
         production_active_record_encryption_deterministic_key   = random_password.active_record_encryption_deterministic_key.result,
         production_active_record_encryption_key_derivation_salt = random_password.active_record_encryption_key_derivation_salt.result,
-        production_openid_connect_signing_key                   = indent(4, tls_private_key.openid_connect_signing_key.private_key_pem_pkcs8),
+        production_openid_connect_signing_key                   = indent(4, chomp(tls_private_key.openid_connect_signing_key.private_key_pem_pkcs8)),
       }
     ))
   }
@@ -167,36 +167,6 @@ resource "kubernetes_secret_v1" "rails_secret" {
   }
 }
 
-resource "kubernetes_secret_v1" "runner_registration_token_deprecated" {
-  depends_on = [
-    kubernetes_namespace_v1.gitlab,
-  ]
-  metadata {
-    name      = "gitlab-gitlab-runner-secret-deprecated"
-    namespace = kubernetes_namespace_v1.gitlab.metadata[0].name
-
-    # Set labels and annotations to prevent Gitlab Chart to create it again
-    labels = {
-      "app.kubernetes.io/managed-by" = "Helm"
-    }
-
-    annotations = {
-      "meta.helm.sh/release-name"      = kubernetes_namespace_v1.gitlab.metadata[0].name
-      "meta.helm.sh/release-namespace" = "gitlab"
-    }
-  }
-
-  data = {
-    "runner-registration-token" = ""
-    "runner-token"              = var.gitlab_runner_authentication_token
-  }
-
-  lifecycle {
-    ignore_changes = [metadata[0].labels, metadata[0].annotations]
-  }
-}
-
-# This secret is currently not used. Set it up for future use if supporting by Gitlab Runner Chart.
 resource "kubernetes_secret_v1" "runner_token" {
   depends_on = [
     kubernetes_namespace_v1.gitlab,

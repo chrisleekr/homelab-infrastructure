@@ -6,7 +6,7 @@ resource "helm_release" "eck_operator" {
   name       = "elastic-operator"
   repository = "https://helm.elastic.co"
   chart      = "eck-operator"
-  version    = "3.4.1"
+  version    = "3.5.0"
   namespace  = kubernetes_namespace_v1.logging.metadata[0].name
   timeout    = 300
   wait       = true

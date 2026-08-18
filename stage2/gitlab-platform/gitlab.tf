@@ -37,7 +37,7 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "10.0.4"
+  version    = "10.2.4"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   # A major-version upgrade pulls every image fresh, and 1800 was not enough for 19.0: the release
   # timed out mid-apply, which does not roll back. It leaves resources behind that the next upgrade
@@ -78,9 +78,8 @@ resource "helm_release" "gitlab" {
         runner_s3_access_secret = kubernetes_secret_v1.gitlab_runner_s3_access.metadata[0].name
         toolbox_s3cmd_secret    = kubernetes_secret_v1.gitlab_toolbox_s3cmd.metadata[0].name
 
-        gitlab_runner_gitlab_url           = var.gitlab_global_hosts_https ? "https://gitlab.${var.gitlab_global_hosts_domain}" : "http://gitlab.${var.gitlab_global_hosts_domain}"
-        gitlab_runner_authentication_token = var.gitlab_runner_authentication_token
-        gitlab_runner_token_secret         = kubernetes_secret_v1.runner_token.metadata[0].name
+        gitlab_runner_gitlab_url   = var.gitlab_global_hosts_https ? "https://gitlab.${var.gitlab_global_hosts_domain}" : "http://gitlab.${var.gitlab_global_hosts_domain}"
+        gitlab_runner_token_secret = kubernetes_secret_v1.runner_token.metadata[0].name
 
         certmanager_issuer_email = var.gitlab_certmanager_issuer_email
 

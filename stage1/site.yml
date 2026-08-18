@@ -86,6 +86,7 @@
           ansible.builtin.include_role:
             name: kubeadm_pre_setup
         - name: Include kubeadm cluster server
+          tags: [k8s_upgrade, cni]
           ansible.builtin.include_role:
             name: kubeadm_server
     - name: Setup minikube cluster
@@ -145,6 +146,7 @@
           ansible.builtin.include_role:
             name: kubeadm_pre_setup
         - name: Include kubeadm worker join
+          tags: [k8s_upgrade]
           ansible.builtin.include_role:
             name: kubeadm_agent
   handlers:

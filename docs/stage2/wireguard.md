@@ -32,7 +32,7 @@ The pod is `privileged` with `NET_ADMIN` and `SYS_MODULE`, and mounts the host's
 | Resource | Name | Notes |
 |---|---|---|
 | `kubernetes_persistent_volume_claim_v1.wireguard_config` | `wireguard-config` | 1Gi, `ReadWriteOnce`. See the warning below |
-| `kubernetes_deployment_v1.wireguard` | `wireguard` | Single replica, `linuxserver/wireguard:1.0.20250521-r0-ls92` |
+| `kubernetes_deployment_v1.wireguard` | `wireguard` | Single replica, `linuxserver/wireguard:1.0.20260223-r0-ls120` |
 | `kubernetes_service_v1.wireguard` | `wireguard` | ClusterIP, UDP, `wireguard_port` to container 51820 |
 
 All three are gated on `wireguard_enable`, so a disabled backend leaves no orphaned PVC behind. The `vpn` namespace itself is created unconditionally in `stage2/vpn/namespace.tf` and carries `prevent_destroy = true`.

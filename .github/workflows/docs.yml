@@ -12,6 +12,10 @@ on:
       - "mkdocs.yml"
       - "scripts/check-docs.py"
       - "scripts/sync-versions.sh"
+      # A chart pin change must rerun the compatibility gate even when no docs change.
+      - "stage2/kubernetes/prometheus-crd.tf"
+      - "stage2/monitoring/prometheus-stack.tf"
+      - "stage2/preflight/scripts/check-prometheus-chart-compatibility.py"
       - ".github/workflows/docs.yml"
   # No paths filter on pull_request, deliberately. Code-side changes are exactly
   # what invalidates the doc facts the gates below check: deleting a Terraform
@@ -63,6 +67,8 @@ jobs:
 
       - name: Verify docs coverage, citations and nav
         run: python scripts/check-docs.py --check
+      - name: Verify Prometheus chart compatibility
+        run: python stage2/preflight/scripts/check-prometheus-chart-compatibility.py
 
       # --strict turns every warning into an error, which is what makes this the
       # internal link checker.

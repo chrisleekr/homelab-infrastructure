@@ -2,110 +2,160 @@
 # Reference: https://trivy.dev/docs/latest/configuration/filtering/#trivyignoreyaml
 # Note: Misconfiguration IDs use DS- format (not AVD-DS-)
 #
-# Every vulnerability below is a HIGH CVE in a Go dependency vendored by an upstream CLI
-# tool (kubectl, go-task, terraform, tflint). All four tools are already pinned to their
-# latest stable release in the Dockerfile, so these can only clear when the upstream
-# project rebuilds with the fixed dependency. Verified against a local image scan on
-# 2026-07-02 (trivy 0.72.0): this is the complete HIGH/CRITICAL set, nothing else remains.
-# Re-evaluate on expired_at and drop each entry once its tool ships a fixed release.
+# Active vulnerability exceptions are time-bounded and scoped to exact package versions.
+# Risk owner: repository maintainer.
+# Re-evaluate on expired_at and drop entries once official rebuilt artifacts clear the finding.
 
 vulnerabilities:
-  # golang.org/x/net HIGH CVEs vendored by kubectl 1.36.2 (x/net v0.49.0) and
-  # go-task 3.51.1 (x/net v0.54.0). Fixed in x/net 0.53.0-0.55.0.
-  # Unblocks when kubectl and go-task rebuild with x/net >= 0.55.0.
+  # pip 26.1.2 vendors implementations that do not contain the affected runtime surfaces.
+  # Recheck when pip changes its vendor tree.
+  - id: GHSA-6v7p-g79w-8964
+    purls:
+      - pkg:pypi/msgpack@1.1.2
+    statement: pip uses msgpack fallback.Unpacker and the image contains no _cmsgpack extension
+    expired_at: 2026-09-15
+
+  - id: CVE-2025-47273
+    purls:
+      - pkg:pypi/setuptools@70.3.0
+    statement: pip retains only pkg_resources from setuptools; the affected setuptools.package_index module is absent
+    expired_at: 2026-09-15
+
+  # Latest official Go CLI binaries remain affected. Exact PURLs make rebuilt versions visible.
   - id: CVE-2026-25681
-    statement: golang.org/x/net/html arbitrary code execution via XSS (kubectl/task) - waiting for upstream rebuild with x/net >= 0.55.0
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/golang.org/x/net@v0.49.0
+    statement: Accept kubectl x/net HTML risk until an official rebuild includes x/net 0.55.0 or later
+    expired_at: 2026-09-15
+
   - id: CVE-2026-27136
-    statement: golang.org/x/net/html Render XSS (kubectl/task) - waiting for upstream rebuild with x/net >= 0.55.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-33814
-    statement: golang.org/x/net HTTP/2 SETTINGS_MAX_FRAME_SIZE DoS (kubectl) - waiting for upstream rebuild with x/net >= 0.53.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39821
-    statement: golang.org/x/net/idna privilege escalation via Punycode label processing (kubectl/task) - waiting for upstream rebuild with x/net >= 0.55.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-42502
-    statement: golang.org/x/net/html Render XSS (kubectl/task) - waiting for upstream rebuild with x/net >= 0.55.0
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/golang.org/x/net@v0.49.0
+    statement: Accept kubectl x/net HTML risk until an official rebuild includes x/net 0.55.0 or later
+    expired_at: 2026-09-15
 
-  # golang.org/x/crypto SSH HIGH CVEs vendored by go-task 3.51.1 (x/crypto v0.51.0).
-  # Fixed in x/crypto 0.52.0. go-task main already bumped to 0.53.0; unblocks on next task release.
-  - id: CVE-2026-39827
-    statement: golang.org/x/crypto/ssh DoS via repeatedly opened channels (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39828
-    statement: golang.org/x/crypto/ssh HIGH (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39829
-    statement: golang.org/x/crypto/ssh HIGH (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39830
-    statement: golang.org/x/crypto/ssh DoS via resource leak from unsolicited SSH responses (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39832
-    statement: golang.org/x/crypto/ssh/agent security bypass via improper key restriction handling (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-39835
-    statement: golang.org/x/crypto/ssh DoS via crafted SSH certificate (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-42508
-    statement: golang.org/x/crypto/ssh/knownhosts revocation bypass via unchecked SignatureKey (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-46595
-    statement: golang.org/x/crypto/ssh authorization bypass via skipped source-address validation (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-  - id: CVE-2026-46597
-    statement: golang.org/x/crypto/ssh server-side panic via incorrectly placed bytes-to-int cast (task) - waiting for upstream rebuild with x/crypto >= 0.52.0
-    expired_at: 2026-08-15
-
-  # Go stdlib crypto/x509 DoS. Fixed in Go 1.25.11 / 1.26.4. Present in terraform 1.15.7
-  # (Go 1.25.10), go-task 3.51.1 (Go 1.26.3), tflint 0.63.1 (Go 1.26.3).
-  # Unblocks when each tool rebuilds with Go >= 1.25.11 / 1.26.4.
   - id: CVE-2026-27145
-    statement: Go stdlib crypto/x509 DoS via excessive DNS name constraint processing (terraform/task/tflint) - waiting for upstream rebuild with Go >= 1.25.11/1.26.4
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+    statement: Accept Terraform and TFLint stdlib risk until official binaries use a fixed Go release
+    expired_at: 2026-09-15
 
-  # github.com/sigstore/rekor OOM via unbounded gzip, vendored by tflint 0.63.1 (rekor v1.5.0).
-  # Fixed in rekor 1.5.2. Unblocks on next tflint release bumping rekor.
-  - id: CVE-2026-48702
-    statement: github.com/sigstore/rekor OOM via unbounded gzip (tflint) - waiting for upstream rebuild with rekor >= 1.5.2
-    expired_at: 2026-08-15
+  - id: CVE-2026-33814
+    purls:
+      - pkg:golang/golang.org/x/net@v0.49.0
+    statement: Accept kubectl x/net HTTP/2 risk until an official rebuild includes x/net 0.53.0 or later
+    expired_at: 2026-09-15
 
-  - id: CVE-2026-50163
-    statement: oras-go tar extraction Hardlink entry with relative Linkname escapes extract dir - waiting for upstream fix
-    expired_at: 2026-08-15
+  - id: CVE-2026-33818
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI stdlib risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-39821
+    purls:
+      - pkg:golang/golang.org/x/net@v0.49.0
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI IDNA risk until official binaries include the fixed x/net and Go releases
+    expired_at: 2026-09-15
 
   - id: CVE-2026-39822
-    statement: os golang Go os.Root Symlink following vulnerability
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+    statement: Accept Task Terraform and TFLint os.Root risk until official binaries use a fixed Go release
+    expired_at: 2026-09-15
 
   - id: CVE-2026-42504
-    statement: mime golang Golang MIME Denial of Service via maliciously-crafted MIME header
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+    statement: Accept Terraform and TFLint MIME risk until official binaries use a fixed Go release
+    expired_at: 2026-09-15
 
-  - id: CVE-2026-50151
-    statement: oras-go blob upload vulnerable to credential forwarding via unvalidated Location header
-    expired_at: 2026-08-15
+  - id: CVE-2026-46600
+    purls:
+      - pkg:golang/golang.org/x/net@v0.49.0
+      - pkg:golang/golang.org/x/net@v0.55.0
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI DNS parsing risk until official binaries include x/net 0.56.0 and Go 1.26.6 or later
+    expired_at: 2026-09-15
 
-  # google.golang.org/grpc HIGH advisory vendored by go-task (grpc v1.82.0), terraform (v1.80.0),
-  # tflint (v1.81.1) and trivy (v1.81.0). Fixed in grpc 1.82.1. Published 2026-07-21, after every
-  # tool's current pinned release, so no version bump clears it yet; unblocks as each upstream
-  # rebuilds with grpc >= 1.82.1. Not reachable here: none of these CLIs runs an xDS control plane
-  # or serves gRPC, they are one-shot binaries invoked by CI and the operator shell.
-  - id: GHSA-hrxh-6v49-42gf
-    statement: gRPC-Go xDS RBAC and HTTP/2 vulnerabilities (task/terraform/tflint/trivy) - waiting for upstream rebuild with grpc >= 1.82.1
-    expired_at: 2026-08-15
+  - id: CVE-2026-50163
+    purls:
+      - pkg:golang/oras.land/oras-go/v2@v2.6.1
+    statement: Accept Helm ORAS hardlink risk until an official rebuild includes oras-go 2.6.2 or later
+    expired_at: 2026-09-15
 
-  # golang.org/x/text HIGH vendored by kubectl 1.36.3, go-task 3.52.0 (x/text v0.38.0),
-  # terraform 1.15.8 (v0.37.0) and trivy 0.72.0 (v0.38.0). Fixed in x/text 0.39.0. Published
-  # 2026-07-14, after every tool's current pinned release; all four are already at the latest
-  # upstream tag, so no version bump clears it. Unblocks as each upstream rebuilds.
-  # Not reachable here: the infinite loop needs attacker-controlled text fed to norm.Iter, and
-  # these are one-shot CLIs run by CI and the operator shell against trusted input.
   - id: CVE-2026-56852
-    statement: golang.org/x/text norm.Iter infinite loop on invalid input (kubectl/task/terraform/trivy) - waiting for upstream rebuild with x/text >= 0.39.0
-    expired_at: 2026-08-15
+    purls:
+      - pkg:golang/golang.org/x/text@v0.33.0
+      - pkg:golang/golang.org/x/text@v0.37.0
+      - pkg:golang/golang.org/x/text@v0.38.0
+    statement: Accept kubectl Task and Terraform UTF-8 parsing risk until official binaries include x/text 0.39.0 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56853
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI HTTP/2 risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56858
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI HTML template risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56859
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI XML parsing risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56860
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI URL parsing risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56862
+    purls:
+      - pkg:golang/stdlib@v1.25.10
+      - pkg:golang/stdlib@v1.26.3
+      - pkg:golang/stdlib@v1.26.4
+      - pkg:golang/stdlib@v1.26.5
+    statement: Accept current CLI TLS risk until official binaries use Go 1.25.13 or 1.26.6 or later
+    expired_at: 2026-09-15
+
+  - id: GHSA-hrxh-6v49-42gf
+    purls:
+      - pkg:golang/google.golang.org/grpc@v1.80.0
+      - pkg:golang/google.golang.org/grpc@v1.82.0
+    statement: Accept Task Terraform and TFLint xDS risk until official binaries include gRPC-Go 1.82.1 or later
+    expired_at: 2026-09-15
 
 misconfigurations:
   # Dockerfile checks - acceptable for this use case

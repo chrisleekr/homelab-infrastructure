@@ -1043,7 +1043,7 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.2.0"
+  default     = "0.2.1"
 }
 
 variable "omniroute_image_tag" {

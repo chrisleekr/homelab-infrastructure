@@ -38,7 +38,7 @@ The pod runs with `TS_USERSPACE=false`, so it uses kernel networking and needs t
 | `kubernetes_service_account_v1.tailscale` | `tailscale-sa` | Identity for the state secret writes |
 | `kubernetes_role_v1.tailscale` | `tailscale` | `create` on secrets, plus `get`, `update`, `patch` on `tailscale-secret` |
 | `kubernetes_role_binding_v1.tailscale` | `tailscale` | Binds the two |
-| `kubernetes_deployment_v1.tailscale` | `tailscale` | Single replica, `tailscale/tailscale:v1.92.5` |
+| `kubernetes_deployment_v1.tailscale` | `tailscale` | Single replica, `tailscale/tailscale:v1.102.2` |
 
 The `vpn` namespace is created unconditionally in `stage2/vpn/namespace.tf` and carries `prevent_destroy = true`, so it survives even with both backends off.
 
@@ -113,7 +113,7 @@ bws secret create TF_VAR_tailscale_auth_key "tskey-auth-..." "$BWS_PROJECT_ID"
 
 !!! danger "The pod logs in again on every restart, so the key is not a one-shot bootstrap credential"
 
-    [`containerboot`](https://github.com/tailscale/tailscale/blob/v1.92.5/cmd/containerboot/main.go) documents `TS_AUTH_ONCE` as "if true, only attempt to log in if not already logged in. If false, the default, for backwards compatibility, forcibly log in every time the container starts." This module does not set it, and `tailscaleUp` appends `--authkey=` whenever the key is non-empty.
+    [`containerboot`](https://github.com/tailscale/tailscale/blob/v1.102.2/cmd/containerboot/main.go) documents `TS_AUTH_ONCE` as "if true, only attempt to log in if not already logged in. If false, the default, for backwards compatibility, forcibly log in every time the container starts." This module does not set it, and `tailscaleUp` appends `--authkey=` whenever the key is non-empty.
 
     Two consequences. The key must be reusable, and it must still be valid every time the pod restarts. Auth keys cap at 90 days, so a working deployment fails to start at some arbitrary later date with an expired key and no other change to explain it.
 

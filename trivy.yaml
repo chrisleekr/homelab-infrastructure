@@ -18,6 +18,6 @@ scan:
   # KSV-0118/KSV-0014 HIGH misconfigs. Skip both trees.
   skip-dirs:
     - "/root/.ansible"
-    - "/tmp/.venv/lib/python3.12/site-packages/ansible_collections"
+    - "/tmp/.venv/lib/python3.14/site-packages/ansible_collections"
     # Pre-commit cache: third-party hooks with their own Dockerfiles/manifests.
     - "/root/.cache"

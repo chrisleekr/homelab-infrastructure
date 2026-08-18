@@ -32,6 +32,9 @@
       ansible.builtin.command: kubeadm upgrade node
       register: kubeadm_agent_upgrade_node
       changed_when: kubeadm_agent_upgrade_node.rc == 0
+      when: >-
+        kubeadm_node_kubeadm_upgrade_required | bool
+        or kubeadm_node_kubelet_upgrade_required | bool
       vars:
         kubeadm_upgrade_step: upgrade_node
 

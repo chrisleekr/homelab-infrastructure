@@ -108,6 +108,16 @@ Eight `tasks_from:` call sites in total: three from `upgrade-control-plane.yml`,
 
 Cilium carries two independent pins, `cilium_version` and `cilium_cli_version`. See [Version pins](../reference/versions.md) for why they must not be compared to each other.
 
+### Extra Helm arguments
+
+`cilium_helm_args` in `stage1/inventories/inventory.yml` is appended to both `cilium install` and `cilium upgrade`. `envoy.xdsMode=split` holds the cluster on the pre-1.20 per-resource-type xDS server, because the 1.20 chart default of `ads` deadlocks the agent against Envoy ([cilium#47624](https://github.com/cilium/cilium/issues/47624)). The two `maxUnavailable=1` settings roll one Cilium pod and one Envoy pod at a time so node networking survives the roll.
+
+Drop `envoy.xdsMode=split` once cilium#47624 ships a fix. The `maxUnavailable` settings are independent of it and stay.
+
+!!! warning "A values-only change does not reconcile"
+
+    Both task files that pass these arguments are gated on version, not on values: `install-cilium.yml` runs only when Cilium is absent, and `upgrade-cilium.yml` only when the running agent is older than `cilium_version`. Editing `cilium_helm_args` without also bumping `cilium_version` is a silent no-op, and a cluster already on the target version never receives them. Apply such a change by hand with `cilium upgrade --version <cilium_version> --wait <args>`.
+
 ### MTU and the Cilium pin
 
 `cilium_mtu` in `stage1/inventories/inventory.yml` is pinned at `1500`, the LAN NIC MTU, from which Cilium derives a 1450-byte pod route MTU. It is pinned rather than auto-detected, and the reason is specific.

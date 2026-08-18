@@ -72,7 +72,7 @@ extract_arg() {
   printf '%s\n' "$value"
 }
 
-# inventory.yml: `cilium_version: "1.19.6" # https://github.com/cilium/cilium/releases`
+# inventory.yml: `cilium_version: "<version>" # https://github.com/cilium/cilium/releases`
 # Values are quoted or bare, with an optional trailing upstream-release comment.
 # Anchoring on `^\s*key:` matches a YAML key rather than the same text appearing
 # in a value or a comment, and stops a short key matching as the suffix of a

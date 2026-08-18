@@ -16,7 +16,7 @@ Infrastructure-as-code for provisioning a single-node Kubernetes cluster and dep
 
 - **Stage 0 (Terraform, optional)**: Oracle Cloud Always Free ARM machines joined to a tailnet as workers
 - **Stage 1 (Ansible)**: server hardening and Kubernetes bootstrap via kubeadm, k3s or minikube
-- **Stage 2 (Terraform)**: 19 modules, including GitLab, ArgoCD, monitoring, logging, storage, VPN, ingress
+- **Stage 2 (Terraform)**: 20 modules, including preflight checks, GitLab, ArgoCD, monitoring, logging, storage, VPN, ingress
 - **Containerised tooling**: one Alpine image with kubectl, helm, terraform, ansible and bws
 
 Supported platforms:
@@ -32,7 +32,7 @@ Supported platforms:
 | [Get started](docs/start/index.md) | Prerequisites, secrets, every stage, verification |
 | [Cloud (Stage 0)](docs/stage0/index.md) | Optional cloud workers: architecture, Oracle Always Free, account setup |
 | [Cluster (Stage 1)](docs/stage1/index.md) | Architecture, the `site.yml` plays, inventory, tags, handlers, all 10 roles |
-| [Platform (Stage 2)](docs/stage2/index.md) | All 19 Terraform modules and the dependency graph |
+| [Platform (Stage 2)](docs/stage2/index.md) | All 20 Terraform modules and the dependency graph |
 | [Operations](docs/operations/index.md) | Kubernetes upgrades, adding a worker, secrets, troubleshooting |
 | [Reference](docs/reference/index.md) | Version pins, `task` commands, repository layout, Terraform variables |
 | [Contributing](CONTRIBUTING.md) | Development guidelines |
@@ -66,10 +66,10 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 | Tool | Version |
 |------|---------|
 | kubectl | 1.36.3 |
-| helm | 4.2.3 |
+| helm | 4.2.4 |
 | terraform | 1.15.8 |
 | taskfile | 3.52.0 |
-| trivy | 0.72.0 |
+| trivy | 0.74.0 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at [Version pins](docs/reference/versions.md).

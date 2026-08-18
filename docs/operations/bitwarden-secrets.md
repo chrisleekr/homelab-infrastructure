@@ -307,10 +307,10 @@ The key must be reusable, because the pod re-authenticates on every container st
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_argocd_apps_repo_url` | | (empty, or repo URL) | Root apps repo for ApplicationSet |
-| `TF_VAR_argocd_config_repositories_json_encoded` | 🔑 | JSON array of repo creds; `[]` if none | Repo connection creds (may embed tokens) |
+| `TF_VAR_argocd_config_repositories_json_encoded` | 🔑 | `[]` | Repository credentials rendered into `configs.repositories`; empty in this deployment |
 | `TF_VAR_argocd_domain` | | `argocd.chrislee.local` | ArgoCD host |
 | `TF_VAR_argocd_rbac_policy_default` | | `role:readonly` | Default RBAC role |
-| `TF_VAR_argocd_ssh_known_hosts_base64` | 🔑 | `ssh-keyscan <host> \| base64` (optional) | Verify SSH git repos |
+| `TF_VAR_argocd_ssh_known_hosts_base64` | | `""` | SSH repository host keys; currently unused |
 | `TF_VAR_argocd_rbac_policy_csv` | | multi-line RBAC CSV | Extra RBAC policy rules |
 
 ### Stage 2: ArgoCD Image Updater (gate: `TF_VAR_argocd_image_updater_enable`)
