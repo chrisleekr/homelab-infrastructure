@@ -54,6 +54,7 @@ Optional. Only relevant when provisioning cloud machines. See [Cloud (Stage 0)](
 
 | Command | Does |
 | --- | --- |
+| `task stage0:test` | End-to-end run of the OCI capacity retry loop against stubbed `terraform` and `oci`. No cloud account, no network. |
 | `task stage0:terraform:init` | `terraform init` and select the `homelab-stage0` workspace |
 | `task stage0:terraform:plan` | |
 | `task stage0:terraform:apply` | |
@@ -61,7 +62,7 @@ Optional. Only relevant when provisioning cloud machines. See [Cloud (Stage 0)](
 | `task stage0:terraform:output` | Print the `worker_hosts_json` entries for every provisioned node |
 | `task stage0:terraform:init:lock` | Regenerate provider lock files with `darwin_arm64`, `linux_amd64` and `linux_arm64` hashes |
 
-One workspace holds every cloud account, so these take no account argument. A single apply provisions all of them, see [the account model](../stage0/architecture.md#the-account-model).
+All but `stage0:test` need Terraform Cloud credentials. One workspace holds every cloud account, so these take no account argument. A single apply provisions all of them, see [the account model](../stage0/architecture.md#the-account-model).
 
 ## Stage 1: Ansible
 

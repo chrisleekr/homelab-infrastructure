@@ -158,7 +158,7 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 | `prometheus_persistence_storage_class_name` | Storage class | `longhorn` |
 | `prometheus_persistence_size` | Prometheus storage size | `10Gi` |
 | `prometheus_alertmanager_slack_channel` | Slack channel for alerts | (required) |
-| `prometheus_alertmanager_slack_credentials` | Slack webhook URL | (required, sensitive) |
+| `prometheus_alertmanager_slack_credentials` | Slack bot token (`xoxb-`) with the `chat:write` scope | (required, sensitive) |
 | `prometheus_minio_job_bearer_token` | MinIO metrics token | (required, sensitive) |
 
 ### ElastAlert2
@@ -175,10 +175,14 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 
 ### Configure Slack Alerts
 
+Alertmanager posts through the Slack Web API (`chat.postMessage`), not an incoming webhook, so the credential is a bot token and the bot has to be a member of the target channel. Give the channel name without a leading `#`, the template adds it.
+
 ```bash
-TF_VAR_prometheus_alertmanager_slack_channel="#alerts"
-TF_VAR_prometheus_alertmanager_slack_credentials="https://hooks.slack.com/services/xxx"
+TF_VAR_prometheus_alertmanager_slack_channel="alerts"
+TF_VAR_prometheus_alertmanager_slack_credentials="xoxb-..."
 ```
+
+Each alert group keeps one Slack message. The first notification posts it, and every later notification for the same group rewrites it via `chat.update`, so the resolve and the 12h repeat both land as edits rather than new messages. An edit does not ping. Two gaps follow and are accepted deliberately: a second instance of the same alert in the same namespace joins the group and arrives as a silent edit, and an alert that resolves and re-fires while the message reference is still held is edited back to red without pinging. `alertname` is in the group key so that different rules at least never collide this way. Alertmanager holds the reference in its notification log for twice the repeat interval, on an `emptyDir` volume that is lost when the pod is replaced, and either expiry starts a fresh message. Deleting an alert message in Slack stops that group notifying until the reference expires, because the failed edit is not retried and never falls back to posting.
 
 ### Access Dashboards
 

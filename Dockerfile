@@ -10,7 +10,7 @@ ARG KUBECTL_VERSION=1.36.3
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.2.4
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.15.8
+ARG TERRAFORM_VERSION=1.15.9
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.52.0
 # https://github.com/aquasecurity/trivy/releases
@@ -21,6 +21,8 @@ ARG TFLINT_SHA256_AMD64=cca9d13e2e1d7a2c627af60ff899a3c9b74212899416aeb96ec764d2
 ARG TFLINT_SHA256_ARM64=560da89aacf59389d4eb029730dd5b109b7288096c32f2726a0d9e783a5ea8eb
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
+# https://github.com/oracle/oci-cli/releases
+ARG OCI_CLI_VERSION=3.90.3
 
 # Fail before installing target-specific binaries into a mismatched base image.
 RUN case "${TARGETARCH}:$(apk --print-arch)" in \
@@ -38,9 +40,13 @@ WORKDIR /tmp
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
+# alpine:3.24.1 ships openssl 3.5.7-r0, which carries CVE-2026-14456. The v3.24 apk repo already
+# has the fix, so libcrypto3 and libssl3 are pinned ahead of the base image until 3.24.2 is tagged.
 RUN set -eux; \
   \
   apk add --no-cache \
+  libcrypto3=3.5.8-r0 \
+  libssl3=3.5.8-r0 \
   ca-certificates=20260611-r0 \
   curl=8.21.0-r0 \
   bash=5.3.9-r1 \
@@ -90,6 +96,18 @@ RUN set -eux; \
   ansible --version && \
   # Run Ansible Galaxy to install required collections
   ansible-galaxy install -r /tmp/requirements.yml && \
+  \
+  # oci-cli, used only by the stage0 capacity pre-check in scripts/oci-apply-retry.sh, which
+  # needs a stateless API call Terraform cannot make.
+  #
+  # Its own venv, not the Ansible one: oci-cli pins PyYAML<=6.0.2, which silently downgrades
+  # the Ansible venv and breaks the kubernetes package's pyyaml>=6.0.3 requirement. Nothing
+  # here imports oci as a library, so a symlinked console script is all that is needed.
+  # System python by absolute path because the Ansible venv is active at this point.
+  /usr/bin/python3 -m venv /opt/oci-cli && \
+  /opt/oci-cli/bin/pip install --no-cache-dir oci-cli==${OCI_CLI_VERSION} && \
+  ln -s /opt/oci-cli/bin/oci /usr/local/bin/oci && \
+  oci --version && \
   \
   # Install Taskfile
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin v${TASKFILE_VERSION} && \
