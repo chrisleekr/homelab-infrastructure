@@ -263,6 +263,8 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 | `TF_VAR_prometheus_minio_job_bucket_bearer_token` | 🔑 | `mc admin prometheus generate minio bucket` | Scrape MinIO bucket metrics |
 | `TF_VAR_prometheus_minio_job_resource_bearer_token` | 🔑 | `mc admin prometheus generate minio resource` | Scrape MinIO resource metrics |
 
+The channel name carries no leading `#`. The values template adds it, so `#notification` renders as `##notification` and every `chat.postMessage` fails with `channel_not_found`. `terraform plan` rejects a leading `#` rather than applying it.
+
 ### Stage 2: Logging / Elasticsearch / Kibana
 
 | Variable | | Value / how to obtain | Purpose |
@@ -309,9 +311,11 @@ The key must be reusable, because the pod re-authenticates on every container st
 | `TF_VAR_argocd_apps_repo_url` | | (empty, or repo URL) | Root apps repo for ApplicationSet |
 | `TF_VAR_argocd_config_repositories_json_encoded` | 🔑 | `[]` | Repository credentials rendered into `configs.repositories`; empty in this deployment |
 | `TF_VAR_argocd_domain` | | `argocd.chrislee.local` | ArgoCD host |
-| `TF_VAR_argocd_rbac_policy_default` | | `role:readonly` | Default RBAC role |
+| `TF_VAR_argocd_rbac_policy_default` | | `""` | Optional fallback role for non-admin identities; empty requires explicit policy grants |
 | `TF_VAR_argocd_ssh_known_hosts_base64` | | `""` | SSH repository host keys; currently unused |
 | `TF_VAR_argocd_rbac_policy_csv` | | multi-line RBAC CSV | Extra RBAC policy rules |
+
+An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default of `""` and grants every authenticated identity that role. Before applying, confirm that the intended `TF_VAR_argocd_rbac_policy_csv` grants human access, remove any stored default-role variable, reload without its already-exported value by running `unset TF_VAR_argocd_rbac_policy_default; bws-load`, and verify that the Terraform plan sets `argocd-rbac-cm.data["policy.default"]` to an empty string.
 
 ### Stage 2: ArgoCD Image Updater (gate: `TF_VAR_argocd_image_updater_enable`)
 

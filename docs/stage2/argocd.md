@@ -179,7 +179,7 @@ Keep the template reference and `helm_release.argo_cd.version` on the same chart
 | `argocd_ingress_class_name` | Ingress class | `nginx` |
 | `argocd_ssh_known_hosts_base64` | SSH repository host keys; currently unused | `""` |
 | `argocd_config_repositories` | Repository credentials rendered into `configs.repositories`; empty in this deployment | `[]` |
-| `argocd_rbac_policy_default` | Default RBAC policy | `role:readonly` |
+| `argocd_rbac_policy_default` | Fallback RBAC role for non-admin identities | `""` |
 | `argocd_rbac_policy_csv` | RBAC policy CSV | `""` |
 | `argocd_apps_repo_url` | GitOps repository for the optional root Application | `""` |
 | `auth_oauth2_proxy_host` | Auth0 group claim namespace | `auth.chrislee.local` |
@@ -200,11 +200,13 @@ Configure `TF_VAR_argocd_domain`, `TF_VAR_auth_auth0_domain`, `TF_VAR_auth_auth0
 
 ### 2. Configure RBAC
 
-`argocd_rbac_policy_default` controls the fallback role. `argocd_rbac_policy_csv` maps Auth0 groups to Argo CD roles.
+`argocd_rbac_policy_default` controls the fallback role and is empty by default, so non-admin SSO and local identities may authenticate but receive no resource access unless `argocd_rbac_policy_csv` grants it explicitly. The built-in `admin` remains the unrestricted break-glass account. The CSV maps Auth0 groups and other subjects to Argo CD roles or direct policies.
 
 ```text
 g, my-group, role:admin
 ```
+
+On an existing cluster an already-exported `TF_VAR_argocd_rbac_policy_default` overrides this default and keeps the old `role:readonly` grant. See [Stage 2: ArgoCD](../operations/bitwarden-secrets.md#stage-2-argocd) before applying.
 
 ### 3. Configure the Root Application
 
@@ -284,7 +286,7 @@ kubectl -n argocd get applications.argoproj.io
 | Symptom | Check |
 |---------|-------|
 | Auth0 redirect loop or rejected callback | Confirm the Auth0 callback URL, inspect `argocd-cm`, and read `argocd-server` logs. |
-| Login succeeds but applications are hidden | Inspect `argocd-rbac-cm`, the token group claim, and the configured RBAC scopes. |
+| Login succeeds but applications are hidden | Expected when `argocd_rbac_policy_csv` grants the user nothing, because `argocd_rbac_policy_default` is empty. Confirm the CSV first, then the token group claim and the RBAC scopes in `argocd-rbac-cm`. |
 | Repository connection fails | Inspect the repository Secret data keys and `argocd-repo-server` logs. |
 | Application remains OutOfSync | Compare desired and live manifests, then inspect application-controller and repo-server logs before syncing. |
 | Metrics or alerts are absent | Verify the ServiceMonitors and PrometheusRule in the `monitoring` namespace and confirm Prometheus selected them. |

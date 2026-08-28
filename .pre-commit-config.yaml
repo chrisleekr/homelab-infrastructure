@@ -78,13 +78,30 @@ repos:
         pass_filenames: false
         files: ^stage2/preflight/(scripts/check-prometheus-chart-compatibility\.py|tests/)
 
+      # Guards the stage0 capacity retry loop. Both bugs it covers, a wait that overshot its
+      # budget and a bare `return` that aborted the run under set -e, were only reachable when
+      # the script runs as a script, so no unit-scoped check replaces it.
+      #
+      # It spends about 30 seconds of real sleep in the container, more on a macOS host where
+      # every freshly written stub pays a Gatekeeper scan. `language: system` with an explicit
+      # bash, because committed mode bits are unreliable here, see `ansible-upgrade-ordering`.
+      #
+      # stage0/ is watched because the probe mirrors it: the jq defaults mirror the optional()
+      # node defaults, and the probe shape mirrors compute.tf. The test asserts both mirrors.
+      - id: oci-retry-tests
+        name: oci apply retry loop self-test
+        entry: bash scripts/tests/test-oci-apply-retry.sh
+        language: system
+        pass_filenames: false
+        files: ^(scripts/(oci-apply-retry\.sh|tests/test-oci-apply-retry\.sh)|stage0/(variables\.tf|oci-freetier/compute\.tf))$
+
       # Version-pin drift. Regenerates the sentinel blocks in README.md and
       # docs/reference/versions.md from Dockerfile ARGs and inventory.yml, and
       # rewrites every <!--v:key--> span, then diffs.
       - id: docs-versions
         name: version pins in sync (Dockerfile + inventory -> README + docs)
-        # `language: system` with an explicit bash, for the same mode-bit reason
-        # as the hook above.
+        # `language: system` with an explicit bash, because committed mode bits
+        # are unreliable here, see `ansible-upgrade-ordering`.
         entry: bash scripts/sync-versions.sh --check
         language: system
         pass_filenames: false

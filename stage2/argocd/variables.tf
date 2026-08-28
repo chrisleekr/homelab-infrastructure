@@ -78,9 +78,9 @@ variable "argocd_auth0_client_secret" {
 }
 
 variable "argocd_rbac_policy_default" {
-  description = "The default RBAC policy for ArgoCD"
+  description = "The fallback RBAC role for non-admin ArgoCD identities; empty requires explicit policy grants"
   type        = string
-  default     = "role:readonly"
+  default     = ""
 }
 
 variable "argocd_rbac_policy_csv" {

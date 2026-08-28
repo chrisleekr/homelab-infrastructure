@@ -32,7 +32,7 @@ homelab-infrastructure/
 ├── scripts/                      # helper scripts
 │   ├── sync-versions.sh          # version drift gate
 │   ├── check-docs.py             # docs coverage, citation and nav gate
-│   ├── tests/                    # self-test for check-docs.py
+│   ├── tests/                    # self-tests for the scripts in this directory
 │   ├── oci-apply-retry.sh        # retries stage0 apply while Oracle is out of capacity
 │   ├── bump-versions.sh
 │   ├── docker-build.sh, docker-run.sh, repo-setup.sh

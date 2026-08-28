@@ -53,12 +53,17 @@ variable "prometheus_persistence_size" {
 }
 
 variable "prometheus_alertmanager_slack_channel" {
-  description = "The slack channel for the alertmanager"
+  description = "Slack channel name without a leading '#'. The Alertmanager values template adds it."
   type        = string
+
+  validation {
+    condition     = can(regex("^[^#[:space:]][^[:space:]]*$", var.prometheus_alertmanager_slack_channel))
+    error_message = "Give a non-empty channel name with no whitespace and no leading '#'. The template prepends the '#', so '#alerts' renders as '##alerts' and chat.postMessage returns channel_not_found."
+  }
 }
 
 variable "prometheus_alertmanager_slack_credentials" {
-  description = "The slack credentials for the alertmanager"
+  description = "Slack bot token, xoxb-, with the chat:write scope. Alertmanager sends it as a bearer token to chat.postMessage, so an incoming webhook URL will not work."
   type        = string
   sensitive   = true
 }

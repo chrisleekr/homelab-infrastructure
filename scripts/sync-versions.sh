@@ -103,6 +103,7 @@ TASKFILE_VERSION=$(extract_arg "TASKFILE_VERSION")
 TRIVY_VERSION=$(extract_arg "TRIVY_VERSION")
 TFLINT_VERSION=$(extract_arg "TFLINT_VERSION")
 BWS_VERSION=$(extract_arg "BWS_VERSION")
+OCI_CLI_VERSION=$(extract_arg "OCI_CLI_VERSION")
 
 # Ordered list of inventory pins. One entry per line: `<key> <label>`.
 INVENTORY_KEYS="kubeadm_version kubeadm
@@ -139,7 +140,8 @@ terraform_version=$TERRAFORM_VERSION
 taskfile_version=$TASKFILE_VERSION
 trivy_version=$TRIVY_VERSION
 tflint_version=$TFLINT_VERSION
-bws_version=$BWS_VERSION"
+bws_version=$BWS_VERSION
+oci_cli_version=$OCI_CLI_VERSION"
 
 while read -r key _label; do
   [[ -n "$key" ]] || continue
@@ -268,6 +270,7 @@ if [[ -f "$VERSIONS_DOC" ]]; then
     echo "| trivy | $TRIVY_VERSION |"
     echo "| tflint | $TFLINT_VERSION |"
     echo "| bws | $BWS_VERSION |"
+    echo "| oci-cli | $OCI_CLI_VERSION |"
     echo "<!-- VERSIONS_END:container-tools -->"
   } > "$TMP_DIR/tools-table"
 

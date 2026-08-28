@@ -55,7 +55,11 @@ alertmanager:
       - target_matchers:
           - 'alertname = InfoInhibitor'
     route:
-      group_by: ['namespace']
+      ## alertname is in the group key because update_message rewrites the group's existing
+      ## Slack message and an edit never pings. This separates different rules only.
+      ## Instances of one rule in a namespace still share a group, so the second pod to
+      ## crashloop arrives as a silent edit. Accepted, see docs/stage2/monitoring.md.
+      group_by: ['namespace', 'alertname']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
@@ -83,6 +87,11 @@ alertmanager:
       - api_url: 'https://slack.com/api/chat.postMessage'
         channel: '#${alertmanager_slack_channel}'
         send_resolved: true
+        ## Every notification after the first rewrites the group's message via chat.update,
+        ## repeat reminders and re-fires after a resolve included, and an edit never pings.
+        ## Bot token only, incoming webhooks cannot update. Needs Alertmanager >= v0.32.0,
+        ## chart 88.3.0 ships v0.33.1.
+        update_message: true
         http_config:
           authorization:
             credentials: ${alertmanager_slack_credentials}

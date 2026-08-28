@@ -157,6 +157,20 @@ vulnerabilities:
     statement: Accept Task Terraform and TFLint xDS risk until official binaries include gRPC-Go 1.82.1 or later
     expired_at: 2026-09-15
 
+  # x/mod 0.40.0 carries the fix. Terraform 1.15.9 already ships it, so only TFLint is listed:
+  # v0.64.0 is the latest release and still vendors 0.37.0, as an indirect dependency.
+  - id: CVE-2026-56864
+    purls:
+      - pkg:golang/golang.org/x/mod@v0.37.0
+    statement: Accept TFLint GOSUMDB risk until an official rebuild includes x/mod 0.40.0 or later
+    expired_at: 2026-09-15
+
+  - id: CVE-2026-56865
+    purls:
+      - pkg:golang/golang.org/x/mod@v0.37.0
+    statement: Accept TFLint GOPROXY sumdb risk until an official rebuild includes x/mod 0.40.0 or later
+    expired_at: 2026-09-15
+
 misconfigurations:
   # Dockerfile checks - acceptable for this use case
   - id: DS-0002

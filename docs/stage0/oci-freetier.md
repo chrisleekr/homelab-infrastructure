@@ -122,13 +122,16 @@ Reference: [Managing Compartments](https://docs.oracle.com/en-us/iaas/Content/Id
     Allow group homelab-terraform to read all-resources in compartment homelab
     Allow group homelab-terraform to inspect compartments in tenancy
     Allow group homelab-terraform to manage quota in tenancy
+    Allow group homelab-terraform to manage compute-capacity-reports in tenancy
     ```
 
 6. Select **Create**.
 
-**You should see:** `homelab-terraform-policy` in the Policies list of the root compartment, holding all six statements.
+**You should see:** `homelab-terraform-policy` in the Policies list of the root compartment, holding all seven statements.
 
-The last two are tenancy-scoped because quotas are tenancy-level objects, and because `ListAvailabilityDomains` and `GetCompartment` both require `COMPARTMENT_INSPECT` at the tenancy per the [IAM policy reference](https://docs.oracle.com/en-us/iaas/Content/Identity/Reference/iampolicyreference.htm). `inspect compartments` is read-only: it carries no create, update or delete anywhere. `manage quota` is not. Quota permissions [cannot be scoped below the tenancy](https://docs.oracle.com/en-us/iaas/Content/Quotas/Concepts/resourcequotas_authentication_and_authorization.htm), so that one statement grants create, update and delete on quota policies tenancy-wide, including the ceiling that caps this account. Every other statement is confined to `homelab`.
+The last three are tenancy-scoped because quotas are tenancy-level objects, and because `ListAvailabilityDomains` and `GetCompartment` both require `COMPARTMENT_INSPECT` at the tenancy per the [IAM policy reference](https://docs.oracle.com/en-us/iaas/Content/Identity/Reference/iampolicyreference.htm). `inspect compartments` is read-only: it carries no create, update or delete anywhere. `manage quota` is not. Quota permissions [cannot be scoped below the tenancy](https://docs.oracle.com/en-us/iaas/Content/Quotas/Concepts/resourcequotas_authentication_and_authorization.htm), so that one statement grants create, update and delete on quota policies tenancy-wide, including the ceiling that caps this account. Every other statement is confined to `homelab`.
+
+`compute-capacity-reports` is an individual resource type that no aggregate covers, so `manage instance-family` does not reach it, and `CreateComputeCapacityReport` is a tenancy-level call. The verb reads alarming but the [Core Services policy reference](https://docs.oracle.com/en-us/iaas/Content/Identity/Reference/corepolicyreference.htm) gives it exactly one permission, `COMPUTE_CAPACITY_REPORT_CREATE`, covering exactly one API. `inspect`, `read` and `use` grant nothing at all on this type, so `manage` is the only verb that works. It creates no resource and changes no state. Without it the capacity pre-check in [Capacity retries](#capacity-retries) turns itself off, saying so on stdout, and the apply loop falls back to fixed waits.
 
 Add one more line **only** if you intend to set `stage0_budget_enable = true`. Budgets are created in the root compartment and their resource type is `usage-budgets`, so without this the apply fails on an authorization error:
 
@@ -411,7 +414,7 @@ Egress is left wide open on purpose. A Kubernetes node needs registries, apt and
 | Control | Detail |
 |---|---|
 | IMDSv2 only | `are_legacy_imds_endpoints_disabled = true` shuts out a blind SSRF that cannot set headers. It is **not** a session-token scheme: OCI's IMDSv2 takes a static, documented `Authorization: Bearer Oracle` header, so anything on the node that can set one still reads `user_data`. Treat the auth key as readable on the box for the life of the instance |
-| Least-privilege IAM | Terraform authenticates as the dedicated user from step 3, never as a tenancy administrator. Every statement is confined to `homelab` except `inspect compartments` and `manage quota`, which OCI only scopes at the tenancy |
+| Least-privilege IAM | Terraform authenticates as the dedicated user from step 3, never as a tenancy administrator. Every statement is confined to `homelab` except `inspect compartments`, `manage quota` and `manage compute-capacity-reports`, which OCI only scopes at the tenancy. See [step 5](#5-grant-the-policy) for what each of the three permits |
 | Credential scoping | Each account gets its own provider alias, so one account's signing key can only ever reach that account's resources. State is shared: a single plan covers every account, so read it before approving |
 | Volume encryption | OCI encrypts block volumes at rest with Oracle-managed keys by default. Customer-managed keys need Vault, which is not free tier |
 | Auth key handling | Kept out of argv and out of the cloud-init log. The file on tmpfs is deleted whether the join worked or not, but the copy inside `user_data` is readable from IMDS for the life of the instance, per the row above. Mechanism in [How cloud-init builds the node](#how-cloud-init-builds-the-node) |
@@ -426,13 +429,25 @@ Egress is left wide open on purpose. A Kubernetes node needs registries, apt and
 
 Always Free A1 capacity is frequently unavailable, worst on accounts that have not been upgraded to pay as you go. Oracle returns "Out of host capacity" and `apply` can fail for days.
 
-`scripts/oci-apply-retry.sh` loops `terraform apply` on exactly that string, with a bounded attempt count and a sleep between attempts, and logs every attempt so a silent give-up is impossible. Any other failure aborts immediately, because retrying a bad credential or an over-quota plan just burns attempts.
+`scripts/oci-apply-retry.sh` loops `terraform apply` on exactly that string, with a bounded attempt count and a wait between attempts, and logs every attempt so a silent give-up is impossible. Any other failure aborts immediately, because retrying a bad credential or an over-quota plan just burns attempts.
 
 ```bash
 task stage0:terraform:apply:retry
 ```
 
 Tune with `OCI_APPLY_MAX_ATTEMPTS` and `OCI_APPLY_SLEEP_SECONDS`, defaulting to 30 attempts five minutes apart.
+
+### Capacity pre-check
+
+Capacity frees up in short windows, so how fast the loop reacts matters more than how many attempts it makes. During each wait the script polls [`CreateComputeCapacityReport`](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/compute/compute-capacity-report/create.html) every `OCI_CAPACITY_POLL_SECONDS`, 30 by default, and starts the next apply the moment the report reads `AVAILABLE`. That cuts the maximum detection interval from five minutes to 30 seconds without raising the `LaunchInstance` call rate at all, because the report is a separate API that launches nothing.
+
+The report is a trigger, never a veto. A negative report does not cancel or extend anything: the wait still ends within one report round trip of `OCI_APPLY_SLEEP_SECONDS` and the apply runs regardless. This is deliberate. The report [can disagree with reality](https://github.com/oracle/oci-cli/issues/748), and a false negative that skipped an apply would make the loop worse than the fixed sleep it replaces. Wired this way the pre-check can only ever save time.
+
+It queries the largest node under `account1`, which is the hardest single placement in that account. A positive result does not prove two nodes fit, and it says nothing about any later account. A false positive costs one apply, which is what every attempt costs today.
+
+The pre-check disables itself, with a line saying so, if anything it needs is missing: the `oci` or `jq` binaries, the `TF_VAR_stage0_oci_*` secrets, a readable availability domain, a numeric shape in `nodes`, or the `manage compute-capacity-reports in tenancy` grant from [step 5](#5-grant-the-policy). The loop then behaves exactly as it did before. If the report starts failing after the loop is already running, the script says so once and reverts to the fixed budget for the rest of the run. Credentials come from the same injected secrets Terraform uses, passed as [CLI environment variables](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clienvironmentvariables.htm) with the signing key in `OCI_CLI_KEY_CONTENT`, so no `~/.oci/config` and no key file is written.
+
+Set `OCI_CAPACITY_POLL_SECONDS` below `OCI_APPLY_SLEEP_SECONDS`. At or above it the first sleep consumes the whole budget and no poll ever runs, leaving the pre-check armed but inert.
 
 ## Idle reclamation
 

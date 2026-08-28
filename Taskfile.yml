@@ -182,6 +182,11 @@ tasks:
           fi
         done
 
+  stage0:test:
+    desc: Exercise the OCI capacity retry loop against stubbed terraform and oci binaries. No cloud account, no network.
+    cmds:
+      - bash scripts/tests/test-oci-apply-retry.sh
+
   stage1:test:
     desc: Assert the kubeadm upgrade ordering statically. Needs a python3 with PyYAML, which the ansible install already provides. No cluster, no network.
     cmds:
