@@ -405,8 +405,8 @@ variable "prometheus_alertmanager_slack_channel" {
   type        = string
 
   validation {
-    condition     = !startswith(var.prometheus_alertmanager_slack_channel, "#")
-    error_message = "Drop the leading '#'. The template prepends it, so '#alerts' renders as '##alerts' and chat.postMessage returns channel_not_found."
+    condition     = can(regex("^[^#[:space:]][^[:space:]]*$", var.prometheus_alertmanager_slack_channel))
+    error_message = "Give a non-empty channel name with no whitespace and no leading '#'. The template prepends the '#', so '#alerts' renders as '##alerts' and chat.postMessage returns channel_not_found."
   }
 }
 

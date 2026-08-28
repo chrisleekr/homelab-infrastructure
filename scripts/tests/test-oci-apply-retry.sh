@@ -334,6 +334,11 @@ check_precheck_banner() {
 check_precheck_banner "largest node sets the probe shape" "for 2 OCPU / 12 GB" \
   TF_VAR_stage0_oci_accounts='{"account1":{"region":"r","tenancy_ocid":"t","user_ocid":"u","fingerprint":"f","nodes":{"small":{"ocpus":1,"memory_gbs":6},"big":{}}}}'
 
+# Maxima taken independently would combine 4 OCPU from one node with 24 GB from another into a
+# shape no node asks for. The probe must name one real node.
+check_precheck_banner "probe shape comes from one node" "for 4 OCPU / 6 GB" \
+  TF_VAR_stage0_oci_accounts='{"account1":{"region":"r","tenancy_ocid":"t","user_ocid":"u","fingerprint":"f","nodes":{"cpu":{"ocpus":4,"memory_gbs":6},"mem":{"ocpus":2,"memory_gbs":24}}}}'
+
 # A non-numeric field must disable the pre-check, not reach the API as a shape.
 check_precheck_banner "non-numeric shape is rejected" "pre-check unavailable" \
   TF_VAR_stage0_oci_accounts='{"account1":{"region":"r","tenancy_ocid":"t","user_ocid":"u","fingerprint":"f","nodes":{"n":{"ocpus":"9; rm -rf /","memory_gbs":12}}}}'

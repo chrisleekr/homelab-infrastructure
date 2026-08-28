@@ -439,7 +439,7 @@ Tune with `OCI_APPLY_MAX_ATTEMPTS` and `OCI_APPLY_SLEEP_SECONDS`, defaulting to 
 
 ### Capacity pre-check
 
-Capacity frees up in short windows, so how fast the loop reacts matters more than how many attempts it makes. During each wait the script polls [`CreateComputeCapacityReport`](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/compute/compute-capacity-report/create.html) every `OCI_CAPACITY_POLL_SECONDS`, 30 by default, and starts the next apply the moment the report reads `AVAILABLE`. That is a ten times tighter reaction than the five minute wait alone, without raising the `LaunchInstance` call rate at all, because the report is a separate read-only API.
+Capacity frees up in short windows, so how fast the loop reacts matters more than how many attempts it makes. During each wait the script polls [`CreateComputeCapacityReport`](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/compute/compute-capacity-report/create.html) every `OCI_CAPACITY_POLL_SECONDS`, 30 by default, and starts the next apply the moment the report reads `AVAILABLE`. That cuts the maximum detection interval from five minutes to 30 seconds without raising the `LaunchInstance` call rate at all, because the report is a separate API that launches nothing.
 
 The report is a trigger, never a veto. A negative report does not cancel or extend anything: the wait still ends within one report round trip of `OCI_APPLY_SLEEP_SECONDS` and the apply runs regardless. This is deliberate. The report [can disagree with reality](https://github.com/oracle/oci-cli/issues/748), and a false negative that skipped an apply would make the loop worse than the fixed sleep it replaces. Wired this way the pre-check can only ever save time.
 

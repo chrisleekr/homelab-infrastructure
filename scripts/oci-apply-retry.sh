@@ -48,7 +48,7 @@ setup_capacity_precheck() {
   command -v jq >/dev/null 2>&1 || return 1
   [[ -n "${TF_VAR_stage0_oci_accounts:-}" && -n "${TF_VAR_stage0_oci_private_keys:-}" ]] || return 1
 
-  local account
+  local account shape
   account=$(jq -er '.account1' <<<"${TF_VAR_stage0_oci_accounts}") || return 1
 
   # Assigned without `local`: `local x=$(cmd)` reports local's own exit status, not the
@@ -71,10 +71,15 @@ setup_capacity_precheck() {
   # The `// ` defaults mirror the optional() defaults in stage0/variables.tf. Terraform
   # applies those during type conversion, so an unset field is simply absent from the secret.
   #
+  # Taken as a pair, never as two independent maxima: 4 OCPU / 6 GB alongside 2 OCPU / 24 GB
+  # would otherwise probe a synthetic 4 OCPU / 24 GB that no node asks for.
+  #
   # `numbers` rejects a non-numeric field rather than passing it through: jq orders strings
-  # above numbers, so a stray string would win `max` and reach the API as the probe shape.
-  CAPACITY_OCPUS=$(jq -er '[.nodes[] | (.ocpus // 2)] | max | numbers' <<<"${account}") || return 1
-  CAPACITY_MEMORY=$(jq -er '[.nodes[] | (.memory_gbs // 12)] | max | numbers' <<<"${account}") || return 1
+  # above numbers, so a stray string wins max_by and then fails here, rather than reaching the
+  # API as the probe shape.
+  shape=$(jq -er '[.nodes[] | [(.ocpus // 2), (.memory_gbs // 12)]] | max_by(.)' <<<"${account}") || return 1
+  CAPACITY_OCPUS=$(jq -er '.[0] | numbers' <<<"${shape}") || return 1
+  CAPACITY_MEMORY=$(jq -er '.[1] | numbers' <<<"${shape}") || return 1
 
   # CreateComputeCapacityReport is a tenancy-level call. The homelab compartment is rejected,
   # and the IAM grant it needs is `manage compute-capacity-reports in tenancy`, which is not
