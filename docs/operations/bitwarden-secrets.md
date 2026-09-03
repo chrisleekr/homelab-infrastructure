@@ -380,7 +380,7 @@ Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` ma
 | `TF_VAR_omniroute_ingress_class_name` | | `nginx` | Ingress class for both ingresses |
 | `TF_VAR_omniroute_storage_size` | | `5Gi` | SQLite volume size |
 | `TF_VAR_omniroute_storage_class_name` | | `longhorn` | Storage class |
-| `TF_VAR_omniroute_chart_version` | | `0.1.1` | `omniroute` chart pin. Bump together with the image tag |
+| `TF_VAR_omniroute_chart_version` | | `0.2.2` | `omniroute` chart pin. Bump together with the image tag |
 | `TF_VAR_omniroute_image_tag` | | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
 | `TF_VAR_omniroute_public_paths` | | `["/api/v1", "/v1"]` | Paths routed to the open API ingress. Anything omitted is gated by oauth2-proxy |
 | `TF_VAR_omniroute_gated_admin_suffixes` | | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every public path prefix |

@@ -10,9 +10,9 @@ ARG KUBECTL_VERSION=1.36.3
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.2.4
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.15.9
+ARG TERRAFORM_VERSION=1.16.1
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.52.0
+ARG TASKFILE_VERSION=3.53.1
 # https://github.com/aquasecurity/trivy/releases
 ARG TRIVY_VERSION=0.74.0
 # https://github.com/terraform-linters/tflint/releases
@@ -48,9 +48,9 @@ RUN set -eux; \
   libcrypto3=3.5.8-r0 \
   libssl3=3.5.8-r0 \
   ca-certificates=20260611-r0 \
-  curl=8.21.0-r0 \
+  curl=8.22.0-r0 \
   bash=5.3.9-r1 \
-  jq=1.8.1-r0 \
+  jq=1.8.2-r0 \
   bind-tools=9.20.26-r0 \
   git=2.54.0-r0 \
   graphviz=12.2.1-r3 \
@@ -82,7 +82,7 @@ RUN set -eux; \
   \
   # Install Ansible
   apk add --no-cache \
-  openssh=10.3_p1-r0 \
+  openssh=10.3_p1-r1 \
   sshpass=1.10-r0 \
   g++=15.2.0-r5 \
   gcc=15.2.0-r5 \

@@ -71,7 +71,7 @@ variable "omniroute_chart_version" {
 }
 
 variable "omniroute_image_tag" {
-  description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.48-web) for web-cookie providers like gemini-web or claude-web"
+  description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.50-web) for web-cookie providers like gemini-web or claude-web"
   type        = string
 }
 

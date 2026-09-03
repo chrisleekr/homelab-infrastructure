@@ -59,7 +59,7 @@ The exact set is app-version dependent; re-verify it against a running container
 | `omniroute_ingress_enable_tls` | bool | `true` | Wired from the root `ingress_enable_tls` |
 | `omniroute_public_paths` | list(string) | `["/api/v1", "/v1"]` | Paths routed to the open API Ingress. Omissions fall through to oauth2-proxy |
 | `omniroute_gated_admin_suffixes` | list(string) | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every API alias prefix (`/api/v1`, `/v1`, `/v1/v1`). `[]` disables |
-| `omniroute_chart_version` | string | `0.1.1` | `omniroute` chart pin. Bump with the image tag |
+| `omniroute_chart_version` | string | `0.2.2` | `omniroute` chart pin. Bump with the image tag |
 | `omniroute_image_tag` | string | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
 | `omniroute_storage_class_name` | string | `longhorn` | SQLite PVC storage class |
 | `omniroute_storage_size` | string | `5Gi` | SQLite PVC size |
@@ -116,7 +116,7 @@ done
 - **The PVC holds the only copy of state.** Providers, keys, and settings live in SQLite on the `omniroute-data` PVC. Setting `omniroute_enable = false` deletes the Namespace, and that is what reaps the PVC and the data. Back up before disabling.
 - **Write-once keys.** Rotating `omniroute_api_key_secret` or `omniroute_storage_encryption_key` after providers have been added makes every stored credential permanently unreadable. Generate them once and keep them in Bitwarden.
 - **TLS on a `.local` domain never issues.** `letsencrypt-prod` cannot complete an HTTP-01 challenge for `omniroute.chrislee.local`. Certificates only issue once a real public domain is set. This is the repo-wide pattern, not specific to this module.
-- **`-web` image flavor.** Web-cookie providers (`gemini-web`, `claude-web`, `claude-turnstile`) need the `-web` image; set `omniroute_image_tag` to e.g. `3.8.48-web`, and add their callback paths to `omniroute_public_paths`.
+- **`-web` image flavor.** Web-cookie providers (`gemini-web`, `claude-web`, `claude-turnstile`) need the `-web` image; set `omniroute_image_tag` to e.g. `3.8.50-web`, and add their callback paths to `omniroute_public_paths`.
 - **Chart and image versions move together.** Bump `omniroute_chart_version` and `omniroute_image_tag` as a pair.
 - **Heap cap and memory limit move together.** `OMNIROUTE_MEMORY_MB` is the V8 old-space ceiling and `resources.limits.memory` must clear it by several hundred MiB, both in `templates/omniroute-values.tftpl`. Undersizing the cap aborts the process with "Reached heap limit" and reports exit 0, so it looks like a clean shutdown. `OmniRouteMemoryNearHeapCeiling` in [monitoring](https://github.com/chrisleekr/homelab-infrastructure/blob/main/stage2/monitoring/prometheus-rules/omniroute-rules.tftpl) is tuned to the gap between the two values, so retune it when either changes.
 - **Credential health is reactive, not scheduled.** `extraConfig.OMNIROUTE_DISABLE_CREDENTIAL_HEALTH_CHECK: "true"` in `templates/omniroute-values.tftpl` stops the 5-minute sweep that re-probed every provider connection, because each probe billed a real upstream call against free-tier quota. A live request that fails auth still flips its connection on its own, but nothing re-probes on a schedule any more, so a credential that goes bad while idle keeps reading healthy until something uses it. Use Test Connection on a connection to refresh it on demand.

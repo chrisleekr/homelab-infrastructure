@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml)
 [![Container Security](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml)
-[![Terraform](https://img.shields.io/badge/terraform-1.15.9-blue)](https://www.terraform.io/)
+[![Terraform](https://img.shields.io/badge/terraform-1.16.1-blue)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.3-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -67,8 +67,8 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 |------|---------|
 | kubectl | 1.36.3 |
 | helm | 4.2.4 |
-| terraform | 1.15.9 |
-| taskfile | 3.52.0 |
+| terraform | 1.16.1 |
+| taskfile | 3.53.1 |
 | trivy | 0.74.0 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
