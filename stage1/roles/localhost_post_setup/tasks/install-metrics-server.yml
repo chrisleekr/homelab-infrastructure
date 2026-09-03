@@ -1,8 +1,12 @@
 ---
+# Canonical slash-free form: kubernetes.core >= 6.5.0 rstrips "/" from the declared repo_url
+# before both the add and the idempotency compare. A host whose repositories.yaml still holds
+# the old slashed URL fails until a one-time `helm repo remove metrics-server`.
+# https://github.com/ansible-collections/kubernetes.core/pull/1121
 - name: Add Helm repository for metrics-server
   kubernetes.core.helm_repository:
     name: metrics-server
-    repo_url: https://kubernetes-sigs.github.io/metrics-server/
+    repo_url: https://kubernetes-sigs.github.io/metrics-server
 
 - name: Install metrics-server using Helm
   kubernetes.core.helm:

@@ -1048,11 +1048,11 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.2.1"
+  default     = "0.2.2"
 }
 
 variable "omniroute_image_tag" {
-  description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.48-web) for web-cookie providers like gemini-web or claude-web"
+  description = "Tag for diegosouzapw/omniroute. Empty defaults to the chart appVersion. Use the -web flavor (e.g. 3.8.50-web) for web-cookie providers like gemini-web or claude-web"
   type        = string
   default     = ""
 }
