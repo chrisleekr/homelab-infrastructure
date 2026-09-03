@@ -1,6 +1,6 @@
 # Helm values for the omniroute chart. Overrides ONLY what the module must own; every other key
-# keeps its chart 0.1.1 default. Each key below was confirmed against a `helm template` render of
-# chart 0.1.1. Rendered by templatefile() from omniroute.tf.
+# keeps its chart 0.2.2 default. Each key below was confirmed against a `helm template` render of
+# chart 0.2.2. Rendered by templatefile() from omniroute.tf.
 
 # Pins the Service/Deployment name so the Ingress backends and the module outputs reference a single
 # local instead of inheriting whatever the Helm release happens to be called.
@@ -9,7 +9,7 @@ fullnameOverride: omniroute
 image:
   repository: diegosouzapw/omniroute
   # Empty defaults to the chart appVersion. For web-cookie providers (gemini-web, claude-web,
-  # claude-turnstile) use the "-web" flavor, e.g. "3.8.48-web". Quoted so an empty tag stays a
+  # claude-turnstile) use the "-web" flavor, e.g. "3.8.50-web". Quoted so an empty tag stays a
   # string rather than YAML null.
   tag: "${image_tag}"
 
