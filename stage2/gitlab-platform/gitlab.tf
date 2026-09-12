@@ -37,7 +37,7 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "10.2.4"
+  version    = "10.3.2"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   # A major-version upgrade pulls every image fresh, and 1800 was not enough for 19.0: the release
   # timed out mid-apply, which does not roll back. It leaves resources behind that the next upgrade

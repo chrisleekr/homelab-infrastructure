@@ -640,6 +640,24 @@ variable "argocd_config_repositories_json_encoded" {
   default     = "[]"
 }
 
+variable "argocd_notifications_slack_token" {
+  description = "Slack bot token used by the ArgoCD notifications controller. Empty leaves Slack notifications off."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "argocd_notifications_slack_subscriptions_json_encoded" {
+  description = "The default ArgoCD Slack subscriptions - json encoded. See the argocd module for the accepted entry shape."
+  type        = string
+  default     = "[]"
+
+  validation {
+    condition     = can(jsondecode(var.argocd_notifications_slack_subscriptions_json_encoded)) && startswith(trimspace(var.argocd_notifications_slack_subscriptions_json_encoded), "[")
+    error_message = "Must be a valid JSON array, for example [{\"triggers\":[\"on-sync-failed\"],\"channels\":[\"homelab-alerts\"]}]."
+  }
+}
+
 
 variable "argocd_rbac_policy_default" {
   description = "The fallback RBAC role for non-admin ArgoCD identities; empty requires explicit policy grants"

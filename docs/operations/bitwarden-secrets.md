@@ -311,6 +311,8 @@ The key must be reusable, because the pod re-authenticates on every container st
 | `TF_VAR_argocd_apps_repo_url` | | (empty, or repo URL) | Root apps repo for ApplicationSet |
 | `TF_VAR_argocd_config_repositories_json_encoded` | 🔑 | `[]` | Repository credentials rendered into `configs.repositories`; empty in this deployment |
 | `TF_VAR_argocd_domain` | | `argocd.chrislee.local` | ArgoCD host |
+| `TF_VAR_argocd_notifications_slack_token` | 🔑 | api.slack.com/apps → Install App → Bot User OAuth Token, `chat:write` scope; starts `xoxb-`. Token rotation is not supported | Slack notifications; empty leaves them off |
+| `TF_VAR_argocd_notifications_slack_subscriptions_json_encoded` | | `[]`, or a JSON array of `triggers` and `channels` entries | Default Slack routing for Applications |
 | `TF_VAR_argocd_rbac_policy_default` | | `""` | Optional fallback role for non-admin identities; empty requires explicit policy grants |
 | `TF_VAR_argocd_ssh_known_hosts_base64` | | `""` | SSH repository host keys; currently unused |
 | `TF_VAR_argocd_rbac_policy_csv` | | multi-line RBAC CSV | Extra RBAC policy rules |

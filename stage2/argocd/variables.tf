@@ -99,3 +99,42 @@ variable "argocd_apps_repo_url" {
     error_message = "argocd_apps_repo_url must be empty or a valid Git URL (https://, http://, git@, or ssh://)"
   }
 }
+
+variable "argocd_notifications_slack_token" {
+  description = "Slack bot token used by the notifications controller. Empty leaves Slack notifications off."
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.argocd_notifications_slack_token == "" || can(regex("^xoxb-\\S+$", var.argocd_notifications_slack_token))
+    error_message = "Give an empty string or a non-rotating Slack bot token starting 'xoxb-' with no surrounding whitespace. Rotating 'xoxe.xoxb-' tokens are not supported because the controller holds a single static token it cannot refresh."
+  }
+}
+
+# The trigger names are not free text: each one must have a matching trigger and template definition
+# in templates/argocd-values.tftpl, so the validation pins them to the catalog that file ships.
+variable "argocd_notifications_slack_subscriptions" {
+  description = "Default Slack routing applied to every Application. Each entry sends its triggers to its channels, optionally narrowed to Applications matching a label selector."
+  type = list(object({
+    triggers = list(string)
+    channels = list(string)
+    selector = optional(string, "")
+  }))
+  default = []
+
+  validation {
+    condition     = alltrue([for s in var.argocd_notifications_slack_subscriptions : length(s.triggers) > 0 && length(s.channels) > 0])
+    error_message = "Every subscription needs at least one trigger and at least one channel."
+  }
+
+  validation {
+    condition     = alltrue([for s in var.argocd_notifications_slack_subscriptions : alltrue([for c in s.channels : can(regex("^[^#\\pZ\\pC][^\\pZ\\pC]*$", c))])])
+    error_message = "Give channel names with no whitespace and no leading '#'. The module prepends 'slack:', so '#alerts' would render as the recipient 'slack:#alerts'."
+  }
+
+  validation {
+    condition     = alltrue([for s in var.argocd_notifications_slack_subscriptions : alltrue([for t in s.triggers : contains(["on-deployed", "on-sync-failed", "on-health-degraded"], t)])])
+    error_message = "Triggers must come from the catalog in templates/argocd-values.tftpl: on-deployed, on-sync-failed, on-health-degraded."
+  }
+}

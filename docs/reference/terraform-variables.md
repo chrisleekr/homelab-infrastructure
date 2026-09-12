@@ -1,6 +1,6 @@
 # Terraform variables
 
-All 136 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
+All 138 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
 
 Values are supplied as `TF_VAR_*` environment variables, injected from [Bitwarden](../operations/bitwarden-secrets.md) when you enter the tooling container. There is no `terraform.tfvars`; `*.tfvars` is gitignored.
 
@@ -14,7 +14,7 @@ Variables are prefixed by the module that consumes them.
 | `litellm_*` | 14 | [litellm](../stage2/litellm.md) |
 | `omniroute_*` | 13 | [omniroute-gateway](../stage2/omniroute-gateway.md) |
 | `prometheus_*` | 12 | [monitoring](../stage2/monitoring.md) |
-| `argocd_*` | 10 | [argocd](../stage2/argocd.md), [argocd-updater](../stage2/argocd-updater.md) |
+| `argocd_*` | 12 | [argocd](../stage2/argocd.md), [argocd-updater](../stage2/argocd-updater.md) |
 | `minio_*` | 9 | [minio-object-storage](../stage2/minio-object-storage.md) |
 | `auth_*` | 7 | [auth](../stage2/auth.md) |
 | `elasticsearch_*`, `kibana_*` | 10 | [logging](../stage2/logging.md) |
