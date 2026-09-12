@@ -10,7 +10,7 @@ ARG KUBECTL_VERSION=1.36.3
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.2.4
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.16.1
+ARG TERRAFORM_VERSION=1.16.2
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.53.1
 # https://github.com/aquasecurity/trivy/releases
@@ -51,7 +51,7 @@ RUN set -eux; \
   curl=8.22.0-r0 \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \
-  bind-tools=9.20.26-r0 \
+  bind-tools=9.20.27-r0 \
   git=2.54.0-r0 \
   graphviz=12.2.1-r3 \
   python3=3.14.7-r1 \

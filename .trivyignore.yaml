@@ -13,38 +13,38 @@ vulnerabilities:
     purls:
       - pkg:pypi/msgpack@1.1.2
     statement: pip uses msgpack fallback.Unpacker and the image contains no _cmsgpack extension
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2025-47273
     purls:
       - pkg:pypi/setuptools@70.3.0
     statement: pip retains only pkg_resources from setuptools; the affected setuptools.package_index module is absent
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   # Latest official Go CLI binaries remain affected. Exact PURLs make rebuilt versions visible.
   - id: CVE-2026-25681
     purls:
       - pkg:golang/golang.org/x/net@v0.49.0
     statement: Accept kubectl x/net HTML risk until an official rebuild includes x/net 0.55.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-27136
     purls:
       - pkg:golang/golang.org/x/net@v0.49.0
     statement: Accept kubectl x/net HTML risk until an official rebuild includes x/net 0.55.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-27145
     purls:
       - pkg:golang/stdlib@v1.26.3
     statement: Accept TFLint stdlib risk until official binaries use a fixed Go release
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-33814
     purls:
       - pkg:golang/golang.org/x/net@v0.49.0
     statement: Accept kubectl x/net HTTP/2 risk until an official rebuild includes x/net 0.53.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-33818
     purls:
@@ -52,7 +52,7 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI stdlib risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-39821
     purls:
@@ -61,20 +61,20 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI IDNA risk until official binaries include the fixed x/net and Go releases
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-39822
     purls:
       - pkg:golang/stdlib@v1.26.3
       - pkg:golang/stdlib@v1.26.4
     statement: Accept Terraform and TFLint os.Root risk until official binaries use a fixed Go release
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-42504
     purls:
       - pkg:golang/stdlib@v1.26.3
     statement: Accept TFLint MIME risk until official binaries use a fixed Go release
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-46600
     purls:
@@ -83,19 +83,19 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI DNS parsing risk until official binaries include x/net 0.56.0 and Go 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-50163
     purls:
       - pkg:golang/oras.land/oras-go/v2@v2.6.1
     statement: Accept Helm ORAS hardlink risk until an official rebuild includes oras-go 2.6.2 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56852
     purls:
       - pkg:golang/golang.org/x/text@v0.33.0
     statement: Accept kubectl UTF-8 parsing risk until official binaries include x/text 0.39.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56853
     purls:
@@ -103,7 +103,7 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI HTTP/2 risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   # GO-2026-6303 affected symbols are ssh.NewServerConn and connection.serverAuthenticate.
   # Helm and TFLint use x/crypto/ssh as clients only, so the server auth path is unreachable.
@@ -112,7 +112,7 @@ vulnerabilities:
       - pkg:golang/golang.org/x/crypto@v0.53.0 # TFLint v0.64.0
       - pkg:golang/golang.org/x/crypto@v0.54.0 # Helm 4.2.4
     statement: Not reachable, server-side only. Drop when Helm and TFLint ship x/crypto 0.55.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56858
     purls:
@@ -120,7 +120,7 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI HTML template risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56859
     purls:
@@ -128,7 +128,7 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI XML parsing risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56860
     purls:
@@ -136,7 +136,7 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI URL parsing risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56862
     purls:
@@ -144,13 +144,13 @@ vulnerabilities:
       - pkg:golang/stdlib@v1.26.4
       - pkg:golang/stdlib@v1.26.5
     statement: Accept current CLI TLS risk until official binaries use Go 1.25.13 or 1.26.6 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: GHSA-hrxh-6v49-42gf
     purls:
       - pkg:golang/google.golang.org/grpc@v1.82.0
     statement: Accept TFLint xDS risk until official binaries include gRPC-Go 1.82.1 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   # x/mod 0.40.0 carries the fix. Terraform 1.16.1 already ships it, so only TFLint is listed:
   # v0.64.0 is the latest release and still vendors 0.37.0, as an indirect dependency.
@@ -158,13 +158,13 @@ vulnerabilities:
     purls:
       - pkg:golang/golang.org/x/mod@v0.37.0
     statement: Accept TFLint GOSUMDB risk until an official rebuild includes x/mod 0.40.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-56865
     purls:
       - pkg:golang/golang.org/x/mod@v0.37.0
     statement: Accept TFLint GOPROXY sumdb risk until an official rebuild includes x/mod 0.40.0 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
 
   - id: CVE-2026-84304
     purls:
@@ -172,7 +172,19 @@ vulnerabilities:
       - pkg:golang/google.golang.org/grpc@v1.82.1 # Helm 4.2.4, Trivy 0.74.0
       - pkg:golang/google.golang.org/grpc@v1.83.0 # Task 3.53.1
     statement: Accept Helm, TFLint, Task and Trivy gRPC risk until official binaries include gRPC-Go 1.83.1 or later
-    expired_at: 2026-09-15
+    expired_at: 2026-10-15
+
+  # GHSA-2v4p-qf9q-27wj only affects servers created with xds.NewGRPCServer, which installs the
+  # xDS routing interceptor that panics on the missing authority header. These CLIs use gRPC for
+  # local plugin transport only and never start an xDS server.
+  # Terraform is absent from this list because 1.16.2 ships gRPC-Go 1.83.2.
+  - id: CVE-2026-84445
+    purls:
+      - pkg:golang/google.golang.org/grpc@v1.82.0 # TFLint v0.64.0
+      - pkg:golang/google.golang.org/grpc@v1.82.1 # Helm 4.2.4, Trivy 0.74.0
+      - pkg:golang/google.golang.org/grpc@v1.83.0 # Task 3.53.1
+    statement: Not reachable, xDS server only. Drop when Helm, TFLint, Task and Trivy ship gRPC-Go 1.82.2 or 1.83.2 or later
+    expired_at: 2026-10-15
 
 misconfigurations:
   # Dockerfile checks - acceptable for this use case

@@ -17,6 +17,7 @@ flowchart TB
         Terraform["Stage 2 Terraform<br/>module.argocd"]:::control
         Namespace["argocd namespace<br/>prevent_destroy"]:::resource
         OIDCSecret["argocd-auth0-secret<br/>OIDC client secret"]:::secret
+        NotificationsSecret["argocd-notifications-slack-secret<br/>Slack bot token"]:::secret
         RBACConfig["argocd-rbac-cm<br/>default role and group policy"]:::resource
         HelmRelease["argo-cd Helm release<br/>chart 10.3.3"]:::control
         CRDs["Argo CD CRDs<br/>Application, ApplicationSet, AppProject"]:::resource
@@ -40,11 +41,13 @@ flowchart TB
 
     Terraform -->|creates first| Namespace
     Terraform -->|stores Auth0 secret| OIDCSecret
+    Terraform -->|stores Slack token when set| NotificationsSecret
     Terraform -->|owns RBAC data| RBACConfig
     Terraform -->|installs| HelmRelease
     Terraform -->|creates when repo URL is set| RootApplication
     Namespace --> HelmRelease
     OIDCSecret -->|clientSecret reference| Server
+    NotificationsSecret -->|slack-token reference| Notifications
     RBACConfig -->|authorization policy| Server
     HelmRelease --> CRDs
     HelmRelease --> Ingress
@@ -159,10 +162,13 @@ sequenceDiagram
 
 Keep the template reference and `helm_release.argo_cd.version` on the same chart tag. For upgrades, review that tag's `values.yaml`, the Argo CD upgrade guide, and the rendered manifest. Copying chart defaults into the template pins them.
 
+The notification trigger and template catalog is the exception: the chart ships none, so `notifications.triggers` and `notifications.templates` are repository-owned and the template carries the full body of `on-deployed`, `on-sync-failed`, and `on-health-degraded`.
+
 ## Resources Created
 
 - `kubernetes_namespace_v1.argocd`: Dedicated namespace guarded by `prevent_destroy`.
 - `kubernetes_secret_v1.argocd_auth0_oidc_secret`: Auth0 OIDC client secret.
+- `kubernetes_secret_v1.argocd_notifications_secret`: Slack bot token read by the notifications controller as `$slack-token`, created only when `argocd_notifications_slack_token` is set. Its name, `argocd-notifications-slack-secret`, is distinct from the chart-owned default Secret so enabling or disabling Slack needs no ownership transfer.
 - `kubernetes_config_map_v1.argocd_rbac_cm`: Default RBAC role, group policy, scopes, and matching mode.
 - `helm_release.argo_cd`: Argo CD CRDs, workloads, Services, Ingress, ServiceMonitors, and PrometheusRule.
 - `kubernetes_manifest.argocd_apps_root`: Optional root Application for the `applicationsets` path in the central GitOps repository.
@@ -186,6 +192,8 @@ Keep the template reference and `helm_release.argo_cd.version` on the same chart
 | `argocd_auth0_domain` | Auth0 tenant domain | `chrislee.auth0.com` |
 | `argocd_auth0_client_id` | Auth0 client ID | `""` |
 | `argocd_auth0_client_secret` | Auth0 client secret | required, sensitive |
+| `argocd_notifications_slack_token` | Slack bot token for the notifications controller; empty leaves Slack notifications off | `""`, sensitive |
+| `argocd_notifications_slack_subscriptions` | Default Slack routing; each entry maps `triggers` to `channels` with an optional Application label `selector` | `[]` |
 
 ## Usage
 
@@ -217,13 +225,32 @@ Set `TF_VAR_argocd_apps_repo_url` to create `argocd-apps-root`, which syncs Appl
 !!! warning
     Only `[]` is supported. The input's Secret selectors cannot be encoded as scalar repository Secret values. Manage credentials as direct [Argo CD repository Secrets](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#repositories).
 
-### 5. Get the Initial Administrator Password
+### 5. Configure Slack Notifications
+
+Create the Slack app and obtain its bot token as described in [Configure Slack Alerts](monitoring.md#configure-slack-alerts), then set `TF_VAR_argocd_notifications_slack_token` to that token. The bot needs the `chat:write` scope and has to be a member of every target channel. Leave the variable empty to keep notifications off; nothing under `notifications` is then rendered beyond the `resources` block.
+
+The token is stored in Terraform state and in prior state versions, so read access to the `stage2` workspace state is equivalent to holding the token. To rotate it, revoke the token in the Slack app, update the Bitwarden secret, then apply again.
+
+`TF_VAR_argocd_notifications_slack_subscriptions_json_encoded` holds the default routing as a JSON array. Each entry needs `triggers` and `channels`, and may add a `selector` that limits the entry to Applications whose labels match. The subscriptions render only when the token is set, so with an empty token they are ignored and the plan shows no change. Their contents are validated on every plan regardless, because Terraform evaluates a variable's `validation` blocks independently of any other variable.
+
+```json
+[
+  {"triggers": ["on-sync-failed", "on-health-degraded"], "channels": ["homelab-alerts"]},
+  {"triggers": ["on-deployed"], "channels": ["homelab-deploys"], "selector": "app.kubernetes.io/part-of=homelab"}
+]
+```
+
+The available triggers are `on-deployed`, `on-sync-failed`, and `on-health-degraded`. Argo CD takes the channel name without a leading `#` and the module adds the `slack:` recipient prefix itself. Individual Applications can still opt in separately through the `notifications.argoproj.io/subscribe.<trigger>.slack` annotation.
+
+`on-deployed` deduplicates by Application and sync operation revision. `on-sync-failed` and `on-health-degraded` notify when their condition becomes true again after the controller observes it as false, even on the same revision. They suppress repeats while the condition stays true and allow retryable delivery failures to be retried.
+
+### 6. Get the Initial Administrator Password
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-### 6. Access the Dashboard
+### 7. Access the Dashboard
 
 Navigate to `https://argocd.chrislee.local` and authenticate through Auth0.
 

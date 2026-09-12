@@ -194,3 +194,45 @@ notifications:
     requests:
       cpu: 10m
       memory: 34Mi
+%{ if argocd_notifications_slack_enabled ~}
+  secret:
+    create: false
+    name: argocd-notifications-slack-secret
+  notifiers:
+    service.slack: |
+      token: $slack-token
+  subscriptions: ${jsonencode(argocd_notifications_subscriptions)}
+  triggers:
+    trigger.on-deployed: |
+      - description: Application is synced and healthy. Triggered once per commit.
+        oncePer: app.status.operationState?.syncResult?.revision
+        send:
+        - app-deployed
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1 * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))
+    trigger.on-sync-failed: |
+      - description: Application syncing has failed
+        send:
+        - app-sync-failed
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
+    trigger.on-health-degraded: |
+      - description: Application has degraded
+        send:
+        - app-health-degraded
+        when: app.status.health.status == 'Degraded'
+  templates:
+    template.app-deployed: |
+      message: Application {{.app.metadata.name}} is now running revision {{.app.status.sync.revision}}.
+      slack:
+        attachments: |
+          [{"title": "{{.app.metadata.name}}", "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}", "color": "#18be52", "fields": [{"title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true}, {"title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true}]}]
+    template.app-sync-failed: |
+      message: Application {{.app.metadata.name}} failed to sync revision {{.app.status.sync.revision}}.
+      slack:
+        attachments: |
+          [{"title": "{{.app.metadata.name}}", "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}", "color": "#e01e5a", "fields": [{"title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true}, {"title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true}]}]
+    template.app-health-degraded: |
+      message: Application {{.app.metadata.name}} has degraded.
+      slack:
+        attachments: |
+          [{"title": "{{.app.metadata.name}}", "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}", "color": "#ecb22e", "fields": [{"title": "Health Status", "value": "{{.app.status.health.status}}", "short": true}, {"title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true}]}]
+%{ endif ~}
