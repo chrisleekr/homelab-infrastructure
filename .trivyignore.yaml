@@ -183,7 +183,7 @@ vulnerabilities:
       - pkg:golang/google.golang.org/grpc@v1.82.0 # TFLint v0.64.0
       - pkg:golang/google.golang.org/grpc@v1.82.1 # Helm 4.2.4, Trivy 0.74.0
       - pkg:golang/google.golang.org/grpc@v1.83.0 # Task 3.53.1
-    statement: Not reachable, xDS server only. Drop when TFLint, Task and Trivy ship gRPC-Go 1.82.2 or 1.83.2 or later
+    statement: Not reachable, xDS server only. Drop when Helm, TFLint, Task and Trivy ship gRPC-Go 1.82.2 or 1.83.2 or later
     expired_at: 2026-10-15
 
 misconfigurations:

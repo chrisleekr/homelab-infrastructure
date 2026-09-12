@@ -242,7 +242,7 @@ The token is stored in Terraform state and in prior state versions, so read acce
 
 The available triggers are `on-deployed`, `on-sync-failed`, and `on-health-degraded`. Argo CD takes the channel name without a leading `#` and the module adds the `slack:` recipient prefix itself. Individual Applications can still opt in separately through the `notifications.argoproj.io/subscribe.<trigger>.slack` annotation.
 
-Each trigger fires at most once per Application and git revision. A second sync of the same revision, or a re-degrade while the revision is unchanged, sends nothing, and a new revision produces a new message.
+`on-deployed` deduplicates by Application and sync operation revision. `on-sync-failed` and `on-health-degraded` notify when their condition becomes true again after the controller observes it as false, even on the same revision. They suppress repeats while the condition stays true and allow retryable delivery failures to be retried.
 
 ### 6. Get the Initial Administrator Password
 
