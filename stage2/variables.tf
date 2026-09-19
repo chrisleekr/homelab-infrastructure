@@ -1050,3 +1050,14 @@ variable "istio_gateway_namespace" {
   type        = string
   default     = "istio-ingress"
 }
+
+variable "istio_gateway_num_trusted_proxies" {
+  description = "Trusted proxy hops in front of the gateway, used to pick the client address out of X-Forwarded-For. 1 matches Cloudflare Tunnel as the only hop; raising it without a real hop lets a client forge its address"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.istio_gateway_num_trusted_proxies >= 0 && floor(var.istio_gateway_num_trusted_proxies) == var.istio_gateway_num_trusted_proxies
+    error_message = "Must be a whole number, zero or greater"
+  }
+}

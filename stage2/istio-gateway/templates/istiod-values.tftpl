@@ -74,6 +74,9 @@ meshConfig:
           - x-forwarded-proto
           - x-forwarded-host
           - x-forwarded-uri
+          # Client IP for oauth2-proxy. HTTP ext_authz forwards only listed headers, and the route's
+          # X-Real-IP is added after the check runs.
+          - x-envoy-external-address
         # Where to send the browser after login. ext_authz has no way to pass a return URL, and
         # without it oauth2-proxy stores a bare path and returns the browser to its OWN host after
         # the Auth0 callback. X-Auth-Request-Redirect is what makes the stored redirect absolute.

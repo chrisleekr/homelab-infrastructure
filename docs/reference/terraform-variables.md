@@ -1,6 +1,6 @@
 # Terraform variables
 
-All 125 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
+All 126 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
 
 Values are supplied as `TF_VAR_*` environment variables, injected from [Bitwarden](../operations/bitwarden-secrets.md) when you enter the tooling container. There is no `terraform.tfvars`; `*.tfvars` is gitignored.
 
@@ -23,8 +23,8 @@ Variables are prefixed by the module that consumes them.
 | `cloudflare_*` | 5 | [cloudflare-tunnel](../stage2/cloudflare-tunnel.md) |
 | `kubernetes_*` | 4 | [kubernetes](../stage2/kubernetes.md) |
 | `kubecost_*` | 3 | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
+| `istio_*` | 3 | [istio-gateway](../stage2/istio-gateway.md) |
 | `cert_*` | 2 | [cert-manager-letsencrypt](../stage2/cert-manager-letsencrypt.md) |
-| `istio_*` | 2 | [istio-gateway](../stage2/istio-gateway.md) |
 | `longhorn_*` | 2 | [longhorn-storage](../stage2/longhorn-storage.md) |
 | `sealed_*` | 2 | [bitnami-sealed-secrets](../stage2/bitnami-sealed-secrets.md) |
 | `ingress_*` | 1 | [gitlab-platform](../stage2/gitlab-platform.md) |

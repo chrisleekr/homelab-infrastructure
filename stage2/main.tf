@@ -25,9 +25,10 @@ module "istio_gateway" {
 
   source = "./istio-gateway"
 
-  istio_gateway_acme_email = var.cert_manager_acme_email
-  istio_gateway_name       = var.istio_gateway_name
-  istio_gateway_namespace  = var.istio_gateway_namespace
+  istio_gateway_acme_email          = var.cert_manager_acme_email
+  istio_gateway_name                = var.istio_gateway_name
+  istio_gateway_namespace           = var.istio_gateway_namespace
+  istio_gateway_num_trusted_proxies = var.istio_gateway_num_trusted_proxies
 }
 
 # Cloudflare Tunnel connector (cloudflared). Exposes services through Cloudflare,

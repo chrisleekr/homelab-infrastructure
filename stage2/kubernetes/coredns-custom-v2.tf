@@ -158,7 +158,9 @@ locals {
   #
   # Unlike the per-domain blocks below, these lines sit in the MAIN server block, which the
   # START/END markers do not cover. They are stripped and rebuilt on every apply; without the strip
-  # each apply would append another copy.
+  # each apply would append another copy. The strip matches any <name>-istio Service, not only the
+  # current FQDN, so renaming the gateway does not strand old lines. Hand-written rewrites to other
+  # Services are left alone.
   gateway_rewrite_lines = join("", [
     for domain in local.gateway_domain_list :
     "    rewrite name ${domain} ${var.kubernetes_gateway_service_fqdn}\n"
@@ -166,7 +168,7 @@ locals {
 
   corefile_without_rewrites = replace(
     local.without_custom_config,
-    "/(?m)^[ \\t]*rewrite name \\S+ ${replace(var.kubernetes_gateway_service_fqdn, ".", "\\.")}[ \\t]*\\n/",
+    "/(?m)^[ \\t]*rewrite name \\S+ \\S+-istio\\.\\S+\\.svc\\.cluster\\.local[ \\t]*\\n/",
     ""
   )
 

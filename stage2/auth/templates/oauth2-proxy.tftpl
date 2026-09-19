@@ -23,7 +23,9 @@ config:
 
     # Networking Configuration
     reverse_proxy = true
-    real_client_ip_header = "X-Real-IP"
+    # Set by the gateway from X-Forwarded-For using its trusted hop count, and present on both the
+    # ext_authz check and the direct route. X-Forwarded-For itself is forgeable.
+    real_client_ip_header = "X-Envoy-External-Address"
 
     # Features Configuration
     skip_provider_button = true

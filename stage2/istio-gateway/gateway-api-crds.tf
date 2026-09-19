@@ -57,6 +57,19 @@ data "http" "gateway_api" {
   for_each = local.gateway_api_objects
 
   url = "${local.gateway_api_base}/gateway.networking.k8s.io_${each.key}.yaml"
+
+  retry {
+    attempts     = 3
+    min_delay_ms = 1000
+  }
+
+  # Without this an outage or 404 surfaces later as a checksum mismatch, which reads as tampering.
+  lifecycle {
+    postcondition {
+      condition     = self.status_code == 200
+      error_message = "gateway-api ${each.key} at ${var.istio_gateway_api_version} returned HTTP ${self.status_code}. Check the version tag exists and GitHub is reachable."
+    }
+  }
 }
 
 # server_side_apply is required, not a preference: the larger CRDs here exceed the 262144 byte limit

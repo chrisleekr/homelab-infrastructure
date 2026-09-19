@@ -61,7 +61,7 @@ The login redirect needs `X-Auth-Request-Redirect`. ext_authz has no way to pass
 | `istio_gateway_chart_repository` | `https://blob.istio.io/istio-release/charts` | The `storage.googleapis.com` mirror stops at 1.30.4 |
 | `istio_gateway_control_plane_namespace` | `istio-system` | istiod, and the Istio root namespace that mesh-wide config is read from |
 | `istio_gateway_api_version` | `v1.6.2` | CRD bundle |
-| `istio_gateway_num_trusted_proxies` | `1` | Cloudflare Tunnel is the only hop. Raising it without a real hop lets clients forge their address |
+| `istio_gateway_num_trusted_proxies` | `1` | Root variable. Cloudflare Tunnel is the only hop. Raising it without a real hop lets clients forge their address |
 | `istio_gateway_istiod_requests` | `100m` / `128Mi` | Sized for a gateway-only control plane. The chart default of `500m` / `2048Mi` is mesh sizing |
 | `istio_gateway_proxy_requests` | `50m` / `160Mi` | Set above steady state deliberately: the kubelet evicts by usage relative to request, and this pod is the ingress path for every host |
 | `istio_gateway_ext_authz_service` | `oauth2-proxy.auth.svc.cluster.local` | oauth2-proxy Service used as the ext_authz provider for gated hosts |
