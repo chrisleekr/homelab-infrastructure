@@ -68,6 +68,24 @@ repos:
         pass_filenames: false
         files: ^scripts/(check-docs\.py|tests/test_check_docs\.py)$
 
+      # Header-filter gate for Gateway API routes. A route that omits the filters forwards a
+      # forged X-Real-IP and leaks the backend Server header, and nothing fails at apply or at
+      # runtime, so only a static gate catches it.
+      - id: gateway-route-filters
+        name: gateway route header filters
+        entry: python scripts/check-gateway-routes.py --check
+        language: python
+        pass_filenames: false
+        files: ^stage2/.*\.tf$
+
+      # Guards the gate above. Its failure modes are all silent-pass.
+      - id: gateway-route-filters-tests
+        name: gateway route filter gate self-test
+        entry: python scripts/tests/test_check_gateway_routes.py
+        language: python
+        pass_filenames: false
+        files: ^scripts/(check-gateway-routes\.py|tests/test_check_gateway_routes\.py)$
+
       # Guards the Prometheus chart compatibility gate. Both of its failure directions
       # are silent: the wrong pin fails open, an unowned pin fails closed on every plan.
       # The gate itself needs network, so only its self-test runs here.

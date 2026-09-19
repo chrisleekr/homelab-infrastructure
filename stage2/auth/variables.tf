@@ -4,18 +4,6 @@ variable "prometheus_namespace" {
   default     = "monitoring"
 }
 
-variable "auth_ingress_class_name" {
-  description = "Ingress class name for the oauth2 proxy"
-  type        = string
-  default     = "nginx"
-}
-
-variable "auth_ingress_enable_tls" {
-  description = "Enable TLS for the oauth2 proxy"
-  type        = bool
-  default     = true
-}
-
 variable "auth_oauth2_proxy_host" {
   description = "The host for the oauth2 proxy"
   type        = string
@@ -52,14 +40,14 @@ variable "auth_auth0_client_secret" {
   sensitive   = true
 }
 
-variable "auth_host_alias_ip" {
-  description = "The IP address of the host alias."
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its listener to."
   type        = string
-  default     = ""
+  default     = "public"
 }
 
-variable "auth_host_alias_hostnames" {
-  description = "The hostnames of the host alias comma separated. i.e. remote1.local,remote2.local"
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. Nothing is created there by this module, but the ListenerSet parentRef needs the name."
   type        = string
-  default     = ""
+  default     = "istio-ingress"
 }

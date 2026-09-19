@@ -73,7 +73,7 @@ If Ansible fails to connect to the target server:
 ### Error with `no matches for kind "ServiceMonitor"`
 
 ```text
-Error: unable to build kubernetes objects from release manifest: resource mapping not found for name: "nginx-ingress-nginx-controller" namespace: "nginx" from "": no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"
+Error: unable to build kubernetes objects from release manifest: resource mapping not found for name: "istio-gateway" namespace: "istio-ingress" from "": no matches for kind "PodMonitor" in version "monitoring.coreos.com/v1"
 ```
 
 This error means the Kubernetes API used by Terraform cannot discover the required Prometheus Operator CRD. The CRD may be missing, its Helm release may have failed, or the command may be inspecting a different kubeconfig context.

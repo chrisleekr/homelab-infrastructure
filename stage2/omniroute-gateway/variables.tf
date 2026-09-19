@@ -10,22 +10,13 @@ variable "omniroute_enable" {
 }
 
 variable "omniroute_domain" {
-  description = "Domain name for the OmniRoute ingress. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
+  description = "Domain name for the OmniRoute route. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
   type        = string
 }
 
-variable "omniroute_ingress_class_name" {
-  description = "Ingress class name for the OmniRoute ingresses"
-  type        = string
-}
-
-variable "omniroute_ingress_enable_tls" {
-  description = "Enable TLS on the OmniRoute ingresses. When true, cert-manager issues omniroute-tls from the letsencrypt-prod ClusterIssuer, annotated on the UI ingress only"
-  type        = bool
-}
 
 variable "omniroute_public_paths" {
-  description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else falls through to the oauth2-proxy-gated ingress. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions; re-verify against a running container"
+  description = "URL path prefixes left open on the route, unauthenticated. Every other path is gated by oauth2-proxy on the AuthorizationPolicy. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks are opt-in additions; re-verify against a running container"
   type        = list(string)
   default     = ["/api/v1", "/v1"]
 
@@ -137,7 +128,15 @@ variable "omniroute_storage_encryption_key" {
   }
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "Hostname of the oauth2-proxy instance guarding the OmniRoute dashboard"
+
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its listener to."
   type        = string
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. The AuthorizationPolicy is created here, because Istio requires a policy to sit beside the resource its targetRefs names."
+  type        = string
+  default     = "istio-ingress"
 }

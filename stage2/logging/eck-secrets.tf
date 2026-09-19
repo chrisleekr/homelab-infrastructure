@@ -1,21 +1,3 @@
-resource "kubernetes_secret_v1" "frontend_basic_auth" {
-  metadata {
-    name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace_v1.logging.metadata[0].name
-  }
-
-  data = {
-    auth = base64decode(var.nginx_frontend_basic_auth_base64)
-  }
-
-  type = "Opaque"
-
-  lifecycle {
-    ignore_changes = [metadata[0].labels]
-  }
-}
-
-
 resource "random_password" "elastic_password" {
   length  = 16
   special = false

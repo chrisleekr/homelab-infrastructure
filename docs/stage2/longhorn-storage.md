@@ -24,14 +24,14 @@ flowchart TB
             Replica1[Volume Replicas]
         end
 
-        subgraph ingress [Ingress Layer]
-            Nginx[NGINX Ingress]
+        subgraph edgelayer [Edge Layer]
+            Gateway[Istio Gateway]
             OAuth[OAuth2 Proxy]
         end
     end
 
-    User[User Browser] --> Nginx
-    Nginx --> OAuth
+    User[User Browser] --> Gateway
+    Gateway --> OAuth
     OAuth --> UI
 
     Manager --> Driver
@@ -111,7 +111,6 @@ kubectl -n longhorn-system get volumes.longhorn.io \
 ## Resources Created
 
 - `kubernetes_namespace.longhorn` - Dedicated namespace (longhorn-system)
-- `kubernetes_secret.frontend_basic_auth` - Basic auth for UI
 - `data.kubernetes_nodes.control_plane` - Looks up the control-plane node to label
 - `kubernetes_labels.longhorn_default_disk` - Marks the control plane as the storage node
 - `helm_release.longhorn` - Longhorn Helm chart
@@ -121,12 +120,8 @@ kubectl -n longhorn-system get volumes.longhorn.io \
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `nginx_frontend_basic_auth_base64` | Base64 encoded basic auth | (required, sensitive) |
 | `longhorn_default_settings_default_data_path` | Data storage path on nodes | `/var/lib/longhorn` |
-| `longhorn_ingress_class_name` | Ingress class for UI | (required) |
 | `longhorn_ingress_host` | Hostname for UI access | (required) |
-| `longhorn_ingress_enable_tls` | Enable TLS for UI | `true` |
-| `auth_oauth2_proxy_host` | OAuth2 proxy for authentication | `auth.chrislee.local` |
 
 ## Usage
 

@@ -20,17 +20,20 @@ variable "host_machine_architecture" {
   }
 }
 
+# Empty is legal and the normal case: hosts served by the Istio gateway belong in
+# kubernetes_gateway_domains, not here. split(" ", "") yields [""], which no FQDN regex
+# matches, so the empty case has to be short-circuited rather than validated.
 variable "kubernetes_override_domains" {
   description = "Space-delimited list of domains added to the CoreDNS configuration. Each entry must be a lowercase FQDN. Example: \"gitlab.chrislee.local registry.chrislee.local minio.chrislee.local\""
   type        = string
-  default     = "gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
+  default     = ""
 
   validation {
-    condition = alltrue([
+    condition = var.kubernetes_override_domains == "" || alltrue([
       for d in split(" ", var.kubernetes_override_domains) :
       can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", d))
     ])
-    error_message = "kubernetes_override_domains must be a non-empty, single-space-delimited list of lowercase FQDNs (e.g., \"gitlab.chrislee.local registry.chrislee.local\"). No leading/trailing/multiple spaces, no uppercase, no empty entries."
+    error_message = "kubernetes_override_domains must be empty, or a single-space-delimited list of lowercase FQDNs (e.g., \"gitlab.chrislee.local registry.chrislee.local\"). No leading/trailing/multiple spaces, no uppercase, no empty entries."
   }
 }
 
@@ -46,53 +49,26 @@ variable "kubernetes_override_ip" {
   }
 }
 
+variable "kubernetes_gateway_domains" {
+  description = "Space-delimited hostnames resolved in-cluster to the Istio gateway Service instead of the LAN address."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = var.kubernetes_gateway_domains == "" || alltrue([
+      for d in split(" ", var.kubernetes_gateway_domains) :
+      can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", d))
+    ])
+    error_message = "kubernetes_gateway_domains must be empty, or a single-space-delimited list of lowercase FQDNs. No leading/trailing/multiple spaces, no uppercase, no empty entries."
+  }
+}
+
 variable "ingress_enable_tls" {
   description = "Enable TLS for the services"
   type        = bool
   default     = true
 }
 
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
-
-variable "nginx_service_loadbalancer_ip" {
-  description = "The IP address of the loadbalancer ip."
-  type        = string
-
-  # Validate IPv4 address format per HashiCorp variable validation best practices
-  # Allow empty string for dynamic IP assignment by load balancer
-  validation {
-    condition     = var.nginx_service_loadbalancer_ip == "" || can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.nginx_service_loadbalancer_ip))
-    error_message = "Must be a valid IPv4 address (e.g., 192.168.1.100) or empty string"
-  }
-}
-
-variable "nginx_client_max_body_size" {
-  description = "The maximum body size for nginx."
-  type        = string
-  default     = "10M"
-
-  # Validate nginx size format per https://nginx.org/en/docs/syntax.html
-  validation {
-    condition     = can(regex("^[0-9]+[kKmMgG]?$", var.nginx_client_max_body_size))
-    error_message = "Must be a valid nginx size (e.g., 10M, 512k, 1G, or plain bytes like 1048576)"
-  }
-}
-
-variable "nginx_client_body_buffer_size" {
-  description = "The client body buffer size for nginx."
-  type        = string
-  default     = "10M"
-
-  # Validate nginx size format per https://nginx.org/en/docs/syntax.html
-  validation {
-    condition     = can(regex("^[0-9]+[kKmMgG]?$", var.nginx_client_body_buffer_size))
-    error_message = "Must be a valid nginx size (e.g., 10M, 512k, 1G, or plain bytes like 1048576)"
-  }
-}
 
 variable "cert_manager_acme_email" {
   description = "The email address to register certificates requested from Let's Encrypt."
@@ -106,22 +82,15 @@ variable "cert_manager_acme_email" {
   }
 }
 
-variable "cert_manager_ingress_class" {
-  description = "IngressClass resource for cert-manager."
+variable "cert_manager_cloudflare_api_token" {
+  description = "Cloudflare API token for the DNS-01 solver used by hostnames on the Istio gateway. Needs Zone:DNS:Edit plus Zone:Zone:Read. HTTP-01 cannot work through the gateway, see docs/stage2/istio-gateway.md"
   type        = string
-  default     = "nginx"
-}
+  sensitive   = true
 
-variable "cert_manager_host_alias_ip" {
-  description = "The IP address of the host alias."
-  type        = string
-  default     = ""
-}
-
-variable "cert_manager_host_alias_hostnames" {
-  description = "The hostnames of the host alias comma separated. i.e. remote1.local,remote2.local"
-  type        = string
-  default     = ""
+  validation {
+    condition     = trimspace(var.cert_manager_cloudflare_api_token) != ""
+    error_message = "cert_manager_cloudflare_api_token must be set. Every Certificate is issued by the letsencrypt-gateway ClusterIssuer, which solves DNS-01 through Cloudflare with this token."
+  }
 }
 
 variable "longhorn_default_settings_default_data_path" {
@@ -129,10 +98,6 @@ variable "longhorn_default_settings_default_data_path" {
   type        = string
 }
 
-variable "longhorn_ingress_class_name" {
-  description = "IngressClass resource that contains ingress configuration, including the name of the Ingress controller."
-  type        = string
-}
 
 variable "longhorn_ingress_host" {
   description = "Hostname of the Layer 7 load balancer."
@@ -194,12 +159,6 @@ variable "minio_tenant_user_access_key" {
   default     = "minio-user"
 }
 
-variable "minio_tenant_ingress_class_name" {
-  description = "Ingress class name for the minio tenant"
-  type        = string
-  default     = "nginx"
-}
-
 variable "minio_tenant_ingress_api_host" {
   description = "The hostname of the minio tenant api"
   type        = string
@@ -234,20 +193,20 @@ variable "gitlab_global_hosts_host_suffix" {
 }
 
 variable "gitlab_global_hosts_external_ip" {
-  description = "Set the external IP address that will be claimed from the provider. This will be templated into the NGINX chart, in place of the more complex nginx.service.loadBalancerIP."
+  description = "External IP advertised in global.hosts.externalIP. The bundled ingress controller that would have claimed it is disabled, so this only affects values the chart renders from that field."
   type        = string
   default     = ""
 }
 
 
 variable "gitlab_global_ingress_provider" {
-  description = "Global setting that defines the Ingress provider to use. nginx is used as the default provider."
+  description = "Global setting that defines the Ingress provider. Inert while every GitLab component disables its own Ingress, but the chart still reads it for its ingress.class.name helper."
   type        = string
   default     = "nginx"
 }
 
 variable "gitlab_global_ingress_class" {
-  description = "Global setting that controls kubernetes.io/ingress.class annotation or spec.IngressClassName in Ingress resources. Set to none to disable, or \"\" for empty. Note: for none or \"\", set nginx-ingress.enabled=false to prevent the charts from deploying unnecessary Ingress resources."
+  description = "Global setting that controls the ingress class name in Ingress resources. Inert while every GitLab component disables its own Ingress, but the chart still reads it for its ingress.class.name helper."
   type        = string
   default     = "nginx"
 }
@@ -367,12 +326,6 @@ variable "prometheus_grafana_domain" {
   description = "The domain name for the grafana"
   type        = string
   default     = "grafana.chrislee.local"
-}
-
-variable "prometheus_ingress_class_name" {
-  description = "Ingress class name for the prometheus stack"
-  type        = string
-  default     = "nginx"
 }
 
 variable "prometheus_prometheus_domain" {
@@ -501,12 +454,6 @@ variable "kibana_resource_limit_memory" {
   default     = "1Gi"
 }
 
-variable "kibana_ingress_class_name" {
-  description = "Ingress class name for Kibana"
-  type        = string
-  default     = "nginx"
-}
-
 variable "kibana_domain" {
   description = "The domain name for the kibana"
   type        = string
@@ -531,11 +478,6 @@ variable "kubecost_ingress_host" {
   default     = "cost.chrislee.local"
 }
 
-variable "kubecost_ingress_class_name" {
-  description = "Ingress class name for the kubecost"
-  type        = string
-  default     = "nginx"
-}
 
 variable "kubecost_storage_class_name" {
   description = "The storage class name for the kubecost persistence storage"
@@ -622,17 +564,7 @@ variable "argocd_domain" {
   default     = "argocd.chrislee.local"
 }
 
-variable "argocd_ingress_class_name" {
-  description = "The ingress class name for the argocd"
-  type        = string
-  default     = "nginx"
-}
 
-variable "argocd_ssh_known_hosts_base64" {
-  description = "SSH known hosts for Git repositories - base64 encoded"
-  type        = string
-  default     = ""
-}
 
 variable "argocd_config_repositories_json_encoded" {
   description = "The repositories for the argocd - json encoded"
@@ -744,12 +676,6 @@ variable "argocd_apps_git_password" {
   # No format validation: token shapes vary by GitLab version. The module enforces non-empty when enabled.
 }
 
-variable "auth_ingress_class_name" {
-  description = "Ingress class name for the oauth2 proxy"
-  type        = string
-  default     = "nginx"
-}
-
 variable "auth_oauth2_proxy_host" {
   description = "The host for the oauth2 proxy"
   type        = string
@@ -853,14 +779,8 @@ variable "litellm_domain" {
   default     = "litellm.chrislee.local"
 }
 
-variable "litellm_ingress_class_name" {
-  description = "Ingress class name for the LiteLLM ingresses"
-  type        = string
-  default     = "nginx"
-}
-
 variable "litellm_ui_paths" {
-  description = "URL path prefixes routed to the oauth2-proxy protected ingress. /litellm-asset-prefix serves the console JS and CSS, and /fallback/login plus /login are the console's login page and its credential POST target. /docs, /redoc, /openapi.json, /routes, /config/yaml and /public are introspection surfaces no API client needs. Anything omitted here falls through to the unauthenticated API ingress"
+  description = "URL path prefixes gated by oauth2-proxy on the AuthorizationPolicy. /litellm-asset-prefix serves the console JS and CSS, and /fallback/login plus /login are the console's login page and its credential POST target. /docs, /redoc, /openapi.json, /routes, /config/yaml and /public are introspection surfaces no API client needs. Anything omitted here stays unauthenticated"
   type        = list(string)
   default = [
     "/ui", "/sso", "/litellm-asset-prefix",
@@ -1011,19 +931,14 @@ variable "omniroute_enable" {
 }
 
 variable "omniroute_domain" {
-  description = "Domain name for the OmniRoute ingress. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
+  description = "Domain name for the OmniRoute route. Both the open API surface (/v1 and /api/v1) and the gated dashboard are served from this single host"
   type        = string
   default     = "omniroute.chrislee.local"
 }
 
-variable "omniroute_ingress_class_name" {
-  description = "Ingress class name for the OmniRoute ingresses"
-  type        = string
-  default     = "nginx"
-}
 
 variable "omniroute_public_paths" {
-  description = "URL path prefixes routed to the open, unauthenticated API ingress. Everything else falls through to the oauth2-proxy-gated ingress. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks and cert-manager's /.well-known are opt-in additions"
+  description = "URL path prefixes left open on the route, unauthenticated. Every other path is gated by oauth2-proxy on the AuthorizationPolicy. Defaults to both OpenAI-compatible base paths, which are the same handler. Provider OAuth/webhook callbacks are opt-in additions"
   type        = list(string)
   default     = ["/api/v1", "/v1"]
 
@@ -1120,4 +1035,29 @@ variable "omniroute_storage_encryption_key" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+# Passed to the gateway module and to every module that exposes a hostname through it, so an app
+# module can name the Gateway in its ListenerSet parentRef without reaching into another module.
+variable "istio_gateway_name" {
+  description = "Gateway resource name. Istio names the generated Deployment and Service <name>-istio, which is the origin a Cloudflare Tunnel route points at"
+  type        = string
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace holding the Gateway and its auto-provisioned Deployment and Service"
+  type        = string
+  default     = "istio-ingress"
+}
+
+variable "istio_gateway_num_trusted_proxies" {
+  description = "Trusted proxy hops in front of the gateway, used to pick the client address out of X-Forwarded-For. 1 matches Cloudflare Tunnel as the only hop; raising it without a real hop lets a client forge its address"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.istio_gateway_num_trusted_proxies >= 0 && floor(var.istio_gateway_num_trusted_proxies) == var.istio_gateway_num_trusted_proxies
+    error_message = "Must be a whole number, zero or greater"
+  }
 }

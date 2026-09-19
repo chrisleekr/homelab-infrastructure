@@ -84,11 +84,10 @@ resource "kubectl_manifest" "kibana" {
       resource_request_memory = var.kibana_resource_request_memory
       resource_limit_memory   = var.kibana_resource_limit_memory
 
-      kibana_domain = var.kibana_ingress_enable_tls ? "https://${var.kibana_domain}" : "http://${var.kibana_domain}"
+      # Always https. The host is served by the Istio gateway, which terminates TLS for it,
+      # so publicBaseUrl must match the scheme the browser actually used.
+      kibana_domain = "https://${var.kibana_domain}"
 
-      kibana_encryption_key              = random_password.kibana_encryption_key.result
-      kibana_encrypted_saved_objects_key = random_password.kibana_encrypted_saved_objects_key.result
-      kibana_reporting_encryption_key    = random_password.kibana_reporting_encryption_key.result
     }
   )
 }
@@ -111,52 +110,6 @@ resource "null_resource" "kibana_ready" {
         sleep 10
       done
     EOT
-  }
-}
-
-resource "kubernetes_ingress_v1" "kibana_ingress" {
-  depends_on = [null_resource.kibana_ready, kubernetes_secret_v1.frontend_basic_auth]
-
-  metadata {
-    name      = "kibana-ingress"
-    namespace = kubernetes_namespace_v1.logging.metadata[0].name
-    annotations = {
-      "cert-manager.io/cluster-issuer"                    = "letsencrypt-prod"
-      "nginx.ingress.kubernetes.io/auth-url"              = "https://${var.auth_oauth2_proxy_host}/oauth2/auth"
-      "nginx.ingress.kubernetes.io/auth-signin"           = "https://${var.auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-      "nginx.ingress.kubernetes.io/auth-response-headers" = "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-    }
-  }
-
-  spec {
-    ingress_class_name = var.kibana_ingress_class_name
-
-    rule {
-      host = var.kibana_domain
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-
-          backend {
-            service {
-              name = "kibana-kb-http"
-              port {
-                number = 5601
-              }
-            }
-          }
-        }
-      }
-    }
-
-    dynamic "tls" {
-      for_each = var.kibana_ingress_enable_tls ? [1] : []
-      content {
-        hosts       = [var.kibana_domain]
-        secret_name = "kibana-tls"
-      }
-    }
   }
 }
 

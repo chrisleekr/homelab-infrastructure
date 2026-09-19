@@ -1,23 +1,6 @@
-variable "cert_manager_acme_email" {
-  description = "The email address to register certificates requested from Let's Encrypt."
+variable "cert_manager_cloudflare_api_token" {
+  description = "Cloudflare API token for the DNS-01 solver. Needs Zone:DNS:Edit plus Zone:Zone:Read, because the provider looks the zone id up by name. The root module's validation requires it"
   type        = string
-  default     = ""
-}
-
-variable "cert_manager_ingress_class" {
-  description = "IngressClass resource for cert-manager."
-  type        = string
-  default     = "nginx"
-}
-
-variable "cert_manager_host_alias_ip" {
-  description = "The IP address of the host alias."
-  type        = string
-  default     = ""
-}
-
-variable "cert_manager_host_alias_hostnames" {
-  description = "The hostnames of the host alias comma separated. i.e. remote1.local,remote2.local"
-  type        = string
+  sensitive   = true
   default     = ""
 }

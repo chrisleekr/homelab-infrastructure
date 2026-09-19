@@ -10,7 +10,7 @@ Dashed nodes are gated by an enable flag and may be absent from the plan entirel
 flowchart TD
     preflight["preflight<br/>chart compatibility gate"]
     kubernetes["kubernetes"]
-    nginx["nginx"]
+    istiogw["istio_gateway"]
     certmanager["cert_manager_letsencrypt"]
     longhorn["longhorn_storage"]
     minio["minio_object_storage"]
@@ -30,13 +30,11 @@ flowchart TD
     omniroute["omniroute<br/>omniroute_enable"]:::optional
 
     preflight --> kubernetes
-    kubernetes --> nginx
+    kubernetes --> istiogw
     kubernetes --> vpn
     kubernetes --> reloader
     kubernetes --> sealed
-    nginx --> certmanager
-    nginx --> cloudflare
-    nginx --> auth
+    certmanager --> istiogw
     certmanager --> longhorn
     certmanager --> logging
     certmanager --> monitoring
@@ -46,6 +44,16 @@ flowchart TD
     certmanager --> litellm
     certmanager --> omniroute
     certmanager --> argocd
+    istiogw --> auth
+    istiogw --> longhorn
+    istiogw --> minio
+    istiogw --> monitoring
+    istiogw --> kubecost
+    istiogw --> gitlab
+    istiogw --> argocd
+    istiogw --> logging
+    istiogw --> litellm
+    istiogw --> omniroute
     longhorn --> minio
     longhorn --> litellm
     longhorn --> omniroute
@@ -66,13 +74,14 @@ flowchart TD
 |---|---|
 | `preflight → kubernetes` | Prevents the cluster dependency chain from starting unless independently pinned components pass their compatibility checks. |
 | `kubernetes → *` | Installs the Prometheus CRDs and CoreDNS config that later modules' manifests reference. A CRD must exist before a CR that uses it. |
-| `nginx → cert_manager_letsencrypt` | The HTTP-01 solver needs a working ingress controller to answer the ACME challenge. |
+| `kubernetes → istio_gateway`, `cert_manager_letsencrypt → istio_gateway` | The gateway module installs the Gateway API CRDs and its own Gateway, and creates the `letsencrypt-gateway` ClusterIssuer, which needs cert-manager and its Cloudflare token Secret already present. |
+| `istio_gateway → *` | Every module that exposes a host declares a `ListenerSet`, an `HTTPRoute` and, where the host is gated, an `AuthorizationPolicy`. The Gateway API CRDs must exist before any of those apply. |
 | `cert_manager_letsencrypt → *` | Anything terminating TLS needs the `ClusterIssuer` to exist before it requests a `Certificate`. |
 | `longhorn_storage → minio_object_storage` | MinIO's PVCs bind against Longhorn's StorageClass. Without it they stay `Pending`. |
 | `minio_object_storage → gitlab_platform` | GitLab stores artifacts, LFS, uploads and backups in MinIO buckets. |
 | `minio_object_storage → kubecost` | Kubecost federates its cost data into a MinIO bucket. |
 | `logging → monitoring` | Grafana provisions an Elasticsearch datasource pointing at the ECK stack. |
-| `monitoring → auth`, `nginx → auth` | OAuth2 Proxy protects the Grafana and AlertManager ingresses, so both must exist first. |
+| `monitoring → auth` | OAuth2 Proxy renders a ServiceMonitor into the monitoring namespace, so that namespace must exist first. |
 | `gitlab_platform → argocd` | ArgoCD's initial `Application` set points at repositories hosted on the in-cluster GitLab. |
 | `monitoring → argocd` (implicit) | ArgoCD reads `module.monitoring.monitoring_namespace` for its ServiceMonitor. Data flow, not `depends_on`. |
 | `argocd → argocd_image_updater` | The updater writes back to Applications ArgoCD owns. |
@@ -86,4 +95,4 @@ flowchart TD
 `count = 0` removes a module from the plan but **not** its `depends_on` edges. The dependency simply resolves against an empty resource set. The practical consequences:
 
 - On ARM64, `gitlab_platform` has `count = 0`, so `argocd` loses its GitLab ordering edge. It still waits on `cert_manager_letsencrypt` and on `monitoring`, which in turn waits on `logging`.
-- Disabling `logging_module_enable` drops the Elasticsearch datasource from Grafana but leaves `monitoring` otherwise intact.
+- Disabling `logging_module_enable` drops the Elasticsearch datasource from Grafana and the Kibana hostname from the gateway, but leaves `monitoring` otherwise intact.

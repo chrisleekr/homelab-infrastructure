@@ -21,9 +21,9 @@ flowchart TB
         RBACConfig["argocd-rbac-cm<br/>default role and group policy"]:::resource
         HelmRelease["argo-cd Helm release<br/>chart 10.3.3"]:::control
         CRDs["Argo CD CRDs<br/>Application, ApplicationSet, AppProject"]:::resource
-        Ingress["argocd-server Ingress<br/>NGINX class and TLS"]:::network
+        ListenerSet["ListenerSet plus HTTPRoute<br/>module owned, see httproute.tf"]:::network
         TLSSecret["cert-manager TLS Secret"]:::secret
-        Nginx["NGINX Ingress controller"]:::network
+        Gateway["Istio Gateway public-istio<br/>namespace istio-ingress"]:::network
         Server["argocd-server<br/>API and Web UI"]:::component
         Controller["application-controller<br/>desired and live state reconciliation"]:::component
         RepoServer["repo-server<br/>clone and manifest generation"]:::component
@@ -50,7 +50,6 @@ flowchart TB
     NotificationsSecret -->|slack-token reference| Notifications
     RBACConfig -->|authorization policy| Server
     HelmRelease --> CRDs
-    HelmRelease --> Ingress
     HelmRelease --> Server
     HelmRelease --> Controller
     HelmRelease --> RepoServer
@@ -60,10 +59,11 @@ flowchart TB
     HelmRelease --> ServiceMonitors
     HelmRelease --> PrometheusRule
 
-    Admin -->|HTTPS| Nginx
-    Nginx -->|route argocd host| Ingress
-    TLSSecret -->|certificate| Ingress
-    Ingress -->|HTTP inside cluster| Server
+    Terraform -->|owns listener, route, certificate| ListenerSet
+    Admin -->|HTTPS| Gateway
+    Gateway -->|matches SNI argocd host| ListenerSet
+    TLSSecret -->|certificate| ListenerSet
+    ListenerSet -->|plaintext to port 80, server.insecure| Server
     Server -->|authorization request| Auth0
     Auth0 -->|OIDC callback| Server
     Server -->|API operations| KubernetesAPI
@@ -134,22 +134,26 @@ sequenceDiagram
 
 Argo CD handles OIDC directly. OAuth2 Proxy is not in the Argo CD request path.
 
+**This module therefore has no `AuthorizationPolicy`, unlike every other host on the gateway.** The others attach a `CUSTOM` policy delegating to the oauth2-proxy ext_authz provider. Adding one here would put a second login in front of Argo CD's own OIDC flow and break the callback. The host answering `200` rather than a `302` is how to tell the two arrangements apart.
+
+The `argocd` CLI speaks gRPC to the same port as the browser UI. The `argocd-server` Service port is named `http`, which is what lets Envoy negotiate HTTP/2 to the backend; renaming it to a `tcp-` prefix would declare an opaque TCP stream and break the CLI while the browser kept working.
+
 ```mermaid
 sequenceDiagram
     participant Browser
-    participant Nginx as NGINX Ingress
+    participant Gateway as Istio gateway
     participant Server as Argo CD server
     participant Auth0
     participant Secret as argocd-auth0-secret
     participant RBAC as argocd-rbac-cm
 
-    Browser->>Nginx: HTTPS request
-    Nginx->>Server: HTTP request inside cluster
+    Browser->>Gateway: HTTPS request
+    Gateway->>Server: Plaintext request inside cluster
     Server-->>Browser: Redirect to Auth0
     Browser->>Auth0: Authenticate
     Auth0-->>Browser: Authorization response
-    Browser->>Nginx: OIDC callback
-    Nginx->>Server: Forward callback
+    Browser->>Gateway: OIDC callback
+    Gateway->>Server: Forward callback
     Server->>Secret: Read client secret reference
     Server->>Auth0: Exchange code and validate identity
     Server->>RBAC: Evaluate groups and default role
@@ -170,7 +174,10 @@ The notification trigger and template catalog is the exception: the chart ships 
 - `kubernetes_secret_v1.argocd_auth0_oidc_secret`: Auth0 OIDC client secret.
 - `kubernetes_secret_v1.argocd_notifications_secret`: Slack bot token read by the notifications controller as `$slack-token`, created only when `argocd_notifications_slack_token` is set. Its name, `argocd-notifications-slack-secret`, is distinct from the chart-owned default Secret so enabling or disabling Slack needs no ownership transfer.
 - `kubernetes_config_map_v1.argocd_rbac_cm`: Default RBAC role, group policy, scopes, and matching mode.
-- `helm_release.argo_cd`: Argo CD CRDs, workloads, Services, Ingress, ServiceMonitors, and PrometheusRule.
+- `helm_release.argo_cd`: Argo CD CRDs, workloads, Services, ServiceMonitors, and PrometheusRule. The chart's Ingress is disabled, see `httproute.tf`.
+- `kubectl_manifest.listener`: `ListenerSet` contributing this host's HTTPS listener to the shared Istio Gateway.
+- `kubectl_manifest.certificate`: `Certificate` for `argocd-server-tls`, reissued under `letsencrypt-gateway` over DNS-01.
+- `kubectl_manifest.route`: `HTTPRoute` sending every path to `argocd-server:80` with the shared header filters.
 - `kubernetes_manifest.argocd_apps_root`: Optional root Application for the `applicationsets` path in the central GitOps repository.
 - `data.kubernetes_secret_v1.argocd_initial_admin_secret`: Initial administrator password output.
 
@@ -179,11 +186,9 @@ The notification trigger and template catalog is the exception: the chart ships 
 | Name | Description | Default |
 |------|-------------|---------|
 | `prometheus_namespace` | ServiceMonitor and PrometheusRule namespace | `monitoring` |
-| `global_ingress_enable_tls` | Enable ingress TLS | `true` |
-| `nginx_frontend_basic_auth_base64` | Basic auth credentials; currently unused | required, sensitive |
 | `argocd_domain` | Argo CD hostname | `argocd.chrislee.local` |
-| `argocd_ingress_class_name` | Ingress class | `nginx` |
-| `argocd_ssh_known_hosts_base64` | SSH repository host keys; currently unused | `""` |
+| `istio_gateway_name` | Shared Gateway the ListenerSet attaches to | `public` |
+| `istio_gateway_namespace` | Namespace of the shared Gateway | `istio-ingress` |
 | `argocd_config_repositories` | Repository credentials rendered into `configs.repositories`; empty in this deployment | `[]` |
 | `argocd_rbac_policy_default` | Fallback RBAC role for non-admin identities | `""` |
 | `argocd_rbac_policy_csv` | RBAC policy CSV | `""` |

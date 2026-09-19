@@ -97,7 +97,11 @@ data "kubernetes_config_map_v1" "coredns_existing" {
 
 locals {
   existing_corefile = data.kubernetes_config_map_v1.coredns_existing.data["Corefile"]
-  domain_list       = split(" ", trim(var.kubernetes_override_domains, "\""))
+  domain_list       = compact(split(" ", trim(var.kubernetes_override_domains, "\"")))
+
+  # Hosts already serving from the Istio gateway. Kept separate from domain_list: a name belongs to
+  # exactly one of the two, and a cutover moves it across.
+  gateway_domain_list = compact(split(" ", trim(var.kubernetes_gateway_domains, "\"")))
 
   # Use markers to identify modifications
   start_marker = "# START: custom DNS"
@@ -122,23 +126,57 @@ locals {
   # Build except clause for all domains
   except_clause = join(" ", local.domain_list)
 
+  # forward's except takes one or more zones, so an empty domain list has to drop the clause, not
+  # emit a bare "except". CoreDNS rejects the whole Corefile on a zero-arg except, and a rejected
+  # Corefile only fails the reload: the pods keep serving the last good config out of memory and
+  # crashloop later, whenever something restarts them. Worse, the bare-except render is a fixed
+  # point, so a later apply sees no diff and never repairs it.
+  #
+  # Strip any existing except line first, so the empty and non-empty cases both start from a forward
+  # block without one. That also clears the runaway indentation the add-if-missing branch used to
+  # accumulate, one insert per apply that failed to match its own except regex.
+  forward_without_except = replace(local.existing_forward, "/\\n[ \\t]*except[^}\\n]*/", "")
+
   # Always rebuild the forward directive to ensure it matches exactly the current domain list
   new_forward = (
-    can(regex("forward \\. /etc/resolv\\.conf \\{", local.existing_forward)) ?
-    # Has a forward block
-    (can(regex("except [^}\\n]*", local.existing_forward)) ?
-      # Replace existing except clause with new one (preserves exact spacing)
-      replace(local.existing_forward, "/except [^}\\n]*/", "except ${local.except_clause}") :
-      # No except clause exists, add it before the closing brace
-      replace(local.existing_forward, "/\\s*\\}/", "\n                             except ${local.except_clause}\n    }")
-    ) :
+    length(local.domain_list) == 0 ? local.forward_without_except :
+    can(regex("forward \\. /etc/resolv\\.conf \\{", local.forward_without_except)) ?
+    # Has a forward block, already stripped of its except line, so insert before the closing brace
+    replace(local.forward_without_except, "/\\s*\\}/", "\n                             except ${local.except_clause}\n    }") :
     # No forward block at all
     "forward . /etc/resolv.conf {\n                             except ${local.except_clause}\n    }"
   )
 
 
-  # Step 3: Replace the forward directive
-  base_corefile = replace(local.without_custom_config, local.existing_forward, local.new_forward)
+  # Step 3: Replace the forward directive, then inject the gateway rewrites.
+  #
+  # A host served by the gateway must resolve in-cluster to the gateway Service, not to the LAN
+  # address. rewrite runs before kubernetes and forward in the CoreDNS plugin chain, so the rewritten
+  # name is answered by the cluster plugin and the query never leaves the cluster. CoreDNS restores the original name
+  # in the answer for exact "rewrite name" rules, so the client still sees the name it asked for and
+  # TLS SNI still carries the public hostname, which is what selects the gateway listener.
+  #
+  # Unlike the per-domain blocks below, these lines sit in the MAIN server block, which the
+  # START/END markers do not cover. They are stripped and rebuilt on every apply; without the strip
+  # each apply would append another copy. The strip matches any <name>-istio Service, not only the
+  # current FQDN, so renaming the gateway does not strand old lines. Hand-written rewrites to other
+  # Services are left alone.
+  gateway_rewrite_lines = join("", [
+    for domain in local.gateway_domain_list :
+    "    rewrite name ${domain} ${var.kubernetes_gateway_service_fqdn}\n"
+  ])
+
+  corefile_without_rewrites = replace(
+    local.without_custom_config,
+    "/(?m)^[ \\t]*rewrite name \\S+ \\S+-istio\\.\\S+\\.svc\\.cluster\\.local[ \\t]*\\n/",
+    ""
+  )
+
+  base_corefile = replace(
+    replace(local.corefile_without_rewrites, local.existing_forward, local.new_forward),
+    "/(\\.:53 \\{\\n)/",
+    "$1${local.gateway_rewrite_lines}"
+  )
 
   # Step 4: Create server blocks for each domain
   custom_configs = [for domain in local.domain_list : <<EOF

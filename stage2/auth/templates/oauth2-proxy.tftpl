@@ -23,7 +23,9 @@ config:
 
     # Networking Configuration
     reverse_proxy = true
-    real_client_ip_header = "X-Real-IP"
+    # Set by the gateway from X-Forwarded-For using its trusted hop count, and present on both the
+    # ext_authz check and the direct route. X-Forwarded-For itself is forgeable.
+    real_client_ip_header = "X-Envoy-External-Address"
 
     # Features Configuration
     skip_provider_button = true
@@ -36,32 +38,24 @@ config:
     whitelist_domains = ${oauth2_proxy_whitelist_domains}
 
     # Upstream Configuration
-    upstreams = ["file:///dev/null"]
+    # static://200, not file:///dev/null, because Istio ext_authz forwards the ORIGINAL request path
+    # rather than calling /oauth2/auth. An authenticated check therefore reaches the upstream, and a
+    # file upstream answers Go's 404 "page not found", which Envoy reads as deny. A 200 means allow.
+    upstreams = ["static://200"]
 
     # Logging
     silence_ping_logging = true
     request_logging = true
 
 ingress:
-  enabled: true
-  className: ${ingress_class_name}
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-  labels: {}
-  hosts:
-  - ${oauth2_proxy_host}
-  path: /
-  %{ if ingress_enable_tls }
-  tls:
-    - secretName: oauth2-proxy-tls
-      hosts:
-        - ${oauth2_proxy_host}
-  %{ endif }
+  # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress for a host
+  # the gateway now serves.
+  enabled: false
 
 # The proxy idles near zero and only spikes on token exchange, so the request sits well under the
 # limit rather than booking the burst ceiling. Trap: a CPU request below the CPU limit puts the pod
-# in Burstable, not Guaranteed, which raises its oom_score_adj. Auth still fails closed (nginx
-# auth_request denies on any non-2xx), so losing this pod 500s every protected ingress rather than
+# in Burstable, not Guaranteed, which raises its oom_score_adj. Auth still fails closed, because
+# ext_authz denies on any non-2xx, so losing this pod 500s every protected host rather than
 # opening one. Set request == limit on both cpu and memory to get Guaranteed back.
 resources:
   limits:
@@ -90,10 +84,3 @@ metrics:
     interval: 60s
     # Prometheus scrape timeout
     scrapeTimeout: 30s
-
-hostAliases:
-- ip: ${host_alias_ip}
-  hostnames:
-  %{ for hostname in split(",", host_alias_hostnames) ~}
-  - "${hostname}"
-  %{ endfor ~}

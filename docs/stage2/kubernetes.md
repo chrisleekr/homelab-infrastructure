@@ -35,7 +35,7 @@ flowchart TB
         end
 
         subgraph consumers [Downstream custom resources]
-            NginxMonitor["module.nginx<br/>ServiceMonitor"]
+            IstioMonitors["module.istio_gateway<br/>PodMonitor"]
             MonitoringObjects["module.monitoring<br/>Prometheus, Alertmanager,<br/>PrometheusRule"]
             LaterMonitors["later modules<br/>ServiceMonitor, PodMonitor,<br/>ScrapeConfig"]
         end
@@ -60,7 +60,7 @@ flowchart TB
     CRDRelease -->|installs or adopts| ScrapeConfig
     CRDRelease -->|installs or adopts| ServiceMonitor
     CRDRelease -->|installs or adopts| ThanosRuler
-    ServiceMonitor -->|defines schema for| NginxMonitor
+    PodMonitor -->|defines schema for| IstioMonitors
     ServiceMonitor -->|defines schema for| LaterMonitors
     PodMonitor -->|defines schema for| LaterMonitors
     ScrapeConfig -->|defines schema for| LaterMonitors
@@ -73,7 +73,7 @@ flowchart TB
 
 ### CoreDNS Custom Configuration
 
-Resolves hairpin NAT issues by configuring CoreDNS to route specific domains directly to the cluster IP instead of through external DNS.
+Resolves hairpin NAT issues by answering listed domains inside the cluster instead of through external DNS.
 
 ```mermaid
 sequenceDiagram
@@ -82,10 +82,18 @@ sequenceDiagram
     participant External as External DNS
 
     Pod->>CoreDNS: Resolve gitlab.chrislee.local
-    Note over CoreDNS: Custom config matches domain
-    CoreDNS-->>Pod: Return 192.168.1.100
-    Note over Pod: Direct connection to cluster IP
+    Note over CoreDNS: rewrite matches a kubernetes_gateway_domains entry
+    CoreDNS-->>Pod: Return the gateway Service ClusterIP
+    Note over Pod: Connects in-cluster, SNI still gitlab.chrislee.local
 ```
+
+**Hosts served by the Istio gateway use a rewrite, not a hosts entry.** `kubernetes_override_domains` pins a name to `kubernetes_override_ip`. A name served by the Istio gateway belongs in `kubernetes_gateway_domains` instead, which emits a `rewrite name <host> <gateway service FQDN>` line in the main server block.
+
+The rewrite resolves to the gateway's in-cluster Service rather than a pinned IP, so nothing needs a MetalLB address and the value survives Service recreation. `rewrite` runs before `kubernetes` and `forward` in the plugin chain, so the query is answered inside the cluster. CoreDNS restores the original name in the answer, so TLS SNI still carries the public hostname, which is what selects the gateway listener.
+
+A name belongs to exactly one of the two lists. Moving it across is the DNS half of a cutover; the Cloudflare Tunnel route is the public half.
+
+Only hosts with in-cluster callers need an entry. A gateway host absent from both lists still resolves, by leaving the cluster and returning through Cloudflare, which works but takes the long way round. Nothing reconciles this list against the ListenerSets, so a host that other pods call has to be added here by hand.
 
 ### Prometheus Operator CRDs
 
@@ -109,8 +117,10 @@ Reverting to stack-managed CRDs is likewise not a plain revert. Setting `crds.en
 | Name | Description | Default |
 |------|-------------|---------|
 | `kubernetes_cluster_type` | Cluster type (kubeadm, k3s, minikube) | `kubeadm` |
-| `kubernetes_override_domains` | Space-delimited domains for CoreDNS | `gitlab.chrislee.local registry.chrislee.local minio.chrislee.local` |
+| `kubernetes_override_domains` | Space-delimited domains pinned to `kubernetes_override_ip` in CoreDNS | `""` |
 | `kubernetes_override_ip` | IP address for custom domain resolution | `192.168.1.100` |
+| `kubernetes_gateway_domains` | Space-delimited hostnames resolved in-cluster to the Istio gateway | `""` |
+| `kubernetes_gateway_service_fqdn` | In-cluster FQDN of the gateway Service, built from the gateway variables in `main.tf` | `public-istio.istio-ingress.svc.cluster.local` |
 
 ## Usage
 
@@ -128,8 +138,7 @@ terraform import 'module.kubernetes.kubernetes_config_map_v1.coredns[0]' kube-sy
 Set in Terraform Cloud or `.env`:
 
 ```bash
-TF_VAR_kubernetes_override_domains="gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
-TF_VAR_kubernetes_override_ip="192.168.1.100"
+TF_VAR_kubernetes_gateway_domains="gitlab.chrislee.local registry.chrislee.local minio.chrislee.local"
 ```
 
 ## Prometheus CRDs Installed

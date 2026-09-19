@@ -85,12 +85,6 @@ vulnerabilities:
     statement: Accept current CLI DNS parsing risk until official binaries include x/net 0.56.0 and Go 1.26.6 or later
     expired_at: 2026-10-15
 
-  - id: CVE-2026-50163
-    purls:
-      - pkg:golang/oras.land/oras-go/v2@v2.6.1
-    statement: Accept Helm ORAS hardlink risk until an official rebuild includes oras-go 2.6.2 or later
-    expired_at: 2026-10-15
-
   - id: CVE-2026-56852
     purls:
       - pkg:golang/golang.org/x/text@v0.33.0
@@ -106,12 +100,11 @@ vulnerabilities:
     expired_at: 2026-10-15
 
   # GO-2026-6303 affected symbols are ssh.NewServerConn and connection.serverAuthenticate.
-  # Helm and TFLint use x/crypto/ssh as clients only, so the server auth path is unreachable.
+  # TFLint uses x/crypto/ssh as a client only, so the server auth path is unreachable.
   - id: CVE-2026-56854
     purls:
       - pkg:golang/golang.org/x/crypto@v0.53.0 # TFLint v0.64.0
-      - pkg:golang/golang.org/x/crypto@v0.54.0 # Helm 4.2.4
-    statement: Not reachable, server-side only. Drop when Helm and TFLint ship x/crypto 0.55.0 or later
+    statement: Not reachable, server-side only. Drop when TFLint ships x/crypto 0.55.0 or later
     expired_at: 2026-10-15
 
   - id: CVE-2026-56858
@@ -169,9 +162,9 @@ vulnerabilities:
   - id: CVE-2026-84304
     purls:
       - pkg:golang/google.golang.org/grpc@v1.82.0 # TFLint v0.64.0
-      - pkg:golang/google.golang.org/grpc@v1.82.1 # Helm 4.2.4, Trivy 0.74.0
+      - pkg:golang/google.golang.org/grpc@v1.82.1 # Trivy 0.74.0
       - pkg:golang/google.golang.org/grpc@v1.83.0 # Task 3.53.1
-    statement: Accept Helm, TFLint, Task and Trivy gRPC risk until official binaries include gRPC-Go 1.83.1 or later
+    statement: Accept TFLint, Task and Trivy gRPC risk until official binaries include gRPC-Go 1.83.1 or later
     expired_at: 2026-10-15
 
   # GHSA-2v4p-qf9q-27wj only affects servers created with xds.NewGRPCServer, which installs the
@@ -181,8 +174,9 @@ vulnerabilities:
   - id: CVE-2026-84445
     purls:
       - pkg:golang/google.golang.org/grpc@v1.82.0 # TFLint v0.64.0
-      - pkg:golang/google.golang.org/grpc@v1.82.1 # Helm 4.2.4, Trivy 0.74.0
+      - pkg:golang/google.golang.org/grpc@v1.82.1 # Trivy 0.74.0
       - pkg:golang/google.golang.org/grpc@v1.83.0 # Task 3.53.1
+      - pkg:golang/google.golang.org/grpc@v1.83.1 # Helm 4.3.0
     statement: Not reachable, xDS server only. Drop when Helm, TFLint, Task and Trivy ship gRPC-Go 1.82.2 or 1.83.2 or later
     expired_at: 2026-10-15
 

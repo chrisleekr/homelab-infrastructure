@@ -34,7 +34,7 @@ flowchart TD
 
     subgraph clusterChain [Protected cluster dependency chain]
         Kubernetes["module.kubernetes<br/>CoreDNS and Prometheus CRDs"]
-        Foundation["Foundation modules<br/>NGINX, cert-manager, storage"]
+        Foundation["Foundation modules<br/>Istio gateway, cert-manager, storage"]
         Platform["Remaining Stage 2 modules"]
     end
 

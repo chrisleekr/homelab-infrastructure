@@ -18,7 +18,7 @@ The last two sit inside a `when: kubernetes_cluster_type == 'kubeadm'` block. On
 
 A bare-metal cluster has no cloud load balancer, so a `Service` of type `LoadBalancer` stays `Pending` forever. MetalLB assigns it an address from a LAN pool.
 
-Stage 2's [NGINX ingress controller](../../stage2/nginx.md) is exposed as a `LoadBalancer`, so without MetalLB nothing in the platform is reachable. This is the single most common cause of "the apply succeeded but I cannot reach anything".
+Stage 2 creates no `LoadBalancer` Service. Traffic arrives through the [Cloudflare Tunnel](../../stage2/cloudflare-tunnel.md), which reaches the [Istio gateway](../../stage2/istio-gateway.md) over cluster DNS, so nothing in the platform depends on a LAN address. MetalLB stays installed for any Service you add that does need one.
 
 ## Variables
 

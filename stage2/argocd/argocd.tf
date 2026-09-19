@@ -36,17 +36,12 @@ resource "helm_release" "argo_cd" {
 
   values = [
     templatefile("${path.module}/templates/argocd-values.tftpl", {
-      prometheus_namespace             = var.prometheus_namespace
-      global_ingress_enable_tls        = var.global_ingress_enable_tls
-      nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-      argocd_domain                    = var.argocd_domain
-      argocd_ingress_class_name        = var.argocd_ingress_class_name
-      argocd_ssh_known_hosts_base64    = var.argocd_ssh_known_hosts_base64
-      argocd_config_repositories       = var.argocd_config_repositories
-      auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
-      argocd_auth0_domain              = var.argocd_auth0_domain
-      argocd_auth0_client_id           = var.argocd_auth0_client_id
-      argocd_auth0_client_secret       = var.argocd_auth0_client_secret
+      prometheus_namespace       = var.prometheus_namespace
+      argocd_domain              = var.argocd_domain
+      argocd_config_repositories = var.argocd_config_repositories
+      auth_oauth2_proxy_host     = var.auth_oauth2_proxy_host
+      argocd_auth0_domain        = var.argocd_auth0_domain
+      argocd_auth0_client_id     = var.argocd_auth0_client_id
 
       argocd_notifications_slack_enabled = local.argocd_notifications_slack_enabled
       argocd_notifications_subscriptions = local.argocd_notifications_subscriptions

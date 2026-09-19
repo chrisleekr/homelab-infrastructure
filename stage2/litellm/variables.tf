@@ -11,25 +11,13 @@ variable "litellm_enable" {
 }
 
 variable "litellm_domain" {
-  description = "Domain name for the LiteLLM ingress. Both the API and the admin UI are served from this single host"
+  description = "Domain name for LiteLLM. Both the API and the admin UI are served from this single host"
   type        = string
   default     = "litellm.chrislee.local"
 }
 
-variable "litellm_ingress_class_name" {
-  description = "Ingress class name for the LiteLLM ingresses"
-  type        = string
-  default     = "nginx"
-}
-
-variable "litellm_ingress_enable_tls" {
-  description = "Enable TLS on the LiteLLM ingresses. When true, cert-manager issues litellm-tls from the letsencrypt-prod ClusterIssuer"
-  type        = bool
-  default     = true
-}
-
 variable "litellm_ui_paths" {
-  description = "URL path prefixes routed to the oauth2-proxy protected ingress. /litellm-asset-prefix serves the console JS and CSS, and /fallback/login plus /login are the console's login page and its credential POST target. /docs, /redoc, /openapi.json, /routes, /config/yaml and /public are introspection surfaces no API client needs. Anything omitted here falls through to the unauthenticated API ingress"
+  description = "URL path prefixes gated by oauth2-proxy on the AuthorizationPolicy. /litellm-asset-prefix serves the console JS and CSS, and /fallback/login plus /login are the console's login page and its credential POST target. /docs, /redoc, /openapi.json, /routes, /config/yaml and /public are introspection surfaces no API client needs. Anything omitted here stays unauthenticated"
   type        = list(string)
   default = [
     "/ui", "/sso", "/litellm-asset-prefix",
@@ -37,10 +25,9 @@ variable "litellm_ui_paths" {
     # credentials. Omitting them leaves the whole login flow outside the gate.
     "/fallback/login", "/login",
     # Introspection surfaces. NO_DOCS alone only removes /docs; /openapi.json still serves the full
-    # schema and /redoc renders it. /.well-known is left ungated so cert-manager's HTTP-01 solver
-    # stays reachable; the only LiteLLM route under it is /.well-known/litellm-ui-config, which was
-    # measured returning UI routing metadata only (server_root_path, sso_configured and similar),
-    # no credentials, so there is nothing there worth gating.
+    # schema and /redoc renders it. /.well-known stays ungated because the only LiteLLM route under
+    # it is /.well-known/litellm-ui-config, measured returning UI routing metadata only
+    # (server_root_path, sso_configured and similar), no credentials.
     "/docs", "/redoc", "/openapi.json", "/routes",
     # LiteLLM's own unauthenticated allow-list (LiteLLMRoutes.public_routes). /config/yaml returns
     # the proxy config and /public/* the model, agent, mcp and skill hubs, so both disclose which
@@ -50,6 +37,9 @@ variable "litellm_ui_paths" {
     "/config/yaml", "/public",
   ]
 
+  # An empty list would leave the AuthorizationPolicy with no paths, and Istio reads an absent
+  # paths field as "any path", which would gate the API instead of the console. Rejecting empty here
+  # is what keeps that inversion unreachable.
   validation {
     condition     = length(var.litellm_ui_paths) > 0
     error_message = "litellm_ui_paths must contain at least one path"
@@ -158,8 +148,14 @@ variable "litellm_provider_secrets" {
   default     = {}
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "Hostname of the oauth2-proxy instance guarding the LiteLLM admin console"
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module attaches its listener to."
   type        = string
-  default     = ""
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. Nothing is created there by this module except the AuthorizationPolicy, which Istio requires beside the Gateway its targetRefs names."
+  type        = string
+  default     = "istio-ingress"
 }

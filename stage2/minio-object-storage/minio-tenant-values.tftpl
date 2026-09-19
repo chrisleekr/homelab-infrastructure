@@ -89,39 +89,9 @@ tenant:
 
 ingress:
   api:
-    enabled: true
-    ingressClassName: "${tenant_ingress_class_name}"
-    labels: { }
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      nginx.ingress.kubernetes.io/proxy-body-size: "0"
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
-      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-      nginx.ingress.kubernetes.io/proxy-buffering: "off"
-      # Use MinIO-specific custom headers
-      nginx.ingress.kubernetes.io/proxy-set-headers: "nginx/minio-custom-headers"
-    %{ if tenant_ingress_enable_tls }
-    tls:
-      - hosts: ["${tenant_ingress_api_host}"]
-        secretName: "minio-tenant-api-tls"
-    %{ endif }
-    host: ${tenant_ingress_api_host}
-    path: /
-    pathType: Prefix
+    # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress for a
+    # host the gateway now serves.
+    enabled: false
   console:
-    enabled: true
-    ingressClassName: "${tenant_ingress_class_name}"
-    labels: { }
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-    %{ if tenant_ingress_enable_tls }
-    tls:
-      - hosts: ["${tenant_ingress_console_host}"]
-        secretName: "minio-tenant-console-tls"
-    %{ endif }
-    host: ${tenant_ingress_console_host}
-    path: /
-    pathType: Prefix
+    # Served by the Istio gateway, see httproute.tf.
+    enabled: false

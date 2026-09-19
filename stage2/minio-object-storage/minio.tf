@@ -30,41 +30,6 @@ resource "kubernetes_namespace_v1" "minio_tenant" {
   }
 }
 
-resource "kubernetes_secret_v1" "frontend_basic_auth" {
-  metadata {
-    name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace_v1.minio_tenant.metadata[0].name
-  }
-
-  data = {
-    auth = base64decode(var.nginx_frontend_basic_auth_base64)
-  }
-
-  type = "Opaque"
-
-  lifecycle {
-    ignore_changes = [metadata[0].labels]
-  }
-}
-
-
-resource "kubernetes_config_map_v1" "minio_custom_headers" {
-  depends_on = [
-    kubernetes_namespace_v1.minio_tenant
-  ]
-
-  metadata {
-    name      = "minio-custom-headers"
-    namespace = "nginx"
-  }
-
-  data = {
-    "X-Real-IP"         = "$remote_addr"
-    "X-Forwarded-For"   = "$proxy_add_x_forwarded_for"
-    "X-Forwarded-Proto" = "$scheme"
-  }
-}
-
 resource "helm_release" "minio_operator" {
   depends_on = [
     kubernetes_namespace_v1.minio_operator,
@@ -159,8 +124,6 @@ resource "helm_release" "minio_tenant" {
     kubernetes_namespace_v1.minio_tenant,
     kubernetes_secret_v1.minio_tenant_env,
     kubernetes_secret_v1.minio_tenant_user,
-    kubernetes_secret_v1.frontend_basic_auth,
-    kubernetes_config_map_v1.minio_custom_headers
     # kubectl_manifest.minio_tenant_certmanager_cert
   ]
 
@@ -176,18 +139,12 @@ resource "helm_release" "minio_tenant" {
     templatefile(
       "${path.module}/minio-tenant-values.tftpl",
       {
-        frontend_basic_auth_secret_name = kubernetes_secret_v1.frontend_basic_auth.metadata[0].name
         tenant_configuration_name       = kubernetes_secret_v1.minio_tenant_env.metadata[0].name
         tenant_pools_servers            = var.minio_tenant_pools_servers
         tenant_pools_size               = var.minio_tenant_pools_size
         tenant_pools_storage_class_name = var.minio_tenant_pools_storage_class_name
         tenant_default_buckets          = var.minio_tenant_default_buckets
         tenant_user_access_key          = var.minio_tenant_user_access_key
-        tenant_ingress_class_name       = var.minio_tenant_ingress_class_name
-        tenant_ingress_api_host         = var.minio_tenant_ingress_api_host
-        tenant_ingress_console_host     = var.minio_tenant_ingress_console_host
-        tenant_ingress_enable_tls       = var.minio_tenant_ingress_enable_tls
-        auth_oauth2_proxy_host          = var.auth_oauth2_proxy_host
       }
     ),
   ]

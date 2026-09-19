@@ -53,19 +53,10 @@ longhornManager:
       operator: Exists
       effect: NoSchedule
 
+# Exposure is module-owned, see httproute.tf. The host is served by the Istio gateway through a
+# ListenerSet plus an HTTPRoute, so the chart must not also render an Ingress for it.
 ingress:
-  enabled: true
-  ingressClassName: ${longhorn_ingress_class_name}
-  host: ${longhorn_ingress_host}
-  tls: ${longhorn_ingress_enable_tls}
-  secureBackends: true
-  tlsSecret: longhorn-tls
-  path: /
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
+  enabled: false
 
 metrics:
   serviceMonitor:

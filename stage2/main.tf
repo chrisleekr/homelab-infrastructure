@@ -10,25 +10,32 @@ module "kubernetes" {
   kubernetes_cluster_type     = var.kubernetes_cluster_type
   kubernetes_override_domains = var.kubernetes_override_domains
   kubernetes_override_ip      = var.kubernetes_override_ip
+
+  kubernetes_gateway_domains = var.kubernetes_gateway_domains
+  # Built from the gateway variables so this Service name cannot drift from the Gateway it belongs
+  # to. Istio auto-provisions the Service as <gateway name>-istio in the Gateway's namespace.
+  kubernetes_gateway_service_fqdn = "${var.istio_gateway_name}-istio.${var.istio_gateway_namespace}.svc.cluster.local"
 }
 
-module "nginx" {
-  depends_on = [module.kubernetes]
+# Istio gateway. Installs the control plane, the Gateway API CRDs and one Gateway; it carries no
+# traffic until a Cloudflare Tunnel published application route points a hostname at its Service.
+# Each host's listener, certificate and route live in the module that owns that workload.
+module "istio_gateway" {
+  depends_on = [module.kubernetes, module.cert_manager_letsencrypt]
 
-  source                        = "./nginx"
-  nginx_service_loadbalancer_ip = var.nginx_service_loadbalancer_ip
-  nginx_client_max_body_size    = var.nginx_client_max_body_size
-  nginx_client_body_buffer_size = var.nginx_client_body_buffer_size
+  source = "./istio-gateway"
 
-  wireguard_port = var.wireguard_port
+  istio_gateway_acme_email          = var.cert_manager_acme_email
+  istio_gateway_name                = var.istio_gateway_name
+  istio_gateway_namespace           = var.istio_gateway_namespace
+  istio_gateway_num_trusted_proxies = var.istio_gateway_num_trusted_proxies
 }
 
 # Cloudflare Tunnel connector (cloudflared). Exposes services through Cloudflare,
 # bypassing ISP CGNAT. Tunnel/public-hostnames/DNS/Access are managed in the dashboard.
 module "cloudflare_tunnel" {
-  count      = var.cloudflare_tunnel_enable ? 1 : 0
-  depends_on = [module.nginx]
-  source     = "./cloudflare-tunnel"
+  count  = var.cloudflare_tunnel_enable ? 1 : 0
+  source = "./cloudflare-tunnel"
 
   cloudflare_tunnel_token         = var.cloudflare_tunnel_token
   cloudflare_tunnel_chart_version = var.cloudflare_tunnel_chart_version
@@ -37,69 +44,66 @@ module "cloudflare_tunnel" {
 }
 
 module "auth" {
-  depends_on = [module.nginx, module.monitoring, module.cert_manager_letsencrypt]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.monitoring, module.cert_manager_letsencrypt, module.istio_gateway]
   source     = "./auth"
 
   prometheus_namespace                = module.monitoring.monitoring_namespace
-  auth_ingress_class_name             = var.auth_ingress_class_name
-  auth_ingress_enable_tls             = var.ingress_enable_tls
   auth_oauth2_proxy_host              = var.auth_oauth2_proxy_host
   auth_oauth2_proxy_cookie_domains    = var.auth_oauth2_proxy_cookie_domains
   auth_oauth2_proxy_whitelist_domains = var.auth_oauth2_proxy_whitelist_domains
   auth_auth0_domain                   = var.auth_auth0_domain
   auth_auth0_client_id                = var.auth_auth0_client_id
   auth_auth0_client_secret            = var.auth_auth0_client_secret
-  auth_host_alias_ip                  = var.cert_manager_host_alias_ip
-  auth_host_alias_hostnames           = var.cert_manager_host_alias_hostnames
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 
 module "cert_manager_letsencrypt" {
-  depends_on = [module.nginx]
-  source     = "./cert-manager-letsencrypt"
+  source = "./cert-manager-letsencrypt"
 
-  cert_manager_acme_email           = var.cert_manager_acme_email
-  cert_manager_ingress_class        = var.cert_manager_ingress_class
-  cert_manager_host_alias_ip        = var.cert_manager_host_alias_ip
-  cert_manager_host_alias_hostnames = var.cert_manager_host_alias_hostnames
+  cert_manager_cloudflare_api_token = var.cert_manager_cloudflare_api_token
 }
 
 module "longhorn_storage" {
-  depends_on = [module.cert_manager_letsencrypt]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.cert_manager_letsencrypt, module.istio_gateway]
 
   source = "./longhorn-storage"
 
-  nginx_frontend_basic_auth_base64            = var.nginx_frontend_basic_auth_base64
   longhorn_default_settings_default_data_path = var.longhorn_default_settings_default_data_path
-  longhorn_ingress_class_name                 = var.longhorn_ingress_class_name
-  longhorn_ingress_host                       = var.longhorn_ingress_host
-  longhorn_ingress_enable_tls                 = var.ingress_enable_tls
-  auth_oauth2_proxy_host                      = var.auth_oauth2_proxy_host
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
+  longhorn_ingress_host   = var.longhorn_ingress_host
 }
 
 module "minio_object_storage" {
-  depends_on = [module.longhorn_storage]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.longhorn_storage, module.istio_gateway]
 
   source = "./minio-object-storage"
 
-  nginx_frontend_basic_auth_base64      = var.nginx_frontend_basic_auth_base64
   minio_tenant_pools_size               = var.minio_tenant_pools_size
   minio_tenant_pools_storage_class_name = var.minio_tenant_pools_storage_class_name
   minio_tenant_root_user                = var.minio_tenant_root_user
   minio_tenant_default_buckets          = var.minio_tenant_default_buckets
   minio_tenant_user_access_key          = var.minio_tenant_user_access_key
-  minio_tenant_ingress_class_name       = var.minio_tenant_ingress_class_name
   minio_tenant_ingress_api_host         = var.minio_tenant_ingress_api_host
   minio_tenant_ingress_console_host     = var.minio_tenant_ingress_console_host
-  minio_tenant_ingress_enable_tls       = var.ingress_enable_tls
-  auth_oauth2_proxy_host                = var.auth_oauth2_proxy_host
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 module "gitlab_platform" {
   # Gitlab does not work in ARM64. Skip this module if the host machine architecture is ARM64
   count = var.host_machine_architecture == "amd64" ? 1 : 0
 
-  depends_on = [module.minio_object_storage]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSets.
+  depends_on = [module.minio_object_storage, module.istio_gateway]
   source     = "./gitlab-platform"
 
   gitlab_global_hosts_domain       = var.gitlab_global_hosts_domain
@@ -131,12 +135,16 @@ module "gitlab_platform" {
   gitlab_auth0_client_id     = var.auth_auth0_client_id
   gitlab_auth0_client_secret = var.auth_auth0_client_secret
   gitlab_auth0_domain        = var.auth_auth0_domain
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 
 module "logging" {
-  count      = var.logging_module_enable ? 1 : 0
-  depends_on = [module.cert_manager_letsencrypt]
+  count = var.logging_module_enable ? 1 : 0
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.cert_manager_letsencrypt, module.istio_gateway]
   source     = "./logging"
 
   elasticsearch_resource_request_memory = var.elasticsearch_resource_request_memory
@@ -146,28 +154,28 @@ module "logging" {
   elasticsearch_storage_size            = var.elasticsearch_storage_size
   elasticsearch_storage_class_name      = var.elasticsearch_storage_class_name
 
-  kibana_resource_request_memory   = var.kibana_resource_request_memory
-  kibana_resource_limit_memory     = var.kibana_resource_limit_memory
-  kibana_ingress_class_name        = var.kibana_ingress_class_name
-  kibana_ingress_enable_tls        = var.ingress_enable_tls
-  kibana_domain                    = var.kibana_domain
-  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-  auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
+  kibana_resource_request_memory = var.kibana_resource_request_memory
+  kibana_resource_limit_memory   = var.kibana_resource_limit_memory
+  kibana_domain                  = var.kibana_domain
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 module "monitoring" {
-  depends_on = [module.cert_manager_letsencrypt, module.logging]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSets.
+  depends_on = [module.cert_manager_letsencrypt, module.logging, module.istio_gateway]
   source     = "./monitoring"
 
-  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
-  prometheus_alertmanager_domain   = var.prometheus_alertmanager_domain
-  prometheus_grafana_domain        = var.prometheus_grafana_domain
-  prometheus_ingress_class_name    = var.prometheus_ingress_class_name
-  prometheus_ingress_enable_tls    = var.ingress_enable_tls
+  prometheus_alertmanager_domain = var.prometheus_alertmanager_domain
+  prometheus_grafana_domain      = var.prometheus_grafana_domain
 
-  prometheus_prometheus_domain     = var.prometheus_prometheus_domain
-  prometheus_grafana_storage_class = var.prometheus_persistence_storage_class_name
-  prometheus_persistence_size      = var.prometheus_persistence_size
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
+
+  prometheus_prometheus_domain              = var.prometheus_prometheus_domain
+  prometheus_persistence_size               = var.prometheus_persistence_size
+  prometheus_persistence_storage_class_name = var.prometheus_persistence_storage_class_name
 
   prometheus_alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
   prometheus_alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
@@ -183,25 +191,23 @@ module "monitoring" {
   elastalert2_elasticsearch_port     = try(module.logging[0].elasticsearch_port, 9200)
   elastalert2_elasticsearch_username = try(module.logging[0].elasticsearch_username, "")
   elastalert2_elasticsearch_password = try(module.logging[0].elasticsearch_password, "")
-
-  auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
 }
 
 
 module "kubecost" {
   # minio_object_storage is named explicitly: the only value consumed from it resolves to a
   # random_password, so the implicit edge does not reach the tenant or its buckets.
-  depends_on = [module.cert_manager_letsencrypt, module.minio_object_storage]
+  depends_on = [module.cert_manager_letsencrypt, module.minio_object_storage, module.istio_gateway]
   # Not "./kubecost": helm resolves a chart name to a local path before consulting the repo, so a
   # directory matching the chart name shadows the remote chart.
   source = "./monitoring-kubecost"
 
   kubecost_cluster_id         = var.kubecost_cluster_id
   kubecost_ingress_host       = var.kubecost_ingress_host
-  kubecost_ingress_enable_tls = var.ingress_enable_tls
-  kubecost_ingress_class_name = var.kubecost_ingress_class_name
   kubecost_storage_class_name = var.kubecost_storage_class_name
-  auth_oauth2_proxy_host      = var.auth_oauth2_proxy_host
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 
   minio_endpoint   = var.minio_internal_endpoint
   minio_access_key = var.minio_tenant_user_access_key
@@ -227,17 +233,14 @@ module "vpn" {
 module "argocd" {
   # Note: logging dependency is conditional to prevent errors when logging_module_enable = false
   # GitLab dependency uses try() to handle case when gitlab is disabled (ARM64 architecture)
-  depends_on = [module.gitlab_platform, module.cert_manager_letsencrypt]
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.gitlab_platform, module.cert_manager_letsencrypt, module.istio_gateway]
   source     = "./argocd"
 
-  prometheus_namespace             = module.monitoring.monitoring_namespace
-  global_ingress_enable_tls        = var.ingress_enable_tls
-  nginx_frontend_basic_auth_base64 = var.nginx_frontend_basic_auth_base64
+  prometheus_namespace = module.monitoring.monitoring_namespace
 
-  argocd_domain                 = var.argocd_domain
-  argocd_ingress_class_name     = var.argocd_ingress_class_name
-  argocd_ssh_known_hosts_base64 = var.argocd_ssh_known_hosts_base64
-  argocd_config_repositories    = jsondecode(var.argocd_config_repositories_json_encoded)
+  argocd_domain              = var.argocd_domain
+  argocd_config_repositories = jsondecode(var.argocd_config_repositories_json_encoded)
 
   argocd_notifications_slack_token         = var.argocd_notifications_slack_token
   argocd_notifications_slack_subscriptions = jsondecode(var.argocd_notifications_slack_subscriptions_json_encoded)
@@ -252,6 +255,9 @@ module "argocd" {
   argocd_auth0_client_secret = var.auth_auth0_client_secret
 
   argocd_apps_repo_url = var.argocd_apps_repo_url
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 
@@ -303,14 +309,13 @@ module "sealed_secrets" {
 # LiteLLM - self-hosted OpenAI-compatible proxy across multiple LLM providers
 # Reference: https://docs.litellm.ai/docs/proxy/deploy
 module "litellm" {
-  count      = var.litellm_enable ? 1 : 0
-  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage]
+  count = var.litellm_enable ? 1 : 0
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage, module.istio_gateway]
   source     = "./litellm"
 
   litellm_enable             = var.litellm_enable
   litellm_domain             = var.litellm_domain
-  litellm_ingress_class_name = var.litellm_ingress_class_name
-  litellm_ingress_enable_tls = var.ingress_enable_tls
   litellm_ui_paths           = var.litellm_ui_paths
   litellm_chart_version      = var.litellm_chart_version
   litellm_image_tag          = var.litellm_image_tag
@@ -322,20 +327,21 @@ module "litellm" {
   litellm_salt_key           = var.litellm_salt_key
   litellm_db_password        = var.litellm_db_password
   litellm_provider_secrets   = var.litellm_provider_secrets
-  auth_oauth2_proxy_host     = var.auth_oauth2_proxy_host
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }
 
 # OmniRoute - self-hostable AI gateway. Independent of litellm; both can run at once.
 # Reference: https://github.com/diegosouzapw/OmniRoute
 module "omniroute" {
-  count      = var.omniroute_enable ? 1 : 0
-  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage]
+  count = var.omniroute_enable ? 1 : 0
+  # istio_gateway is named so the Gateway API CRDs exist before this module's ListenerSet.
+  depends_on = [module.cert_manager_letsencrypt, module.longhorn_storage, module.istio_gateway]
   source     = "./omniroute-gateway"
 
   omniroute_enable                 = var.omniroute_enable
   omniroute_domain                 = var.omniroute_domain
-  omniroute_ingress_class_name     = var.omniroute_ingress_class_name
-  omniroute_ingress_enable_tls     = var.ingress_enable_tls
   omniroute_public_paths           = var.omniroute_public_paths
   omniroute_gated_admin_suffixes   = var.omniroute_gated_admin_suffixes
   omniroute_chart_version          = var.omniroute_chart_version
@@ -346,5 +352,7 @@ module "omniroute" {
   omniroute_jwt_secret             = var.omniroute_jwt_secret
   omniroute_api_key_secret         = var.omniroute_api_key_secret
   omniroute_storage_encryption_key = var.omniroute_storage_encryption_key
-  auth_oauth2_proxy_host           = var.auth_oauth2_proxy_host
+
+  istio_gateway_name      = var.istio_gateway_name
+  istio_gateway_namespace = var.istio_gateway_namespace
 }

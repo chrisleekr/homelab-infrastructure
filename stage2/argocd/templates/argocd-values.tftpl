@@ -147,14 +147,18 @@ server:
       enabled: true
       interval: 30s
       namespace: ${prometheus_namespace}
+  service:
+    # A second Service port on the same container port, which the chart names http2. Istio picks the
+    # upstream protocol from the port name, and a gateway forwards HTTP/1.1 unless that name is
+    # http2 or grpc, so this port is what carries native gRPC. Port 80 has to stay HTTP/1.1 because
+    # argocd-server accepts HTTP/2 only when the content type is gRPC and refuses a plain HTTP
+    # request over h2c, which would take the web UI down. httproute.tf splits the two.
+    # The chart renders this port only while configs.params."server.insecure" is true.
+    servicePortHttp2: 8080
   ingress:
-    enabled: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    ingressClassName: ${argocd_ingress_class_name}
-    path: /
-    pathType: Prefix
-    tls: ${global_ingress_enable_tls}
+    # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress for a host
+    # the gateway now serves.
+    enabled: false
 
 repoServer:
   resources:

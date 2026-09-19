@@ -13,25 +13,10 @@ global:
   # than left to the cluster default so the claims do not move if that default ever changes.
   defaultStorageClass: "${storage_class_name}"
 
-# Basic Kubecost ingress, more examples available at https://docs.kubecost.com/install-and-configure/install/ingress-examples
+# Exposure is module-owned, see httproute.tf. The host is served by the Istio gateway through a
+# ListenerSet plus an HTTPRoute, so the chart must not also render an Ingress for it.
 ingress:
-  enabled: true
-  className: ${ingress_class_name}
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-  paths: ["/"]  # There's no need to route specifically to the pods-- we have an nginx deployed that handles routing
-  pathType: ImplementationSpecific
-  hosts:
-    - ${kubecost_ingress_host}
-  %{ if ingress_enable_tls }
-  tls:
-    - secretName: kubecost-tls
-      hosts:
-      - ${kubecost_ingress_host}
-  %{ endif }
+  enabled: false
 
 # Chart default is enabled. The hostNetwork DaemonSet only refines egress attribution, which is
 # meaningless on a single-node homelab.

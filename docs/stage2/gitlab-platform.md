@@ -14,8 +14,8 @@ flowchart TB
     end
 
     subgraph k8s [Kubernetes Cluster]
-        subgraph ingress [Ingress Layer]
-            Nginx[NGINX Ingress]
+        subgraph ingress [Edge Layer]
+            Gateway[Istio Gateway<br/>gitlab and registry hosts]
         end
 
         subgraph ns [Namespace: gitlab]
@@ -57,9 +57,9 @@ flowchart TB
         end
     end
 
-    User -->|HTTPS| Nginx
-    Nginx --> WebUI
-    Nginx --> Registry
+    User -->|HTTPS| Gateway
+    Gateway --> WebUI
+    Gateway --> Registry
     User -->|SSH| Shell
 
     WebUI --> PostgreSQL
@@ -127,6 +127,19 @@ sequenceDiagram
 - `helm_release.valkey` - Valkey, replacing the removed bundled Redis
 - `kubectl_manifest.gitlab_postgres` - CNPG `Cluster`, replacing the removed bundled PostgreSQL
 
+### Gateway API
+
+The chart's Ingresses for the web and registry hosts are disabled per component, not through `global.ingress.enabled`, which is chart-wide and also drives defaults other components read.
+
+- `kubectl_manifest.web_listener` - ListenerSet contributing the GitLab HTTPS listener to the shared Gateway
+- `kubectl_manifest.registry_listener` - ListenerSet contributing the registry HTTPS listener
+- `kubectl_manifest.web_certificate` - DNS-01 Certificate for the GitLab host, reusing the Secret name the Ingress used
+- `kubectl_manifest.registry_certificate` - DNS-01 Certificate for the registry host, reusing the Secret name the Ingress used
+- `kubectl_manifest.web_route` - HTTPRoute to `gitlab-webservice-default:8181`, which is workhorse
+- `kubectl_manifest.registry_route` - HTTPRoute to `gitlab-registry:5000`
+
+Neither route has an `AuthorizationPolicy` and neither may gain one. GitLab runs its own session login and the registry authenticates with JWT bearer tokens issued by GitLab, so an ext_authz login redirect would break git over HTTPS, the API, CI and every docker pull.
+
 ## Databases
 
 Chart 10.0 removed the bundled PostgreSQL, Redis and MinIO subcharts, and the chart refuses to render if `postgresql.install` or `redis.install` is present and truthy. MinIO was already external via `stage2/minio-object-storage`; PostgreSQL and Redis moved here.
@@ -156,7 +169,7 @@ kubectl -n gitlab exec gitlab-pg-1 -- psql -U postgres -d gitlabhq_production \
   -c "CREATE EXTENSION IF NOT EXISTS amcheck;"
 ```
 
-Before re-importing, scale `sidekiq`, `webservice`, `registry` and `kas` to zero. KAS writes to the database and is easy to overlook; confirm with `pg_stat_activity`, not the pod list. Then delete the Cluster and re-apply.
+Before re-importing, scale `sidekiq`, `webservice` and `registry` to zero. Confirm with `pg_stat_activity`, not the pod list. Then delete the Cluster and re-apply.
 
 `backup-utility` does **not** cover the `registry` database: Rails' `database.yml` declares only the `main` and `ci` connections, both on `gitlabhq_production`, and `gitlab-backup` iterates those connections. Dump `registry` separately before any migration. Restores also abort on a version mismatch. `lib/backup/restore/preconditions.rb` compares the backup's GitLab version to the running one by exact string equality, so a backup is only usable against the exact version that produced it.
 
@@ -176,10 +189,14 @@ Before re-importing, scale `sidekiq`, `webservice`, `registry` and `kas` to zero
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `gitlab_global_ingress_provider` | Ingress provider | `nginx` |
-| `gitlab_global_ingress_class` | Ingress class | `nginx` |
+| `gitlab_global_ingress_provider` | Ingress provider. No component renders an Ingress, so this only feeds the chart's own naming helpers | `nginx` |
+| `gitlab_global_ingress_class` | Ingress class, inert for the same reason | `nginx` |
 | `gitlab_global_ingress_enable_tls` | Enable TLS | `true` |
 | `gitlab_certmanager_issuer_email` | Let's Encrypt email | `""` |
+| `istio_gateway_name` | Shared Istio Gateway both listeners are added to | `public` |
+| `istio_gateway_namespace` | Namespace of that Gateway, named by the ListenerSet `parentRef` | `istio-ingress` |
+
+The `gitlab_global_ingress_*` settings apply only to chart-wide defaults, since the web and registry hosts are served by the Gateway.
 
 ### MinIO Object Storage
 

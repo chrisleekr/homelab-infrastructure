@@ -31,7 +31,7 @@ task stage2:terraform:apply
 
     An hour or more. Two things dominate:
 
-    **Certificate issuance.** cert-manager requests certificates from Let's Encrypt over HTTP-01, which needs DNS to resolve and the ingress to be reachable. Each certificate is a round trip.
+    **Certificate issuance.** cert-manager requests certificates from Let's Encrypt over DNS-01 through Cloudflare, which waits for the TXT record to propagate. Each certificate is a round trip.
 
     **Longhorn.** Volume creation and initial replica sync happen before dependent modules can bind their PVCs. MinIO waits on Longhorn, GitLab waits on MinIO.
 
@@ -44,9 +44,11 @@ Modules apply in `depends_on` order, not file order:
 ```mermaid
 flowchart LR
     preflight["preflight<br/>compatibility gates"] --> kube["kubernetes<br/>CoreDNS + Prometheus CRDs"]
-    kube --> ngx["nginx"] --> certmgr["cert-manager"]
+    kube --> istiogw["istio_gateway<br/>Gateway API CRDs + Gateway"]
+    certmgr["cert-manager"] --> istiogw
     certmgr --> lhorn["longhorn"] --> minio["minio"] --> gitlab["gitlab"]:::optional
     certmgr --> logging["logging"]:::optional --> monitoring["monitoring"] --> auth["auth"]
+    istiogw --> monitoring
     gitlab --> argocd["argocd"]
 
     classDef optional stroke-dasharray:5 3

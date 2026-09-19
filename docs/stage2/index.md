@@ -12,7 +12,7 @@ These have no `count`, so they deploy on every apply.
 |---|---|
 | [Preflight](preflight.md) | Cross-module compatibility checks that must pass before cluster changes |
 | [Kubernetes](kubernetes.md) | CoreDNS configuration, Prometheus CRDs |
-| [NGINX Ingress](nginx.md) | Ingress controller, fronted by MetalLB |
+| [Istio Gateway](istio-gateway.md) | Gateway API CRDs, the Istio control plane, and the one Gateway every public hostname is served through |
 | [Cert-Manager](cert-manager-letsencrypt.md) | TLS certificates from Let's Encrypt |
 | [Longhorn](longhorn-storage.md) | Distributed block storage, the default StorageClass |
 | [MinIO](minio-object-storage.md) | S3-compatible object storage |

@@ -1,0 +1,101 @@
+# Gateway-only istiod. No sidecar injection and no istio-cni: the injection webhook only acts on
+# namespaces or pods that opt in, and nothing in this cluster does.
+autoscaleEnabled: false
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: ${istiod_cpu_request}
+    memory: ${istiod_memory_request}
+
+# Defaults applied to every Gateway using the istio class. Cloudflare Tunnel reaches the gateway
+# over cluster DNS, so the Service needs no LoadBalancer address. The MetalLB pool holds a single
+# /32 and it is already allocated.
+gatewayClasses:
+  istio:
+    service:
+      spec:
+        type: ClusterIP
+    deployment:
+      spec:
+        replicas: 1
+        template:
+          metadata:
+            # Filebeat only collects pods carrying this annotation. Without it the JSON access log
+            # below never leaves the node.
+            annotations:
+              co.elastic.logs/enabled: "true"
+          spec:
+            containers:
+              - name: istio-proxy
+                resources:
+                  requests:
+                    cpu: ${proxy_cpu_request}
+                    memory: ${proxy_memory_request}
+
+meshConfig:
+  # Envoy logs nothing unless this is set: an empty accessLogFile disables access logging outright,
+  # so the node log collector has no request records to ship and every 4xx and 5xx at the gateway is
+  # invisible. JSON keeps the fields structured for the log pipeline instead of one flat string.
+  accessLogFile: /dev/stdout
+  accessLogEncoding: JSON
+
+  defaultConfig:
+    # Keep implementation detail out of responses: no backend Server value and no x-envoy-*.
+    # server.disabled only stops Envoy overwriting the header: it does NOT remove it, so each
+    # route also strips the backend's own Server header. See the route template.
+    proxyHeaders:
+      server:
+        disabled: true
+      attemptCount:
+        disabled: true
+      envoyDebugHeaders:
+        disabled: true
+      metadataExchangeHeaders:
+        mode: IN_MESH
+    # Number of proxy hops in front, so the trusted client address is the visitor and not
+    # cloudflared. Without this, X-Real-IP and X-Envoy-External-Address carry the tunnel pod IP.
+    gatewayTopology:
+      numTrustedProxies: ${num_trusted_proxies}
+
+  # ext_authz provider for gated hosts.
+  # oauth2-proxy must answer 200 to allow: ext_authz treats any other 2xx as a deny.
+  extensionProviders:
+    - name: oauth2-proxy
+      envoyExtAuthzHttp:
+        service: ${ext_authz_service}
+        port: ${ext_authz_port}
+        # Chart default is 600s. A stalled auth check would otherwise hold the request open.
+        timeout: 5s
+        includeRequestHeadersInCheck:
+          - cookie
+          - authorization
+          - accept
+          - x-forwarded-proto
+          - x-forwarded-host
+          - x-forwarded-uri
+          # Client IP for oauth2-proxy. HTTP ext_authz forwards only listed headers, and the route's
+          # X-Real-IP is added after the check runs.
+          - x-envoy-external-address
+        # Where to send the browser after login. ext_authz has no way to pass a return URL, and
+        # without it oauth2-proxy stores a bare path and returns the browser to its OWN host after
+        # the Auth0 callback. X-Auth-Request-Redirect is what makes the stored redirect absolute.
+        # The %REQ()% operators are evaluated: Envoy parses these through Router::HeaderParser, the
+        # same path as route request_headers_to_add, despite the field being documented as "fixed".
+        # :PATH carries the query string.
+        includeAdditionalHeadersInCheck:
+          X-Auth-Request-Redirect: "https://%REQ(:AUTHORITY)%%REQ(:PATH)%"
+        # The X-Auth-Request-* contract the protected backends consume. Authorization is left out on
+        # purpose: oauth2-proxy answers with Bearer <id_token>, which would replace the client's own
+        # Authorization header and break backends that authenticate it, such as Kibana.
+        headersToUpstreamOnAllow:
+          - x-auth-request-user
+          - x-auth-request-email
+          - x-auth-request-access-token
+        headersToDownstreamOnAllow:
+          - set-cookie
+        # Location and Set-Cookie must reach the browser, or the login redirect cannot complete.
+        headersToDownstreamOnDeny:
+          - content-type
+          - set-cookie
+          - location

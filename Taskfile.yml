@@ -73,6 +73,12 @@ tasks:
     cmds:
       - ./.venv-docs/bin/python scripts/tests/test_check_docs.py
 
+  gateway:test:
+    desc: Assert the gateway route filter gate itself, then run it. No network.
+    cmds:
+      - python3 scripts/tests/test_check_gateway_routes.py
+      - python3 scripts/check-gateway-routes.py --check
+
   versions:check:
     desc: Check for newer tool and Alpine package versions in Dockerfile
     cmds:

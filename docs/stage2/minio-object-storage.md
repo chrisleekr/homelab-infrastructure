@@ -14,9 +14,9 @@ flowchart TB
     end
 
     subgraph k8s [Kubernetes Cluster]
-        subgraph ingress [Ingress Layer]
-            Nginx[NGINX Ingress]
-            OAuth[OAuth2 Proxy]
+        subgraph ingress [Edge Layer]
+            Gateway[Istio Gateway<br/>console and S3 api hosts]
+            OAuth[OAuth2 Proxy<br/>ext_authz provider]
         end
 
         subgraph operator_ns [Namespace: minio-operator]
@@ -40,13 +40,14 @@ flowchart TB
         end
     end
 
-    User --> Nginx
-    Nginx --> OAuth
-    OAuth --> Console
+    User --> Gateway
+    Gateway -->|ext_authz check, console only| OAuth
+    Gateway -->|HTTPRoute| Console
+    Gateway -->|HTTPRoute| API
 
-    GitLab -->|S3 API| API
-    Registry -->|S3 API| API
-    Backup -->|S3 API| API
+    GitLab -->|S3 API| Gateway
+    Registry -->|S3 API| Gateway
+    Backup -->|S3 API| Gateway
 
     Operator -->|manages| tenant
     API --> PVC0
@@ -61,46 +62,49 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     participant Client as GitLab/App
-    participant Ingress as NGINX Ingress
+    participant Gateway as Istio Gateway
     participant MinIO as MinIO Tenant
     participant Storage as Longhorn PVC
 
-    Client->>Ingress: PUT object (S3 API)
-    Ingress->>MinIO: Forward request
+    Client->>Gateway: PUT object, S3 API
+    Gateway->>MinIO: Forward request, body streamed
     Note over MinIO: Authenticate with access key
     MinIO->>Storage: Write object data
     Storage-->>MinIO: Confirm write
-    MinIO-->>Ingress: 200 OK
-    Ingress-->>Client: Object stored
+    MinIO-->>Gateway: 200 OK
+    Gateway-->>Client: Object stored
 ```
 
 ## Resources Created
 
 - `kubernetes_namespace.minio_operator` - Operator namespace
 - `kubernetes_namespace.minio_tenant` - Tenant namespace
-- `kubernetes_secret.frontend_basic_auth` - Basic auth for console
 - `kubernetes_secret.minio_tenant_env` - Root credentials
 - `kubernetes_secret.minio_tenant_user` - User access credentials
-- `kubernetes_config_map.minio_custom_headers` - NGINX headers
 - `helm_release.minio_operator` - MinIO Operator
 - `helm_release.minio_tenant` - MinIO Tenant
+- `kubectl_manifest.console_listener` - ListenerSet contributing the console HTTPS listener to the shared Gateway
+- `kubectl_manifest.console_certificate` - DNS-01 Certificate for the console host, reusing the Secret name the Ingress used
+- `kubectl_manifest.console_route` - HTTPRoute for the console host, carrying the header filters
+- `kubectl_manifest.console_require_auth` - CUSTOM AuthorizationPolicy for the console host, in the Gateway namespace
+- `kubectl_manifest.api_listener` - ListenerSet contributing the S3 api HTTPS listener to the shared Gateway
+- `kubectl_manifest.api_certificate` - DNS-01 Certificate for the S3 api host, reusing the Secret name the Ingress used
+- `kubectl_manifest.api_route` - HTTPRoute for the S3 api host, carrying the header filters and no auth policy
 
 ## Variables
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `nginx_frontend_basic_auth_base64` | Base64 encoded basic auth | (required, sensitive) |
 | `minio_tenant_root_user` | Root username | `minio` |
 | `minio_tenant_pools_servers` | Number of MinIO servers | `1` |
 | `minio_tenant_pools_size` | Storage capacity per volume | `10Gi` |
 | `minio_tenant_pools_storage_class_name` | Storage class for PVCs | `longhorn` |
 | `minio_tenant_default_buckets` | List of buckets to create | (required) |
 | `minio_tenant_user_access_key` | User access key | `minio-user` |
-| `minio_tenant_ingress_class_name` | Ingress class | `nginx` |
-| `minio_tenant_ingress_api_host` | S3 API hostname | `minio.chrislee.local` |
+| `minio_tenant_ingress_api_host` | S3 API hostname. Served by the gateway with no AuthorizationPolicy, because callers authenticate with S3 SigV4 | `minio.chrislee.local` |
 | `minio_tenant_ingress_console_host` | Console hostname | `minio-console.chrislee.local` |
-| `minio_tenant_ingress_enable_tls` | Enable TLS | `true` |
-| `auth_oauth2_proxy_host` | OAuth2 proxy host | `auth.chrislee.local` |
+| `istio_gateway_name` | Shared Istio Gateway both listeners are added to | `public` |
+| `istio_gateway_namespace` | Namespace of that Gateway, and where the AuthorizationPolicy is created | `istio-ingress` |
 
 ## Default Buckets
 
@@ -128,7 +132,7 @@ TF_VAR_minio_tenant_pools_size="50Gi"
 
 ### Access Console
 
-Navigate to `https://minio-console.chrislee.local` (OAuth2 protected).
+Navigate to `https://minio-console.chrislee.local`. The console is served by the Istio gateway and gated by ext_authz. The S3 api host is served by the same gateway with no gate, because clients authenticate with AWS SigV4 against MinIO itself and a login redirect would break every S3 caller.
 
 ### Use S3 API
 

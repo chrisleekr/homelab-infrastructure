@@ -13,10 +13,10 @@ output "omniroute_service_name" {
 output "omniroute_api_url" {
   # /v1, not /api/v1: it is the canonical base the dashboard emits. Both are open.
   description = "Base URL of the OpenAI-compatible API endpoint, open to key-authenticated clients"
-  value       = var.omniroute_enable ? "${local.omniroute_scheme}://${var.omniroute_domain}/v1" : null
+  value       = var.omniroute_enable ? "https://${var.omniroute_domain}/v1" : null
 }
 
 output "omniroute_dashboard_url" {
   description = "URL of the OmniRoute dashboard, protected by oauth2-proxy"
-  value       = var.omniroute_enable ? "${local.omniroute_scheme}://${var.omniroute_domain}/dashboard" : null
+  value       = var.omniroute_enable ? "https://${var.omniroute_domain}/dashboard" : null
 }
