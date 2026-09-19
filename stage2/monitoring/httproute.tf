@@ -38,7 +38,6 @@ locals {
   }
 
   # Header mutations every route carries. Gateway API has no gateway-wide header policy, and mesh
-
   # proxyHeaders alone does not set all of these.
   #   - server: mesh config stops Envoy overwriting it, which leaves the BACKEND value exposed.
   #     Only the route can remove the header.

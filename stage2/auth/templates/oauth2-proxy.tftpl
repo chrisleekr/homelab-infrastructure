@@ -40,7 +40,7 @@ config:
     # Upstream Configuration
     # static://200, not file:///dev/null, because Istio ext_authz forwards the ORIGINAL request path
     # rather than calling /oauth2/auth. An authenticated check therefore reaches the upstream, and a
-    # file upstream answers Go's 404 \"page not found\", which Envoy reads as deny. A 200 means allow.
+    # file upstream answers Go's 404 "page not found", which Envoy reads as deny. A 200 means allow.
     upstreams = ["static://200"]
 
     # Logging

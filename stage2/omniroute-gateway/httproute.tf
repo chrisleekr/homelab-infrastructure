@@ -10,10 +10,8 @@
 locals {
   omniroute_route_slug = replace(var.omniroute_domain, ".", "-")
 
-  # Istio matches a trailing * as a raw STRING prefix, so \"/v1*\" would also match /v1beta and
-
-  # exempt a gated path from the gate. Emitting both the bare path and the \"/*\" form keeps matching
-
+  # Istio matches a trailing * as a raw STRING prefix, so "/v1*" would also match /v1beta and
+  # exempt a gated path from the gate. Emitting both the bare path and the "/*" form keeps matching
   # ELEMENT-WISE, so /v1 covers /v1/models but never /v1beta.
   # Ref: https://istio.io/latest/docs/reference/config/security/authorization-policy/ (Rule)
   omniroute_public_path_matches = distinct(flatten([
