@@ -169,7 +169,6 @@ cluster:
     extra_agent_args: ""
 
     docker_default_data_path: '{{ lookup("env", "docker_default_data_path") or "/var/lib/docker" }}'
-    etc_hosts_json: '{{ (lookup("env", "etc_hosts_json") | default("[]")) | from_json }}'
 
     # Optional vars
     cluster_context: k3s

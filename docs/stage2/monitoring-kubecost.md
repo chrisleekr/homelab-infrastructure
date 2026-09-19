@@ -9,7 +9,7 @@ Kubecost 3.x has no Prometheus dependency. The FinOps agent scrapes the cluster 
 ```mermaid
 flowchart TB
     UserBrowser["User Browser"]:::aux
-    NginxIngress["NGINX Ingress"]:::aux
+    IstioGateway["Istio Gateway"]:::aux
     OAuthProxy["OAuth2 Proxy"]:::aux
 
     subgraph nskubecost [Namespace: kubecost]
@@ -23,8 +23,8 @@ flowchart TB
 
     MinioBucket["MinIO<br/>kubecost-federated-store"]:::aux
 
-    UserBrowser -->|HTTPS| NginxIngress
-    NginxIngress -->|auth| OAuthProxy
+    UserBrowser -->|HTTPS| IstioGateway
+    IstioGateway -->|auth| OAuthProxy
     OAuthProxy -->|authorized| FrontendUI
     FrontendUI --> Aggregator
     FrontendUI --> CloudCost
@@ -60,10 +60,7 @@ flowchart TB
 | `minio_bucket_name` | Bucket holding federated ETL data | `kubecost-federated-store` |
 | `kubecost_cluster_id` | Identity stamped on this cluster's ETL records | `cluster-one` |
 | `kubecost_storage_class_name` | Storage class for the Kubecost volumes | `longhorn` |
-| `kubecost_ingress_enable_tls` | Enable TLS for ingress | `true` |
-| `kubecost_ingress_class_name` | Ingress class name | `nginx` |
 | `kubecost_ingress_host` | Ingress hostname | `cost.chrislee.local` |
-| `auth_oauth2_proxy_host` | OAuth2 proxy host for authentication | `auth.chrislee.local` |
 
 ## Usage
 

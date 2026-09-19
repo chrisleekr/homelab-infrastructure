@@ -25,7 +25,7 @@ ansible-playbook --ask-become-pass -i inventories/inventory.yml site.yml --tags 
 | Tag | Task files |
 |---|---|
 | `packages` | `install-packages.yml`, `remove-snapd.yml` |
-| `network` | `update-etc-hosts.yml`, `update-sysctl.yml`, and `install-metallb.yml` in play 6 |
+| `network` | `update-sysctl.yml`, plus `install-metallb.yml` in play 6 |
 | `storage` | `update-multipath.yml` |
 | `security` | `install-fail2ban.yml`, `setup-ufw.yml` |
 | `system` | `disable-swap.yml`, `enable-memory-cgroup.yml` |

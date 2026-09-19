@@ -19,18 +19,8 @@ variable "kubecost_storage_class_name" {
   default     = "longhorn"
 }
 
-variable "kubecost_ingress_enable_tls" {
-  description = "Enable TLS for the kubecost ingress"
-  type        = bool
-  default     = true
-}
 
 
-variable "kubecost_ingress_class_name" {
-  description = "Ingress class name for the kubecost"
-  type        = string
-  default     = "nginx"
-}
 
 variable "kubecost_ingress_host" {
   description = "The host for the kubecost ingress"
@@ -38,11 +28,6 @@ variable "kubecost_ingress_host" {
   default     = "cost.chrislee.local"
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "The host for the oauth2 proxy"
-  type        = string
-  default     = "auth.chrislee.local"
-}
 
 variable "minio_endpoint" {
   description = "In-cluster S3 endpoint for MinIO, e.g. minio.minio-tenant.svc.cluster.local:80."
@@ -64,4 +49,16 @@ variable "minio_bucket_name" {
   description = "Name of the MinIO bucket for Kubecost federated storage"
   type        = string
   default     = "kubecost-federated-store"
+}
+
+variable "istio_gateway_name" {
+  description = "Gateway resource this module's ListenerSet attaches to"
+  type        = string
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the Gateway, and of the AuthorizationPolicy that targets it"
+  type        = string
+  default     = "istio-ingress"
 }

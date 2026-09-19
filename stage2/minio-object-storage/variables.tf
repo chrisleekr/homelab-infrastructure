@@ -1,9 +1,3 @@
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
-
 variable "minio_tenant_root_user" {
   description = "The minio tenant's root user. Default to minio"
   type        = string
@@ -39,12 +33,6 @@ variable "minio_tenant_user_access_key" {
   default     = "minio-user"
 }
 
-variable "minio_tenant_ingress_class_name" {
-  description = "Ingress class name for the minio tenant"
-  type        = string
-  default     = "nginx"
-}
-
 variable "minio_tenant_ingress_api_host" {
   description = "The hostname of the minio tenant api"
   type        = string
@@ -57,14 +45,14 @@ variable "minio_tenant_ingress_console_host" {
   default     = "minio-console.chrislee.local"
 }
 
-variable "minio_tenant_ingress_enable_tls" {
-  description = "Enable TLS for the services"
-  type        = bool
-  default     = true
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its console listener to."
+  type        = string
+  default     = "public"
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "The host for the oauth2 proxy"
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. The AuthorizationPolicy is created here, because Istio requires a policy to sit beside the resource its targetRefs names."
   type        = string
-  default     = "auth.chrislee.local"
+  default     = "istio-ingress"
 }

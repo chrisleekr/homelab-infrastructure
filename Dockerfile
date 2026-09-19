@@ -8,7 +8,7 @@ ARG TARGETARCH
 # https://dl.k8s.io/release/stable.txt
 ARG KUBECTL_VERSION=1.36.3
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.2.4
+ARG HELM_VERSION=4.3.0
 # https://developer.hashicorp.com/terraform/install
 ARG TERRAFORM_VERSION=1.16.2
 # https://github.com/go-task/task/releases
@@ -47,7 +47,7 @@ RUN set -eux; \
   apk add --no-cache \
   libcrypto3=3.5.8-r0 \
   libssl3=3.5.8-r0 \
-  ca-certificates=20260611-r0 \
+  ca-certificates=20260909-r0 \
   curl=8.22.0-r0 \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \

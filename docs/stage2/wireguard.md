@@ -11,14 +11,12 @@ flowchart TB
     peer["Remote peer<br/>WireGuard client"]:::aux
 
     subgraph cluster [Kubernetes cluster]
-        ingress["ingress-nginx<br/>UDP 51820 stream"]
         wgsvc["Service wireguard<br/>ClusterIP, UDP"]
         wgpod["wireguard pod<br/>linuxserver image<br/>subnet 10.13.13.0/24"]
         lan["LAN and cluster services"]
     end
 
-    peer -->|"UDP 51820"| ingress
-    ingress --> wgsvc
+    peer -.->|"UDP 51820, no inbound path today"| wgsvc
     wgsvc --> wgpod
     wgpod --> lan
 
@@ -53,16 +51,11 @@ Fixed in the module and not exposed: `INTERNAL_SUBNET` is `10.13.13.0`, `ALLOWED
 
 `ALLOWEDIPS=0.0.0.0/0` makes every generated config a full tunnel, so a connected peer sends all of its traffic here, not just cluster-bound traffic.
 
-## Exposure through ingress-nginx
+## Exposure
 
-`stage2/main.tf` passes `wireguard_port` to the nginx module as well, which renders it into the `udp` stream map in `stage2/nginx/templates/nginx-values.tftpl`:
+There is none. The Istio gateway cannot carry the WireGuard UDP stream: UDPRoute ships only in the Gateway API experimental channel and this cluster runs the standard channel.
 
-```yaml
-udp:
-  51820: "vpn/wireguard:51820"
-```
-
-One variable therefore moves the Service port and the ingress-nginx listener together. There is no separate port to keep in step.
+`wireguard_port` therefore sets the `Service` port and nothing else. Enabling `wireguard_enable` produces a reachable-only-from-inside-the-cluster server. Giving it an inbound path means adding a `LoadBalancer` Service with a MetalLB address of its own.
 
 ## Usage
 
@@ -102,4 +95,3 @@ kubectl -n vpn logs deployment/wireguard
 
 - [WireGuard](https://www.wireguard.com/)
 - [LinuxServer WireGuard image](https://docs.linuxserver.io/images/docker-wireguard/)
-- [ingress-nginx UDP services](https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/)

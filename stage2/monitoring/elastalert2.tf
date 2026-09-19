@@ -73,8 +73,6 @@ resource "helm_release" "elastalert2" {
 
       secret_config_name = kubernetes_secret_v1.elastalert2_config[0].metadata[0].name
 
-      elasticsearch_host               = var.elastalert2_elasticsearch_host
-      elasticsearch_port               = var.elastalert2_elasticsearch_port
       elasticsearch_credentials_secret = kubernetes_secret_v1.elastalert2_credentials[0].metadata[0].name
     })
   ]

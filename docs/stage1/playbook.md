@@ -36,7 +36,7 @@ An unset or empty list adds no hosts, leaving `agent` empty and play 4 a no-op. 
 
 `hosts: cluster`, `serial: 1`, `become: true`, roles [`host_setup`](roles/host-setup.md) then [`tailscale_node`](roles/tailscale-node.md), tags `host_setup` and `tailscale_node`
 
-Everything that is not Kubernetes: packages, snapd removal, `/etc/hosts`, multipath blacklist, sysctl, fail2ban, UFW, swap, memory cgroups.
+Everything that is not Kubernetes: packages, snapd removal, multipath blacklist, sysctl, fail2ban, UFW, swap, memory cgroups.
 
 Handlers imported: `fail2ban.yml`, `apt-cache.yml`, `reboot.yml`.
 

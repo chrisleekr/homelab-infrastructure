@@ -11,8 +11,10 @@ Disabled by default. Set `omniroute_enable = true` (or `TF_VAR_omniroute_enable`
 | Namespace | `omniroute` | |
 | Secret | `omniroute-auth` | `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, `STORAGE_ENCRYPTION_KEY`, mounted with `envFrom` |
 | Helm release | `omniroute` | Chart `omniroute`, from `https://chrisleekr.github.io/helm-charts` |
-| Ingress | `omniroute-api` | `var.omniroute_public_paths` (default `/api/v1` and `/v1`), open, SSE-safe |
-| Ingress | `omniroute-ui` | Catch-all `/`, behind oauth2-proxy, carries the cert-manager annotation |
+| ListenerSet | slug of `omniroute_domain` | Contributes this host's HTTPS listener to the shared Istio Gateway |
+| Certificate | `omniroute-tls` | Issued by `letsencrypt-gateway` over DNS-01 |
+| HTTPRoute | slug of `omniroute_domain` | Every path to `omniroute:20128`, carrying the shared request and response header filters |
+| AuthorizationPolicy | `<slug>-require-auth` | Created in the Gateway's namespace. `CUSTOM` action delegating to the oauth2-proxy ext_authz provider |
 
 The chart owns the Service (`omniroute:20128`), the PVC (`omniroute-data`), the ServiceAccount (`automountServiceAccountToken: false`), and a single-replica Deployment with a `Recreate` update mode. None of those are overridden here.
 
@@ -20,30 +22,29 @@ The chart owns the Service (`omniroute:20128`), the PVC (`omniroute-data`), the 
 
 **All 4 auth keys in a module-owned Secret.** The chart can generate `JWT_SECRET` / `API_KEY_SECRET` itself, but only during a live `helm install/upgrade` via a cluster `lookup`. Any client-side render (`helm template`, ArgoCD/Flux without server-side apply) cannot see the existing Secret and mints NEW values every sync, which makes stored provider keys unreadable. The module therefore sets `auth.existingSecret: omniroute-auth` and supplies all four keys from Terraform, so the chart skips its own `secret.yaml` entirely and no credential is written into the Helm values string.
 
-**Inverted split ingress.** OmniRoute serves its dashboard and all non-API routes from the host root with no gate of its own, so without oauth2-proxy the console HTML would be public. The chart's single Ingress is disabled and the module writes two on the same host:
+**One route, a path-scoped gate.** OmniRoute serves its dashboard and all non-API routes from the host root with no gate of its own, so without oauth2-proxy the console HTML would be public. The API prefixes must stay open, because OmniRoute enforces `REQUIRE_API_KEY` itself and an HTTP redirect to an SSO login page would break SDK clients.
 
-- `omniroute-api`: open, for `var.omniroute_public_paths` (default `/api/v1` and `/v1`). No oauth2-proxy: OmniRoute enforces `REQUIRE_API_KEY` on the API itself, and an HTTP redirect to an SSO login page would break SDK clients. Carries the SSE annotations (`proxy-http-version: "1.1"`, `proxy-buffering: "off"`) that make token streaming actually stream.
-- `omniroute-ui`: the catch-all `/`, behind oauth2-proxy. It also captures any `/api` path not in `omniroute_public_paths`, so provider callbacks and management routes stay gated.
+Path selection and auth selection are separate concerns here: one HTTPRoute carries every path to the same Service, and the `AuthorizationPolicy` decides per path whether the ext_authz gate runs. Istio ORs its rules, so the gate fires when the path is an admin route, or when it is not part of the open API surface.
 
-Splitting across two Ingress objects is what makes the mix possible at all, and nginx's longest-prefix match is what routes each request to the right one. `ingress.tf` documents the mechanism and the conditions under which it stops holding.
+SSE needs no extra configuration. Envoy speaks HTTP/1.1 upstream by default and does not buffer responses.
 
 `/v1` and `/api/v1` are both open because they are the same handler. `/v1` is the canonical one the dashboard emits, so opening only `/api/v1` leaves the dashboard handing out URLs that redirect to the login page.
 
 Because the API prefixes are unauthenticated at the edge, the module forces `extraConfig.REQUIRE_API_KEY: "true"` so OmniRoute requires an API key on every proxy call. `REQUIRE_API_KEY` is resolved with a database override ahead of the environment value, so never disable it from the dashboard while these prefixes are served open, or they become anonymous.
 
-**Admin suffixes gated as defense in depth.** The open prefixes also carry management routes (`/management`, `/agents`, `/accounts`, `/registered-keys`) that OpenAI-compatible clients never call. `var.omniroute_gated_admin_suffixes` pulls them back onto the gated Ingress, so they need an oauth2 session on top of the API key while model calls stay open. Dashboard browser calls still pass, carrying the cookie. Set the variable to `[]` to disable.
+**Admin suffixes gated as defense in depth.** The open prefixes also carry management routes (`/management`, `/agents`, `/accounts`, `/registered-keys`) that OpenAI-compatible clients never call. `var.omniroute_gated_admin_suffixes` pulls them back into the gated set, so they need an oauth2 session on top of the API key while model calls stay open. Dashboard browser calls still pass, carrying the cookie. Set the variable to `[]` to disable.
 
-**Every alias must be gated, not just the ones the Ingress opens.** The gated set is `locals.tf`'s alias prefixes crossed with these suffixes, because an alias with no Ingress location of its own falls through to the open prefix and reaches the handler ungated. Both lists are app-version dependent; re-verify against a running container on every image bump.
+**Every alias must be gated, not just the ones the open route serves.** The gated set is `locals.tf`'s alias prefixes crossed with these suffixes, because an alias not covered by the gated set falls through to the open prefix and reaches the handler ungated. Both lists are app-version dependent; re-verify against a running container on every image bump.
 
-Both Ingresses share one host and one TLS secret, and only `omniroute-ui` carries `cert-manager.io/cluster-issuer`. Annotating both would create competing Certificates for the same secret.
+**Istio prefixes are not element-wise.** Istio matches a trailing `*` as a raw string prefix, so `notPaths: ["/v1*"]` would also exempt `/v1beta` and silently un-gate it. `httproute.tf` therefore emits two entries per path, the bare path and the `/*` form, so `/v1` covers `/v1/models` but never `/v1beta`.
 
-**Residual public surface.** Only the paths in `omniroute_public_paths` are unauthenticated. Anything else falls through to the gated Ingress. If you enable web-cookie providers (`gemini-web`, `claude-web`) or external OAuth/webhook callbacks, those callback paths must be added to `omniroute_public_paths` or the provider handshake fails behind the login redirect:
+**Residual public surface.** Only the paths in `omniroute_public_paths` are unauthenticated. Anything else falls through to the gate. If you enable web-cookie providers (`gemini-web`, `claude-web`) or external OAuth/webhook callbacks, those callback paths must be added to `omniroute_public_paths` or the provider handshake fails behind the login redirect:
 
 | Candidate path | When to add it |
 |---|---|
 | `/api/v1`, `/v1` | Always (both are defaults). The OpenAI-compatible API base paths, same handlers |
 | `/api/oauth`, `/api/webhooks` | Provider OAuth or webhook callbacks that must reach the app unauthenticated |
-| `/.well-known` | cert-manager HTTP-01 solver, or provider discovery documents |
+| `/.well-known` | Provider discovery documents. Not needed for certificates: this host issues over DNS-01 |
 
 The exact set is app-version dependent; re-verify it against a running container before widening it.
 
@@ -55,9 +56,7 @@ The exact set is app-version dependent; re-verify it against a running container
 |---|---|---|---|
 | `omniroute_enable` | bool | `false` | Module gate. Everything below is inert while false |
 | `omniroute_domain` | string | `omniroute.chrislee.local` | Single host serving the API and the dashboard |
-| `omniroute_ingress_class_name` | string | `nginx` | Ingress class for both Ingresses |
-| `omniroute_ingress_enable_tls` | bool | `true` | Wired from the root `ingress_enable_tls` |
-| `omniroute_public_paths` | list(string) | `["/api/v1", "/v1"]` | Paths routed to the open API Ingress. Omissions fall through to oauth2-proxy |
+| `omniroute_public_paths` | list(string) | `["/api/v1", "/v1"]` | Paths served by the open route. Omissions fall through to the gated route |
 | `omniroute_gated_admin_suffixes` | list(string) | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every API alias prefix (`/api/v1`, `/v1`, `/v1/v1`). `[]` disables |
 | `omniroute_chart_version` | string | `0.2.2` | `omniroute` chart pin. Bump with the image tag |
 | `omniroute_image_tag` | string | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
@@ -67,7 +66,8 @@ The exact set is app-version dependent; re-verify it against a running container
 | `omniroute_jwt_secret` | string, sensitive | `""` | Session-signing key, min 32 chars. Rotatable |
 | `omniroute_api_key_secret` | string, sensitive | `""` | Encrypts stored provider keys, min 32 chars. Write once |
 | `omniroute_storage_encryption_key` | string, sensitive | `""` | Encrypts the DB at rest, min 32 chars. Write once |
-| `auth_oauth2_proxy_host` | string | `""` | oauth2-proxy host guarding the dashboard |
+| `istio_gateway_name` | string | `public` | Shared Gateway this module's ListenerSet attaches to |
+| `istio_gateway_namespace` | string | `istio-ingress` | Where the AuthorizationPolicy is created, beside the Gateway its `targetRefs` names |
 
 The four credential variables default to `""` so the module stays valid while disabled. Their `validation` blocks reject a malformed non-empty value; `precondition` blocks in `secrets.tf` make them mandatory once `omniroute_enable = true`.
 
@@ -87,7 +87,7 @@ Supplied through Bitwarden Secrets Manager as `TF_VAR_*`; see [Bitwarden secrets
 ## Operations
 
 ```bash
-kubectl -n omniroute get pods,pvc,ingress,secret
+kubectl -n omniroute get pods,pvc,httproute,secret
 
 # /api/monitoring/health is the in-pod liveness/readiness probe. It is NOT in
 # omniroute_public_paths, so from the edge it falls through to the oauth2 gate and returns a login
@@ -99,7 +99,7 @@ curl -sS http://127.0.0.1:20128/api/monitoring/health
 curl -sS https://$DOMAIN/v1/models -H "Authorization: Bearer $API_KEY"
 
 # Admin suffixes must stay gated on every alias. 302 is the oauth2-proxy login redirect, so only it
-# proves the gate held. Transport, TLS and ingress failures also return non-302 without reaching the
+# proves the gate held. Transport, TLS and gateway failures also return non-302 without reaching the
 # app, so they are an inconclusive check rather than a bypass. Re-run after every image bump.
 for p in /v1/management /api/v1/management /v1/v1/management; do
   code=$(curl -so /dev/null -w '%{http_code}' "https://$DOMAIN$p")
@@ -115,7 +115,7 @@ done
 
 - **The PVC holds the only copy of state.** Providers, keys, and settings live in SQLite on the `omniroute-data` PVC. Setting `omniroute_enable = false` deletes the Namespace, and that is what reaps the PVC and the data. Back up before disabling.
 - **Write-once keys.** Rotating `omniroute_api_key_secret` or `omniroute_storage_encryption_key` after providers have been added makes every stored credential permanently unreadable. Generate them once and keep them in Bitwarden.
-- **TLS on a `.local` domain never issues.** `letsencrypt-prod` cannot complete an HTTP-01 challenge for `omniroute.chrislee.local`. Certificates only issue once a real public domain is set. This is the repo-wide pattern, not specific to this module.
+- **TLS on a `.local` domain never issues.** `letsencrypt-gateway` solves DNS-01 through Cloudflare, which holds no zone for `omniroute.chrislee.local`. Certificates only issue once a real public domain is set. This is the repo-wide pattern, not specific to this module.
 - **`-web` image flavor.** Web-cookie providers (`gemini-web`, `claude-web`, `claude-turnstile`) need the `-web` image; set `omniroute_image_tag` to e.g. `3.8.50-web`, and add their callback paths to `omniroute_public_paths`.
 - **Chart and image versions move together.** Bump `omniroute_chart_version` and `omniroute_image_tag` as a pair.
 - **Heap cap and memory limit move together.** `OMNIROUTE_MEMORY_MB` is the V8 old-space ceiling and `resources.limits.memory` must clear it by several hundred MiB, both in `templates/omniroute-values.tftpl`. Undersizing the cap aborts the process with "Reached heap limit" and reports exit 0, so it looks like a clean shutdown. `OmniRouteMemoryNearHeapCeiling` in [monitoring](https://github.com/chrisleekr/homelab-infrastructure/blob/main/stage2/monitoring/prometheus-rules/omniroute-rules.tftpl) is tuned to the gap between the two values, so retune it when either changes.

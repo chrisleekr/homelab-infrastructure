@@ -23,7 +23,7 @@ cilium status                          # kubeadm path only
 kubectl get svc -A --field-selector spec.type=LoadBalancer
 ```
 
-Every `LoadBalancer` service must have an `EXTERNAL-IP`. A `<pending>` here means MetalLB is missing or has no free address in its pool. See [`localhost_post_setup`](../stage1/roles/localhost-post-setup.md). Nothing in the platform is reachable until this is resolved.
+Every `LoadBalancer` service must have an `EXTERNAL-IP`. A `<pending>` here means MetalLB is missing or has no free address in its pool. See [`localhost_post_setup`](../stage1/roles/localhost-post-setup.md).
 
 ## Storage
 
@@ -48,7 +48,7 @@ An error here means metrics-server did not install. Horizontal pod autoscaling a
 kubectl get certificate -A
 ```
 
-Every certificate `READY=True`. A stuck certificate is usually DNS: the HTTP-01 challenge needs the name to resolve to your ingress from outside.
+Every certificate `READY=True`. A stuck certificate is usually the Cloudflare API token or the DNS-01 self-check. See [istio-gateway](../stage2/istio-gateway.md).
 
 ```bash
 kubectl describe certificaterequest -A | tail -40
@@ -68,7 +68,7 @@ Each is behind OAuth2 Proxy and Auth0, at `service.domain.local`:
 | Kibana | [logging](../stage2/logging.md) |
 | Kubecost | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
 
-A TLS warning means the certificate is not issued yet. A 500 from the proxy usually means the Auth0 callback URL does not match the ingress hostname.
+A TLS warning means the certificate is not issued yet. A 500 from the proxy usually means the Auth0 callback URL does not match the gateway hostname.
 
 ## The version convergence contract
 

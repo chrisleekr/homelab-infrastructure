@@ -12,10 +12,6 @@
   when: host_setup_snapd_purge | bool
   tags: [packages]
 
-- name: Update /etc/hosts
-  ansible.builtin.include_tasks: update-etc-hosts.yml
-  tags: [network]
-
 - name: Update multipath blacklist
   ansible.builtin.include_tasks: update-multipath.yml
   tags: [storage]

@@ -85,7 +85,12 @@ resource "helm_release" "gitlab" {
 
         time_zone = var.gitlab_time_zone
 
-        minio_host       = var.gitlab_minio_host
+        minio_host = var.gitlab_minio_host
+        # gitlab-values.tftpl does not interpolate these two, but do NOT remove them. Terraform
+        # propagates sensitivity through templatefile: gitlab_minio_secret_key is sensitive, so it
+        # marks the whole rendered values string sensitive. Dropping it prints the entire values
+        # YAML in plan output and forces a helm upgrade of GitLab to converge a metadata-only
+        # change. Replace with sensitive(templatefile(...)) in the same commit if ever removed.
         minio_access_key = var.gitlab_minio_access_key
         minio_secret_key = var.gitlab_minio_secret_key
 

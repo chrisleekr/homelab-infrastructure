@@ -144,7 +144,7 @@ nav:
       - Foundation:
           - Preflight checks: stage2/preflight.md
           - Kubernetes: stage2/kubernetes.md
-          - NGINX Ingress: stage2/nginx.md
+          - Istio Gateway: stage2/istio-gateway.md
           - Cert-Manager and Let's Encrypt: stage2/cert-manager-letsencrypt.md
       - Storage:
           - Longhorn: stage2/longhorn-storage.md

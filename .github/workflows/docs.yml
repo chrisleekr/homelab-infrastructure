@@ -11,8 +11,12 @@ on:
       - "docs/**"
       - "mkdocs.yml"
       - "scripts/check-docs.py"
+      - "scripts/check-gateway-routes.py"
+      - "scripts/tests/test_check_gateway_routes.py"
       - "scripts/sync-versions.sh"
-      # A chart pin change must rerun the compatibility gate even when no docs change.
+      # A chart pin change must rerun the compatibility gate even when no docs change. The
+      # header-filter gate scans every stage2 .tf, so any of them can break it.
+      - "stage2/**/*.tf"
       - "stage2/kubernetes/prometheus-crd.tf"
       - "stage2/monitoring/prometheus-stack.tf"
       - "stage2/preflight/scripts/check-prometheus-chart-compatibility.py"
@@ -67,6 +71,13 @@ jobs:
 
       - name: Verify docs coverage, citations and nav
         run: python scripts/check-docs.py --check
+
+      - name: Verify the route filter gate itself
+        run: python scripts/tests/test_check_gateway_routes.py
+
+      - name: Verify gateway route header filters
+        run: python scripts/check-gateway-routes.py --check
+
       - name: Verify Prometheus chart compatibility
         run: python stage2/preflight/scripts/check-prometheus-chart-compatibility.py
 

@@ -1,21 +1,10 @@
-
 variable "prometheus_namespace" {
   description = "The namespace for the prometheus"
   type        = string
   default     = "monitoring"
 }
 
-variable "global_ingress_enable_tls" {
-  description = "Enable TLS for the ingress"
-  type        = bool
-  default     = true
-}
 
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
 
 variable "argocd_domain" {
   description = "The domain name for the argocd"
@@ -23,17 +12,7 @@ variable "argocd_domain" {
   default     = "argocd.chrislee.local"
 }
 
-variable "argocd_ingress_class_name" {
-  description = "The ingress class name for the argocd"
-  type        = string
-  default     = "nginx"
-}
 
-variable "argocd_ssh_known_hosts_base64" {
-  description = "SSH known hosts for Git repositories - base64 encoded"
-  type        = string
-  default     = ""
-}
 
 variable "argocd_config_repositories" {
   description = "The repositories for the argocd"
@@ -137,4 +116,16 @@ variable "argocd_notifications_slack_subscriptions" {
     condition     = alltrue([for s in var.argocd_notifications_slack_subscriptions : alltrue([for t in s.triggers : contains(["on-deployed", "on-sync-failed", "on-health-degraded"], t)])])
     error_message = "Triggers must come from the catalog in templates/argocd-values.tftpl: on-deployed, on-sync-failed, on-health-degraded."
   }
+}
+
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its listener to."
+  type        = string
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway."
+  type        = string
+  default     = "istio-ingress"
 }

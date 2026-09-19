@@ -2,9 +2,21 @@
 
 installCRDs: true
 
-hostAliases:
-- ip: ${host_alias_ip}
-  hostnames:
-  %{ for hostname in split(",", host_alias_hostnames) ~}
-  - "${hostname}"
-  %{ endfor ~}
+# Certificate expiry is the one failure mode of DNS-01 renewal that is otherwise silent: nothing
+# serves an error, the old certificate simply runs out. The ServiceMonitor is what feeds
+# certmanager_certificate_expiration_timestamp_seconds to the istio-rules alert in stage2/monitoring.
+# Prometheus selects every ServiceMonitor here (serviceMonitorSelector.matchLabels is null), so no
+# label is needed. podmonitor must stay off: the chart rejects both being enabled at once.
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+
+# The DNS-01 self-check must not use cluster DNS. CoreDNS carries a server block per public hostname
+# containing only hosts and cache, with no forward plugin, and a zone block also captures everything
+# beneath it. So _acme-challenge.<host> is captured and dead-ends: measured SERVFAIL for a host that
+# has a block, NOERROR for one that does not. Without these two the self-check never passes on those
+# hostnames, while appearing to work on the rest.
+# Ref: https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check
+dns01RecursiveNameservers: "1.1.1.1:53,8.8.8.8:53"
+dns01RecursiveNameserversOnly: true

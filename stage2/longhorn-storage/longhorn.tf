@@ -15,23 +15,6 @@ resource "kubernetes_namespace_v1" "longhorn" {
 }
 
 
-resource "kubernetes_secret_v1" "frontend_basic_auth" {
-  metadata {
-    name      = "frontend-basic-auth"
-    namespace = kubernetes_namespace_v1.longhorn.metadata[0].name
-  }
-
-  data = {
-    auth = base64decode(var.nginx_frontend_basic_auth_base64)
-  }
-
-  type = "Opaque"
-
-  lifecycle {
-    ignore_changes = [metadata[0].labels]
-  }
-}
-
 # defaultSettings.createDefaultDiskLabeledNodes gates default-disk creation on this label,
 # and Longhorn only evaluates it the first time it detects a node. Labelling here keeps the
 # storage topology reproducible: without it a rebuilt control plane gets no disk and every
@@ -91,12 +74,7 @@ resource "helm_release" "longhorn" {
     templatefile(
       "${path.module}/templates/longhorn-values.tftpl",
       {
-        auth_oauth2_proxy_host                      = var.auth_oauth2_proxy_host
-        frontend_basic_auth_secret_name             = kubernetes_secret_v1.frontend_basic_auth.metadata[0].name
         longhorn_default_settings_default_data_path = var.longhorn_default_settings_default_data_path
-        longhorn_ingress_class_name                 = var.longhorn_ingress_class_name
-        longhorn_ingress_host                       = var.longhorn_ingress_host
-        longhorn_ingress_enable_tls                 = var.longhorn_ingress_enable_tls
       }
     ),
   ]

@@ -26,8 +26,6 @@ global:
       https: ${global_hosts_https}
     smartcard:
       name: smartcard.${global_hosts_domain}
-    kas:
-      name: kas.${global_hosts_domain}
     pages:
       name: pages.${global_hosts_domain}
       https: ${global_hosts_https}
@@ -40,10 +38,11 @@ global:
       secret: ${registry_http_secret}
       key: secret
 
-  ## Chart 10.0 added Gateway API support and defaults it on, rendering GatewayClass, Gateway,
-  ## HTTPRoute, TCPRoute and Envoy Gateway policies. This cluster has neither the Gateway API nor
-  ## the Envoy CRDs and routes through nginx, so leaving this enabled fails the upgrade at resource
-  ## mapping. Note chart 10.0 also flipped global.ingress.enabled to default false.
+  ## Chart 10.0 added Gateway API support and defaults it on, rendering its own GatewayClass,
+  ## Gateway, HTTPRoute, TCPRoute and Envoy Gateway policies. This cluster has the Gateway API but
+  ## not the Envoy CRDs, and its hosts are served by the shared Istio Gateway from httproute.tf, so
+  ## a chart-owned GatewayClass would compete with that one. Note chart 10.0 also flipped
+  ## global.ingress.enabled to default false.
   gatewayApi:
     enabled: false
     # Separate key, and separately defaulted on: Chart.yaml gates the envoy-gateway subchart on
@@ -52,15 +51,16 @@ global:
     installEnvoy: false
 
   ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
+  ##
+  ## Left enabled although every component disables its own Ingress below: this key also drives
+  ## defaults other components read, and provider/class feed the chart's ingress.class.name helper.
+  ## Nothing renders an Ingress, so no annotations belong here.
   ingress:
     enabled: true
     configureCertmanager: false
     useNewIngressForCerts: false
     provider: ${global_ingress_provider}
     class: ${global_ingress_class}
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      nginx.ingress.kubernetes.io/proxy-body-size: "0"
     %{ if global_ingress_enable_tls }
     tls:
       enabled: true
@@ -265,13 +265,12 @@ global:
   ## End of global.appConfig
 
   ## https://docs.gitlab.com/charts/charts/gitlab/kas/
+  ## The Kubernetes agent server is off because no project has ever registered an agent, so it
+  ## serves nothing. This one flag gates every kas template: it drops the Deployment, Service,
+  ## Ingress, ServiceMonitor, HPA, PodDisruptionBudget and ConfigMap, and removes the gitlab_kas
+  ## section from the Rails config rather than leaving it pointing at an absent Service.
   kas:
-    enabled: true
-    service:
-      apiExternalPort: 8153 # port for connections from the GitLab backend
-    tls:
-      enabled: false
-      verify: true
+    enabled: false
 
   ## https://docs.gitlab.com/charts/charts/gitlab/spamcheck/
   spamcheck:
@@ -408,19 +407,10 @@ registry:
         release: kube-prometheus-stack
       endpointConfig: {}
   ingress:
-    enabled: true
-    %{ if global_ingress_enable_tls }
-    tls:
-      enabled: true
-      secretName: "registry-tls"
-    %{ endif }
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-      nginx.ingress.kubernetes.io/proxy-body-size: "0"
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
-      nginx.ingress.kubernetes.io/proxy-send-timeout: "900"
-      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # Served by the Istio gateway, see httproute.tf. No body size or timeout overrides are needed:
+    # Envoy applies no body limit by default, and the gateway's route and stream idle timeouts are
+    # both 0s, so long registry pushes and pulls are not cut off.
+    enabled: false
   relativeurls: true
   hpa:
     minReplicas: 1
@@ -875,11 +865,10 @@ gitlab:
         enabled: true
         additionalLabels:
           release: kube-prometheus-stack
-    %{ if global_ingress_enable_tls }
     ingress:
-      tls:
-        secretName: "gitlab-webservice-tls"
-    %{ endif }
+      # Served by the Istio gateway, see httproute.tf. Disabled per component rather than through
+      # global.ingress.enabled, which is chart-wide and also drives defaults other components read.
+      enabled: false
   sidekiq:
     enabled: true
     # maxRss must stay below limits.memory or the memory killer can never fire. GitLab converts this
@@ -933,19 +922,3 @@ gitlab:
         additionalLabels:
           release: kube-prometheus-stack
         endpointConfig: {}
-  kas:
-    enabled: true
-    minReplicas: 1
-    metrics:
-      enabled: true
-      path: /metrics
-      serviceMonitor:
-        enabled: true
-        additionalLabels:
-          release: kube-prometheus-stack
-        endpointConfig: {}
-    %{ if global_ingress_enable_tls }
-    ingress:
-      tls:
-        secretName: "gitlab-kas-tls"
-    %{ endif }

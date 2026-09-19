@@ -46,24 +46,7 @@ variable "kibana_resource_limit_memory" {
   default     = "1Gi"
 }
 
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
 
-
-variable "kibana_ingress_class_name" {
-  description = "Ingress class name for Kibana"
-  type        = string
-  default     = "nginx"
-}
-
-variable "kibana_ingress_enable_tls" {
-  description = "Enable TLS for Kibana Ingress"
-  type        = bool
-  default     = false
-}
 
 variable "kibana_domain" {
   description = "The domain name for the kibana"
@@ -71,8 +54,14 @@ variable "kibana_domain" {
   default     = "kibana.chrislee.local"
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "The host for the oauth2 proxy"
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module attaches its Kibana listener to."
   type        = string
-  default     = "auth.chrislee.local"
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. Nothing is created there by this module except the AuthorizationPolicy, which Istio requires beside the Gateway its targetRefs names."
+  type        = string
+  default     = "istio-ingress"
 }

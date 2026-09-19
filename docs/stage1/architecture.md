@@ -103,7 +103,7 @@ Eight `tasks_from:` call sites in total: three from `upgrade-control-plane.yml`,
 ## Networking
 
 - **Cilium** is the CNI for kubeadm. k3s and minikube use their built-in networking instead.
-- **MetalLB** is installed from localhost in play 6, giving `LoadBalancer` services a real IP on the LAN so the Stage 2 NGINX ingress controller can be reached.
+- **MetalLB** is installed from localhost in play 6, giving `LoadBalancer` services a real IP on the LAN. Nothing claims one today: the Stage 2 Istio gateway is a ClusterIP Service reached through Cloudflare Tunnel, so the single-address pool sits unallocated.
 - **UFW** runs on every host in the `cluster` group. It rate-limits port 22 and opens the actual `ansible_port`, so a non-standard SSH port keeps working.
 
 Cilium carries two independent pins, `cilium_version` and `cilium_cli_version`. See [Version pins](../reference/versions.md) for why they must not be compared to each other.

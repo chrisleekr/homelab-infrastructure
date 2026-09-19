@@ -6,13 +6,12 @@ Everything that is not Kubernetes. Runs on **every** host in the `cluster` group
 
 ## Task files, in execution order
 
-`tasks/main.yml` includes nine files. The order matters: packages before anything that uses them, and the two reboot-capable tasks last.
+`tasks/main.yml` includes eight files. The order matters: packages before anything that uses them, and the two reboot-capable tasks last.
 
 ```mermaid
 flowchart TD
     pkg["install-packages.yml<br/>tag: packages"]
     snapd["remove-snapd.yml<br/>tag: packages"]
-    hosts["update-etc-hosts.yml<br/>tag: network"]
     mpath["update-multipath.yml<br/>tag: storage"]
     sysctl["update-sysctl.yml<br/>tag: network"]
     fail2ban["install-fail2ban.yml<br/>tag: security"]
@@ -21,7 +20,7 @@ flowchart TD
     cgroup["enable-memory-cgroup.yml<br/>tag: system"]:::danger
     rebootd["Reboot handler<br/>flushed at end of play 2"]:::danger
 
-    pkg --> snapd --> hosts --> mpath --> sysctl --> fail2ban --> ufw --> swap --> cgroup
+    pkg --> snapd --> mpath --> sysctl --> fail2ban --> ufw --> swap --> cgroup
     cgroup -.->|"notifies, if kernel cmdline changed"| rebootd
 
     classDef danger stroke:#e53935,stroke-width:3px
@@ -31,7 +30,6 @@ flowchart TD
 |---|---|
 | `install-packages.yml` | Installs the `host_setup_install_packages` list: curl, jq, vim, rsync, socat, conntrack, ethtool, ipvsadm and friends |
 | `remove-snapd.yml` | Removes snaps via `uninstall-snaps.yml`, purges snapd, then blocks reinstallation |
-| `update-etc-hosts.yml` | Writes entries from `host_setup_etc_hosts_json` |
 | `update-multipath.yml` | Blacklists devices so multipathd does not claim Longhorn's block devices |
 | `update-sysctl.yml` | Kernel networking parameters for Kubernetes: bridge-nf-call, IP forwarding |
 | `install-fail2ban.yml` | Installs and configures fail2ban with exponential backoff |
@@ -41,7 +39,7 @@ flowchart TD
 
 ## Variables
 
-39 defaults, all prefixed `host_setup_`. The ones you are most likely to change:
+38 defaults, all prefixed `host_setup_`. The ones you are most likely to change:
 
 | Variable | Purpose |
 |---|---|
@@ -50,7 +48,6 @@ flowchart TD
 | `host_setup_ufw_rules` | Firewall rules |
 | `host_setup_ufw_tailnet_ports` | Kubernetes ports opened inbound on `tailscale0`. Empty unless `tailscale_node_enable` is true |
 | `host_setup_snapd_purge` | `false` keeps a cloud provider's agent snap. See the snapd gotcha below |
-| `host_setup_etc_hosts_json` | Static `/etc/hosts` entries |
 | `host_setup_boot_cmdline_paths` | Where to look for the kernel command line, differs between Pi and generic Ubuntu |
 | `host_setup_cgroup_kernel_args` | The arguments appended to enable memory cgroups |
 | `host_setup_fail2ban_bantime`, `_bantime_factor`, `_bantime_maxtime` | Exponential ban backoff |

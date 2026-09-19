@@ -78,9 +78,9 @@ Load your ids first so the project id is never typed inline:
 set -a; . .env; set +a
 ```
 
-**Web UI:** Secrets Manager → project `homelab-infrastructure` → *New secret*. Name = the env var, Value = the value, assign to the project.
+**Web UI:** Secrets Manager → project `homelab-infrastructure` → *New secret*. Name = the env var, Value = the value, assign to the project. This is the path to use with the least-privilege setup below, where the machine account holds `can read` only.
 
-**CLI:**
+**CLI:** needs a machine account with `can read, write` on the project, and a shell that still has `BWS_ACCESS_TOKEN`. Creating or deleting from the container's injected shell fails, because `bws run` strips the token. A write attempt without permission returns `404 Resource not found` rather than a permission error, since Bitwarden's create path raises NotFound on an authorization failure.
 
 ```bash
 bws secret create <NAME> "<VALUE>" "$BWS_PROJECT_ID"
@@ -92,7 +92,7 @@ bws secret create TF_VAR_prometheus_grafana_domain "grafana.chrislee.local" "$BW
 
 > **Store literal values.** Bitwarden does not expand `${...}`. Resolve any interpolation before saving, e.g. `grafana.${domain_host}` → `grafana.chrislee.local`, `${server_ssh_host}` → `192.168.1.100`.
 
-> JSON values (`worker_hosts_json`, `etc_hosts_json`, `worker_default_taints`) are stored **raw**, with no `\"` escaping. `bws run` injects them natively, which is why the old godotenv escaping rule is gone.
+> JSON values (`worker_hosts_json`, `worker_default_taints`) are stored **raw**, with no `\"` escaping. `bws run` injects them natively, which is why the old godotenv escaping rule is gone.
 
 > Never name a secret after a shell-sensitive variable (`PATH`, `LD_PRELOAD`, `LD_LIBRARY_PATH`, `BASH_ENV`, `ENV`, `IFS`). These are injected into the shell and can enable code execution. Only the documented `TF_VAR_*`, `TF_TOKEN_*`, and lowercase config names below are expected.
 
@@ -166,7 +166,6 @@ print(json.dumps({"account1": pathlib.Path.home().joinpath(".oci/oci_api_key.pem
 | `sshd_port` | | `2222` | Hardened sshd port (matches `server_ssh_port`) |
 | `wireguard_port` | | `51820` | WireGuard listen port |
 | `docker_default_data_path` | | `/var/lib/docker` | Docker data root |
-| `etc_hosts_json` | | `[]` or raw JSON array | Extra `/etc/hosts` entries (raw JSON) |
 
 ### Stage 1: Tailscale node transport (gate: `tailscale_node_enable`)
 
@@ -186,35 +185,24 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
-| `TF_VAR_ingress_enable_tls` | | `true` | Generate TLS certs when true |
+| `TF_VAR_ingress_enable_tls` | | `true` | Generate TLS certs when true. Reaches GitLab only; every other host gets its certificate from the per-module `Certificate` |
 | `TF_VAR_host_machine_architecture` | | `amd64` | Passthrough of `host_machine_architecture` |
 | `TF_VAR_kubernetes_override_ip` | | `192.168.1.100` | Cluster external IP override |
-| `TF_VAR_kubernetes_override_domains` | | space-separated domain list (flattened) | Domains routed to the cluster |
-
-### Stage 2: Nginx
-
-| Variable | | Value / how to obtain | Purpose |
-|---|---|---|---|
-| `TF_VAR_nginx_service_loadbalancer_ip` | | `192.168.1.100` | LoadBalancer IP for the ingress |
-| `TF_VAR_nginx_frontend_basic_auth_base64` | 🔑 | `htpasswd -nb user password \| openssl base64` | HTTP basic-auth gate on the frontend |
-| `TF_VAR_nginx_client_max_body_size` | | `10M` | Max request body size |
-| `TF_VAR_nginx_client_body_buffer_size` | | `10M` | Request body buffer size |
+| `TF_VAR_kubernetes_override_domains` | | space-separated domain list, may be empty (flattened) | Domains routed to the cluster |
+| `TF_VAR_kubernetes_gateway_domains` | | space-separated domain list, may be empty | Domains resolved in-cluster to the Istio gateway |
 
 ### Stage 2: Cert Manager
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_cert_manager_acme_email` | | `chris@chrislee.local` | ACME registration email |
-| `TF_VAR_cert_manager_ingress_class` | | `nginx` | Ingress class for ACME solver |
-| `TF_VAR_cert_manager_host_alias_ip` | | `192.168.1.100` | Hairpin-NAT host alias IP |
-| `TF_VAR_cert_manager_host_alias_hostnames` | | comma-separated hostnames (flattened) | Hairpin-NAT host aliases |
+| `TF_VAR_cert_manager_cloudflare_api_token` | 🔑 | Cloudflare → User Profile → API Tokens → Create Token. Permissions: Zone-DNS-Edit AND Zone-Zone-Read (the provider looks the zone id up by name). Zone Resources: Include All Zones | DNS-01 solver for hostnames served by the Istio gateway, where HTTP-01 cannot reach the challenge |
 
 ### Stage 2: Longhorn
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_longhorn_default_settings_default_data_path` | | `/var/lib/longhorn` | Longhorn data path |
-| `TF_VAR_longhorn_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_longhorn_ingress_host` | | `k8s.chrislee.local` | Longhorn UI host |
 
 ### Stage 2: MinIO
@@ -222,7 +210,6 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_minio_tenant_pools_size` | | `100Gi` | Tenant pool capacity |
-| `TF_VAR_minio_tenant_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_minio_tenant_ingress_api_host` | | `minio.chrislee.local` | S3 API host |
 | `TF_VAR_minio_tenant_ingress_console_host` | | `minio-console.chrislee.local` | Console host |
 | `TF_VAR_minio_internal_endpoint` | | `minio.minio-tenant.svc.cluster.local:80` | In-cluster S3 endpoint. Must be the `minio` ClusterIP service on port 80 |
@@ -234,8 +221,8 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 | `TF_VAR_gitlab_global_hosts_domain` | | `chrislee.local` | GitLab base domain |
 | `TF_VAR_gitlab_global_hosts_host_suffix` | | (empty) | Optional host suffix |
 | `TF_VAR_gitlab_global_hosts_external_ip` | | `192.168.1.100` | External IP |
-| `TF_VAR_gitlab_global_ingress_class` | | `nginx` | Ingress class |
-| `TF_VAR_gitlab_global_ingress_provider` | | `nginx` | Ingress provider |
+| `TF_VAR_gitlab_global_ingress_class` | | `nginx` | Ingress class. Inert while every GitLab component disables its own Ingress, but still feeds the chart's `ingress.class.name` helper |
+| `TF_VAR_gitlab_global_ingress_provider` | | `nginx` | Ingress provider. Inert for the same reason as the class above |
 | `TF_VAR_gitlab_certmanager_issuer_email` | | `chris@chrislee.local` | Issuer email |
 | `TF_VAR_gitlab_postgres_storage_size` | | `20Gi` | CloudNativePG volume |
 | `TF_VAR_gitlab_valkey_persistence_size` | | `2Gi` | Valkey volume |
@@ -253,7 +240,6 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 |---|---|---|---|
 | `TF_VAR_prometheus_alertmanager_domain` | | `alertmanager.chrislee.local` | Alertmanager host |
 | `TF_VAR_prometheus_grafana_domain` | | `grafana.chrislee.local` | Grafana host |
-| `TF_VAR_prometheus_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_prometheus_prometheus_domain` | | `prometheus.chrislee.local` | Prometheus host |
 | `TF_VAR_prometheus_persistence_size` | | `10Gi` | Prometheus volume |
 | `TF_VAR_prometheus_alertmanager_slack_channel` | | `notification` | Slack channel for alerts |
@@ -271,7 +257,6 @@ The channel name carries no leading `#`. The values template adds it, so `#notif
 |---|---|---|---|
 | `TF_VAR_logging_module_enable` | | `true` | Enable the logging module |
 | `TF_VAR_elasticsearch_storage_size` | | `10Gi` | Elasticsearch volume |
-| `TF_VAR_kibana_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_kibana_domain` | | `kibana.chrislee.local` | Kibana host |
 
 ### Stage 2: Kubecost
@@ -279,7 +264,6 @@ The channel name carries no leading `#`. The values template adds it, so `#notif
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
 | `TF_VAR_kubecost_ingress_host` | | `cost.chrislee.local` | Kubecost host |
-| `TF_VAR_kubecost_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_kubecost_cluster_id` | | `cluster-one` | Stamped into every ETL record. Changing it on a live install orphans the cost history |
 | `TF_VAR_kubecost_storage_class_name` | | `longhorn` | Storage class for the Kubecost volumes |
 
@@ -314,7 +298,6 @@ The key must be reusable, because the pod re-authenticates on every container st
 | `TF_VAR_argocd_notifications_slack_token` | 🔑 | api.slack.com/apps → Install App → Bot User OAuth Token, `chat:write` scope; starts `xoxb-`. Slack's rotating `xoxe.xoxb-` tokens are not supported | Slack notifications; empty leaves them off |
 | `TF_VAR_argocd_notifications_slack_subscriptions_json_encoded` | | `[]`, or a JSON array of `triggers` and `channels` entries | Default Slack routing for Applications |
 | `TF_VAR_argocd_rbac_policy_default` | | `""` | Optional fallback role for non-admin identities; empty requires explicit policy grants |
-| `TF_VAR_argocd_ssh_known_hosts_base64` | | `""` | SSH repository host keys; currently unused |
 | `TF_VAR_argocd_rbac_policy_csv` | | multi-line RBAC CSV | Extra RBAC policy rules |
 
 An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default of `""` and grants every authenticated identity that role. Before applying, confirm that the intended `TF_VAR_argocd_rbac_policy_csv` grants human access, remove any stored default-role variable, reload without its already-exported value by running `unset TF_VAR_argocd_rbac_policy_default; bws-load`, and verify that the Terraform plan sets `argocd-rbac-cm.data["policy.default"]` to an empty string.
@@ -334,7 +317,6 @@ An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default 
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
-| `TF_VAR_auth_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_auth_oauth2_proxy_host` | | `auth.chrislee.local` | OAuth2 proxy host |
 | `TF_VAR_auth_oauth2_proxy_cookie_domains` | | `[".chrislee.local"]` | Cookie domains |
 | `TF_VAR_auth_oauth2_proxy_whitelist_domains` | | `["*.chrislee.local"]` | Redirect whitelist |
@@ -358,7 +340,6 @@ An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default 
 |---|---|---|---|
 | `TF_VAR_litellm_enable` | | `false` | Enable LiteLLM |
 | `TF_VAR_litellm_domain` | | `litellm.chrislee.local` | Proxy host, serves both `/v1` and `/ui` |
-| `TF_VAR_litellm_ingress_class_name` | | `nginx` | Ingress class |
 | `TF_VAR_litellm_storage_size` | | `10Gi` | Postgres volume size |
 | `TF_VAR_litellm_storage_class_name` | | `longhorn` | Storage class |
 | `TF_VAR_litellm_ui_paths` | | `["/ui","/sso","/litellm-asset-prefix","/fallback/login","/login","/docs","/redoc","/openapi.json","/routes","/config/yaml","/public"]` | Paths routed behind oauth2-proxy. Anything omitted is served unauthenticated |
@@ -379,12 +360,11 @@ Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` ma
 |---|---|---|---|
 | `TF_VAR_omniroute_enable` | | `false` | Enable OmniRoute |
 | `TF_VAR_omniroute_domain` | | `omniroute.chrislee.local` | Host serving both the open API prefixes (`/v1`, `/api/v1`) and the dashboard |
-| `TF_VAR_omniroute_ingress_class_name` | | `nginx` | Ingress class for both ingresses |
 | `TF_VAR_omniroute_storage_size` | | `5Gi` | SQLite volume size |
 | `TF_VAR_omniroute_storage_class_name` | | `longhorn` | Storage class |
 | `TF_VAR_omniroute_chart_version` | | `0.2.2` | `omniroute` chart pin. Bump together with the image tag |
 | `TF_VAR_omniroute_image_tag` | | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
-| `TF_VAR_omniroute_public_paths` | | `["/api/v1", "/v1"]` | Paths routed to the open API ingress. Anything omitted is gated by oauth2-proxy |
+| `TF_VAR_omniroute_public_paths` | | `["/api/v1", "/v1"]` | Paths served by the open route. Anything omitted falls to the gated route, behind oauth2-proxy |
 | `TF_VAR_omniroute_gated_admin_suffixes` | | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every public path prefix |
 | `TF_VAR_omniroute_initial_password` | 🔑 | `openssl rand -base64 24` | First-boot dashboard password, min 12 chars |
 | `TF_VAR_omniroute_jwt_secret` | 🔑 | `openssl rand -hex 32` | Signs dashboard sessions, min 32 chars. Rotatable |
@@ -404,6 +384,12 @@ Rotating `TF_VAR_omniroute_api_key_secret` (`API_KEY_SECRET`) or `TF_VAR_omnirou
 | `TF_VAR_cloudflare_tunnel_chart_version` | | `0.1.2` | Helm chart version |
 | `TF_VAR_cloudflare_tunnel_image_tag` | | (empty) | cloudflared image tag (empty = chart default) |
 | `TF_VAR_cloudflare_tunnel_replica_count` | | `2` | Replica count |
+
+### Stage 2: Istio Gateway
+
+No secrets. The gateway is not optional and takes no per-host configuration: it installs unconditionally, and each app module declares its own listener, certificate and route.
+
+A host only serves from the gateway once its Cloudflare Tunnel published application route points there. That is a Cloudflare dashboard change, not a secret.
 
 ## 6. Manage secrets day-to-day
 

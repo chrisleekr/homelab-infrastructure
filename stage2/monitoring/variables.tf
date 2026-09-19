@@ -1,9 +1,3 @@
-variable "nginx_frontend_basic_auth_base64" {
-  description = "Base64 encoded username:password for basic auth - htpasswd -nb user password | openssl base64"
-  type        = string
-  sensitive   = true
-}
-
 variable "prometheus_alertmanager_domain" {
   description = "The domain name for the alertmanager"
   type        = string
@@ -16,23 +10,6 @@ variable "prometheus_grafana_domain" {
   default     = "grafana.chrislee.local"
 }
 
-variable "prometheus_grafana_storage_class" {
-  description = "The storage class for the grafana"
-  type        = string
-  default     = "longhorn"
-}
-
-variable "prometheus_ingress_class_name" {
-  description = "Ingress class name for the prometheus stack"
-  type        = string
-  default     = "nginx"
-}
-
-variable "prometheus_ingress_enable_tls" {
-  description = "Enable TLS for the prometheus stack"
-  type        = bool
-  default     = true
-}
 
 variable "prometheus_prometheus_domain" {
   description = "The domain name for the prometheus"
@@ -121,8 +98,14 @@ variable "elastalert2_elasticsearch_password" {
   sensitive   = true
 }
 
-variable "auth_oauth2_proxy_host" {
-  description = "The host for the oauth2 proxy"
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its listeners to."
   type        = string
-  default     = "auth.chrislee.local"
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. The AuthorizationPolicy is created here, because Istio requires a policy to sit beside the resource its targetRefs names."
+  type        = string
+  default     = "istio-ingress"
 }

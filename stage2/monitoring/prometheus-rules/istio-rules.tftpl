@@ -1,0 +1,73 @@
+# Alerts for the Istio gateway, which is the single ingress path for every public hostname.
+#
+# Every expression below uses a metric confirmed present on this cluster. Series come from the two
+# PodMonitors in stage2/istio-gateway and, for the certificate alert, from the cert-manager
+# ServiceMonitor enabled in stage2/cert-manager-letsencrypt. An alert whose metric stops being
+# scraped goes silent rather than firing, which is why the two absent() rules exist.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: istio
+    role: alert-rules
+    release: kube-prometheus-stack
+  name: prometheus-istio-rules
+  namespace: ${namespace}
+spec:
+  groups:
+  - name: istio.rules
+    rules:
+    - alert: IstioGatewayMetricsMissing
+      annotations:
+        description: No envoy_server_live series for the Istio gateway for 10 minutes. The gateway pod is gone, or its PodMonitor stopped matching.
+        summary: Istio gateway is not being scraped
+      expr: absent(envoy_server_live)
+      for: 10m
+      labels:
+        issue: Every public hostname is served through this gateway and nothing is reporting on it.
+        severity: critical
+    - alert: IstioGatewayNotLive
+      annotations:
+        description: The Istio gateway reports envoy_server_live = 0, so Envoy is running but not serving.
+        summary: Istio gateway is not live
+      expr: min(envoy_server_live) == 0
+      for: 5m
+      labels:
+        issue: Every public hostname is served through this gateway.
+        severity: critical
+    # Ratio per destination service rather than a raw count, so a quiet host with two errors does
+    # not fire while a busy one drowns them out. reporter="source" is the gateway's own view.
+    - alert: IstioGatewayHigh5xxRate
+      annotations:
+        description: '{{$value | humanizePercentage}} of requests the gateway sent to {{$labels.destination_service}} returned 5xx over the last 10 minutes.'
+        summary: Istio gateway is seeing 5xx from {{$labels.destination_service}}
+      expr: |
+        sum by (destination_service) (rate(istio_requests_total{reporter="source",response_code=~"5.."}[10m]))
+          /
+        sum by (destination_service) (rate(istio_requests_total{reporter="source"}[10m]))
+          > 0.05
+      for: 10m
+      labels:
+        issue: A backend behind the gateway is failing, or the route points at the wrong port.
+        severity: warning
+    # DNS-01 renewal fails silently: nothing serves an error, the certificate simply runs out. Two
+    # weeks is well outside cert-manager's own 30-day renewal window, so this only fires once
+    # renewal has actually stopped working.
+    - alert: CertificateExpiringSoon
+      annotations:
+        description: Certificate {{$labels.name}} in {{$labels.namespace}} expires in less than 14 days and has not been renewed.
+        summary: Certificate {{$labels.name}} is close to expiry
+      expr: (certmanager_certificate_expiration_timestamp_seconds - time()) < (14 * 24 * 3600)
+      for: 1h
+      labels:
+        issue: cert-manager has not renewed this certificate. Check the Certificate and its DNS-01 challenge.
+        severity: critical
+    - alert: IstiodMetricsMissing
+      annotations:
+        description: No pilot_k8s_cfg_events series for 10 minutes. istiod is gone, or its PodMonitor stopped matching.
+        summary: istiod is not being scraped
+      expr: absent(pilot_k8s_cfg_events)
+      for: 10m
+      labels:
+        issue: Without istiod the gateway keeps serving its last config but stops picking up route and listener changes.
+        severity: warning

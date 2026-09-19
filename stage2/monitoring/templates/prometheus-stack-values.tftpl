@@ -117,25 +117,9 @@ alertmanager:
     templates:
     - '/etc/alertmanager/config/*.tmpl'
   ingress:
-    enabled: true
-    ingressClassName: ${ingress_class_name}
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-    labels: {}
-    hosts:
-      - ${alertmanager_domain}
-    paths:
-      - /
-    pathType: ImplementationSpecific
-    %{ if ingress_enable_tls }
-    tls:
-      - secretName: alertmanager-general-tls
-        hosts:
-        - ${alertmanager_domain}
-    %{ endif }
+    # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress
+    # for a host the gateway now serves.
+    enabled: false
 
 # https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
 grafana:
@@ -192,29 +176,11 @@ grafana:
         gnetId: 16888
         revision: 9
         datasource: Prometheus
-      ingress-nginx:
-        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/nginx.json
-      ingress-nginx-request-handling-performance:
-        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/request-handling-performance.json
 
   ingress:
-    enabled: true
-    ingressClassName: ${ingress_class_name}
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-    labels: {}
-    hosts:
-      - ${grafana_domain}
-    path: /
-    %{ if ingress_enable_tls }
-    tls:
-    - secretName: grafana-general-tls
-      hosts:
-      - ${grafana_domain}
-    %{ endif }
+    # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress
+    # for a host the gateway now serves.
+    enabled: false
 
   # To make Grafana persistent (Using Statefulset)
   #
@@ -318,22 +284,6 @@ prometheus:
       static_configs:
       - targets: [minio.minio-tenant.svc.cluster.local]
   ingress:
-    enabled: true
-    ingressClassName: ${ingress_class_name}
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/auth-url: "https://${auth_oauth2_proxy_host}/oauth2/auth"
-      nginx.ingress.kubernetes.io/auth-signin: "https://${auth_oauth2_proxy_host}/oauth2/start?rd=$scheme://$host$escaped_request_uri"
-      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
-    labels: {}
-    hosts:
-      - ${prometheus_domain}
-    paths:
-    - /
-    pathType: ImplementationSpecific
-    %{ if ingress_enable_tls }
-    tls:
-      - secretName: prometheus-general-tls
-        hosts:
-          - ${prometheus_domain}
-    %{ endif }
+    # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress
+    # for a host the gateway now serves.
+    enabled: false

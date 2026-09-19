@@ -44,12 +44,7 @@ resource "helm_release" "oauth2_proxy" {
         oauth2_proxy_cookie_domains    = var.auth_oauth2_proxy_cookie_domains
         oauth2_proxy_whitelist_domains = var.auth_oauth2_proxy_whitelist_domains
 
-        ingress_class_name   = var.auth_ingress_class_name
-        ingress_enable_tls   = var.auth_ingress_enable_tls
         prometheus_namespace = var.prometheus_namespace
-
-        host_alias_ip        = var.auth_host_alias_ip
-        host_alias_hostnames = var.auth_host_alias_hostnames
       }
     ),
   ]

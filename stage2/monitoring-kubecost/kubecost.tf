@@ -66,14 +66,10 @@ resource "helm_release" "kubecost" {
     templatefile(
       "${path.module}/templates/kubecost-values.tftpl",
       {
-        cluster_id             = var.kubecost_cluster_id
-        auth_oauth2_proxy_host = var.auth_oauth2_proxy_host
-        storage_class_name     = var.kubecost_storage_class_name
+        cluster_id         = var.kubecost_cluster_id
+        storage_class_name = var.kubecost_storage_class_name
 
-        ingress_enable_tls = var.kubecost_ingress_enable_tls
-        ingress_class_name = var.kubecost_ingress_class_name
 
-        kubecost_ingress_host = var.kubecost_ingress_host
 
         federated_store_secret_name = kubernetes_secret_v1.federated_store.metadata[0].name
       }

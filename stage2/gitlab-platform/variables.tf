@@ -12,25 +12,25 @@ variable "gitlab_global_hosts_host_suffix" {
 }
 
 variable "gitlab_global_hosts_https" {
-  description = "If set to true, you will need to ensure the NGINX chart has access to the certificates. In cases where you have TLS-termination in front of your Ingresses, you probably want to look at global.ingress.tls.enabled. Set to false for external URLs to use http:// instead of https."
+  description = "Whether GitLab builds its external URLs as https. TLS is terminated at the Istio gateway, so this governs the scheme GitLab advertises, not certificate handling."
   type        = bool
   default     = true
 }
 
 variable "gitlab_global_hosts_external_ip" {
-  description = "Set the external IP address that will be claimed from the provider. This will be templated into the NGINX chart, in place of the more complex nginx.service.loadBalancerIP."
+  description = "External IP advertised in global.hosts.externalIP. The bundled ingress controller that would have claimed it is disabled, so this only affects values the chart renders from that field."
   type        = string
   default     = ""
 }
 
 variable "gitlab_global_ingress_provider" {
-  description = "Global setting that defines the Ingress provider to use. nginx is used as the default provider."
+  description = "Global setting that defines the Ingress provider. Inert while every GitLab component disables its own Ingress, but the chart still reads it for its ingress.class.name helper."
   type        = string
   default     = "nginx"
 
 }
 variable "gitlab_global_ingress_class" {
-  description = "Global setting that controls kubernetes.io/ingress.class annotation or spec.IngressClassName in Ingress resources. Set to none to disable, or \"\" for empty. Note: for none or \"\", set nginx-ingress.enabled=false to prevent the charts from deploying unnecessary Ingress resources."
+  description = "Global setting that controls the ingress class name in Ingress resources. Inert while every GitLab component disables its own Ingress, but the chart still reads it for its ingress.class.name helper."
   type        = string
   default     = "nginx"
 }
@@ -146,4 +146,16 @@ variable "gitlab_auth0_domain" {
   description = "The Auth0 domain for GitLab authentication"
   type        = string
   default     = "chrislee.auth0.com"
+}
+
+variable "istio_gateway_name" {
+  description = "Name of the shared Istio Gateway this module contributes its listeners to."
+  type        = string
+  default     = "public"
+}
+
+variable "istio_gateway_namespace" {
+  description = "Namespace of the shared Istio Gateway. Listeners are contributed from this module's own namespace, so nothing is created here, but the ListenerSet parentRef needs the name."
+  type        = string
+  default     = "istio-ingress"
 }

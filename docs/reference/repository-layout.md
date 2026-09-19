@@ -32,6 +32,7 @@ homelab-infrastructure/
 ├── scripts/                      # helper scripts
 │   ├── sync-versions.sh          # version drift gate
 │   ├── check-docs.py             # docs coverage, citation and nav gate
+│   ├── check-gateway-routes.py   # HTTPRoute header-filter gate
 │   ├── tests/                    # self-tests for the scripts in this directory
 │   ├── oci-apply-retry.sh        # retries stage0 apply while Oracle is out of capacity
 │   ├── bump-versions.sh

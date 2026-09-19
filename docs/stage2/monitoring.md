@@ -10,9 +10,9 @@ flowchart TB
         Preflight["module.preflight<br/>chart compatibility gate"]
         KubernetesModule["module.kubernetes"]
         CRDRelease["helm_release.prometheus_operator_crds"]
-        NginxModule["module.nginx"]
         CertManagerModule["module.cert_manager_letsencrypt"]
         LoggingModule["module.logging<br/>optional"]
+        IstioModule["module.istio_gateway<br/>Gateway API CRDs"]
         MonitoringModule["module.monitoring"]
         RuleResources["kubectl_manifest.prometheus_rules"]
         StackValues["prometheus-stack-values.tftpl<br/>crds.enabled=false"]
@@ -27,9 +27,9 @@ flowchart TB
     subgraph k8s [Kubernetes Cluster]
         PrometheusCRDs["Cluster-scoped Prometheus Operator CRDs"]
 
-        subgraph ingress [Ingress Layer]
-            Nginx[NGINX Ingress]
-            OAuth[OAuth2 Proxy]
+        subgraph ingress [Gateway Layer]
+            Gateway[Istio Gateway<br/>ListenerSet per host]
+            OAuth[OAuth2 Proxy<br/>ext_authz provider]
         end
 
         subgraph ns [Namespace: monitoring]
@@ -45,6 +45,7 @@ flowchart TB
 
             subgraph rules [PrometheusRules]
                 LonghornRules[Longhorn Rules]
+                IstioRules[Istio Rules]
                 OmniRouteRules[OmniRoute Rules]
                 PostgresRules[PostgreSQL Rules]
                 RedisRules[Redis Rules]
@@ -68,11 +69,12 @@ flowchart TB
 
     Preflight -->|must pass| KubernetesModule
     KubernetesModule -->|creates| CRDRelease
-    KubernetesModule -->|dependency| NginxModule
-    NginxModule -->|dependency| CertManagerModule
+    KubernetesModule -->|dependency| IstioModule
+    CertManagerModule -->|dependency| IstioModule
     CertManagerModule -->|dependency| LoggingModule
     CertManagerModule -->|dependency| MonitoringModule
     LoggingModule -->|dependency| MonitoringModule
+    IstioModule -->|dependency| MonitoringModule
     MonitoringModule -->|creates| RuleResources
     MonitoringModule -->|renders| StackValues
     MonitoringModule -->|creates| StackRelease
@@ -80,6 +82,7 @@ flowchart TB
     CRDRelease -->|installs and owns| PrometheusCRDs
     PrometheusCRDs -->|schemas available before install| StackRelease
     RuleResources -->|creates| LonghornRules
+    RuleResources -->|creates| IstioRules
     RuleResources -->|creates| OmniRouteRules
     RuleResources -->|creates| PostgresRules
     RuleResources -->|creates| RedisRules
@@ -89,11 +92,11 @@ flowchart TB
     StackRelease -->|deploys| NodeExporter
     StackRelease -->|deploys| KubeStateMetrics
 
-    User --> Nginx
-    Nginx --> OAuth
-    OAuth --> Grafana
-    OAuth --> Prometheus
-    OAuth --> AlertManager
+    User --> Gateway
+    Gateway -->|ext_authz check| OAuth
+    Gateway -->|HTTPRoute| Grafana
+    Gateway -->|HTTPRoute| Prometheus
+    Gateway -->|HTTPRoute| AlertManager
 
     Prometheus -->|scrape| targets
     Prometheus --> PromPVC
@@ -134,10 +137,13 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 ## Resources Created
 
 - `kubernetes_namespace_v1.monitoring_namespace` - Dedicated namespace
-- `kubernetes_secret_v1.frontend_basic_auth` - Basic auth for UIs
 - `random_password.grafana_admin_password` - Grafana admin password
-- `kubectl_manifest.prometheus_rules` - Custom PrometheusRules
+- `kubectl_manifest.prometheus_rules` - Custom PrometheusRules, one per `*.tftpl` under `prometheus-rules/`, including the Istio gateway alerts
 - `helm_release.prometheus_operator` - kube-prometheus-stack
+- `kubectl_manifest.listener` - one ListenerSet per host, contributing its HTTPS listener to the shared Gateway
+- `kubectl_manifest.certificate` - one DNS-01 Certificate per host, reusing the Secret name the Ingress used
+- `kubectl_manifest.route` - one HTTPRoute per host, carrying the header filters
+- `kubectl_manifest.require_auth` - one CUSTOM AuthorizationPolicy per host, in the Gateway namespace
 - `kubernetes_secret_v1.elastalert2_credentials` - ElastAlert2 credentials
 - `kubernetes_secret_v1.elastalert2_config` - ElastAlert2 configuration
 - `helm_release.elastalert2` - ElastAlert2 chart
@@ -148,12 +154,10 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `nginx_frontend_basic_auth_base64` | Basic auth credentials | (required, sensitive) |
 | `prometheus_alertmanager_domain` | AlertManager hostname | `alertmanager.chrislee.local` |
 | `prometheus_grafana_domain` | Grafana hostname | `grafana.chrislee.local` |
-| `prometheus_grafana_storage_class` | Grafana storage class | `longhorn` |
-| `prometheus_ingress_class_name` | Ingress class | `nginx` |
-| `prometheus_ingress_enable_tls` | Enable TLS | `true` |
+| `istio_gateway_name` | Shared Istio Gateway this module adds its listeners to | `public` |
+| `istio_gateway_namespace` | Namespace of that Gateway, and where the AuthorizationPolicy is created | `istio-ingress` |
 | `prometheus_prometheus_domain` | Prometheus hostname | `prometheus.chrislee.local` |
 | `prometheus_persistence_storage_class_name` | Storage class | `longhorn` |
 | `prometheus_persistence_size` | Prometheus storage size | `10Gi` |
@@ -188,9 +192,9 @@ Each alert group keeps one Slack message. The first notification posts it, and e
 
 | Service | URL | Authentication |
 |---------|-----|----------------|
-| Grafana | <https://grafana.chrislee.local> | OAuth2 + Admin password |
-| Prometheus | <https://prometheus.chrislee.local> | OAuth2 |
-| AlertManager | <https://alertmanager.chrislee.local> | OAuth2 |
+| Grafana | <https://grafana.chrislee.local> | Gateway ext_authz, plus the Grafana admin password |
+| Prometheus | <https://prometheus.chrislee.local> | Gateway ext_authz |
+| AlertManager | <https://alertmanager.chrislee.local> | Gateway ext_authz |
 
 ### Get Grafana Admin Password
 
@@ -211,6 +215,7 @@ Custom alerting rules are defined in `prometheus-rules/`:
 
 | File | Purpose |
 |------|---------|
+| `istio-rules.tftpl` | Istio gateway liveness, 5xx rate per backend, and certificate expiry |
 | `longhorn-rules.tftpl` | Longhorn storage alerts |
 | `omniroute-rules.tftpl` | OmniRoute AI gateway alerts |
 | `postgres-rules.tftpl` | PostgreSQL database alerts |
@@ -224,7 +229,6 @@ Grafana includes dashboards for:
 - Node metrics
 - Pod resources
 - Persistent volumes
-- NGINX Ingress
 - CoreDNS
 - GitLab (if enabled)
 

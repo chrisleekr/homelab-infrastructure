@@ -11,9 +11,9 @@ flowchart TB
     end
 
     subgraph k8s [Kubernetes Cluster]
-        subgraph ingress [Ingress Layer]
-            Nginx[NGINX Ingress]
-            OAuth[OAuth2 Proxy]
+        subgraph ingress [Gateway Layer]
+            Gateway[Istio Gateway<br/>ListenerSet + HTTPRoute]
+            OAuth[OAuth2 Proxy<br/>ext_authz provider]
         end
 
         subgraph ns [Namespace: logging]
@@ -38,8 +38,8 @@ flowchart TB
         end
     end
 
-    User --> Nginx
-    Nginx --> OAuth
+    User --> Gateway
+    Gateway --> OAuth
     OAuth --> Kibana
     Kibana --> ES
 
@@ -87,7 +87,10 @@ sequenceDiagram
 ### Kibana
 
 - `kubectl_manifest.kibana` - Kibana instance
-- `kubernetes_ingress_v1.kibana_ingress` - Ingress with OAuth2
+- `kubectl_manifest.kibana_listener` - ListenerSet contributing the Kibana HTTPS listener to the shared Gateway
+- `kubectl_manifest.kibana_certificate` - DNS-01 Certificate for the Kibana host
+- `kubectl_manifest.kibana_route` - HTTPRoute to `kibana-kb-http:5601`, carrying the header filters
+- `kubectl_manifest.kibana_require_auth` - CUSTOM AuthorizationPolicy in the Gateway namespace, gating the whole host
 
 ### Beats
 
@@ -113,16 +116,16 @@ sequenceDiagram
 |------|-------------|---------|
 | `kibana_resource_request_memory` | Memory request | `1Gi` |
 | `kibana_resource_limit_memory` | Memory limit | `1Gi` |
-| `kibana_ingress_class_name` | Ingress class | `nginx` |
-| `kibana_ingress_enable_tls` | Enable TLS | `false` |
 | `kibana_domain` | Kibana hostname | `kibana.chrislee.local` |
 
-### Common
+### Gateway
 
 | Name | Description | Default |
 |------|-------------|---------|
-| `nginx_frontend_basic_auth_base64` | Basic auth | (required, sensitive) |
-| `auth_oauth2_proxy_host` | OAuth2 proxy | `auth.chrislee.local` |
+| `istio_gateway_name` | Shared Istio Gateway the Kibana listener is added to | `public` |
+| `istio_gateway_namespace` | Namespace of that Gateway, where the AuthorizationPolicy is created | `istio-ingress` |
+
+The oauth2-proxy hostname is not an input. The gate is an `AuthorizationPolicy` naming the mesh-wide ext_authz provider, so the module never interpolates the login host.
 
 ## Usage
 

@@ -10,18 +10,18 @@ This module runs **only the connector**. The tunnel definition, its public hostn
 flowchart LR
   Internet["Internet"]:::aux -->|"HTTPS 443"| Edge["Cloudflare Edge"]:::aux
   Edge -->|"outbound tunnel<br/>TCP 7844"| Conn["cloudflared<br/>connector pods"]
-  Conn -->|"catch-all hostname<br/>HTTPS, No TLS Verify"| Ingress["nginx-ingress-nginx-controller.nginx.svc:443"]
-  Ingress -->|"route by Host"| Apps["cluster services"]
+  Conn -->|"per-hostname route<br/>HTTPS, Origin Server Name set"| Gateway["public-istio.istio-ingress.svc:443"]
+  Gateway -->|"SNI selects the listener"| Apps["cluster services"]
 
   classDef aux stroke:#78909c,stroke-dasharray:2 2
 ```
 
-The single catch-all public hostname points at the ingress-nginx controller Service, and ingress-nginx routes by `Host` as usual.
+Each public hostname points at the Istio gateway Service. Every HTTPS listener shares port 443 and the gateway picks between them by SNI, so a tunnel route must set Origin Server Name to the hostname or no filter chain matches and TLS fails before routing.
 
 ## Requirements
 
 - The cluster must reach Cloudflare outbound on **TCP 7844** (tunnel) and **443**.
-- The NGINX module must be deployed first (`depends_on = [module.nginx]`).
+- The [Istio Gateway](istio-gateway.md) module must be deployed first, since its Service is the tunnel origin.
 - A tunnel token from the Cloudflare dashboard (see below).
 
 ## Configuration
