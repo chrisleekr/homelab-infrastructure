@@ -4,7 +4,14 @@
 ##
 defaultRules:
   create: true
-
+  # On any multi-node cluster these fire when the nodes other than the largest cannot hold total
+  # pod requests. This cluster's low-power workers cannot, so they fire permanently. Taints do not
+  # enter the expression. The dropped requests-above-total-allocatable branch can only trip on
+  # Pending pods, since the scheduler keeps each node within its allocatable, and KubePodNotReady
+  # already alerts on those.
+  disabled:
+    KubeCPUOvercommit: true
+    KubeMemoryOvercommit: true
 
 ## Managed by the standalone prometheus-operator-crds release in module.kubernetes.
 crds:
