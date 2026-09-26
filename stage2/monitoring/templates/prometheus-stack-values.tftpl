@@ -4,9 +4,11 @@
 ##
 defaultRules:
   create: true
-  # These ask whether the other nodes can absorb the biggest node's requests. There is one control
-  # plane and workers carry worker_default_taints (stage1/inventories/inventory.yml), so they can
-  # never clear. This also drops their requests-above-total-allocatable check.
+  # On any multi-node cluster these fire when the nodes other than the largest cannot hold total
+  # pod requests. This cluster's low-power workers cannot, so they fire permanently. Taints do not
+  # enter the expression. The dropped requests-above-total-allocatable branch can only trip on
+  # Pending pods, since the scheduler keeps each node within its allocatable, and KubePodNotReady
+  # already alerts on those.
   disabled:
     KubeCPUOvercommit: true
     KubeMemoryOvercommit: true
