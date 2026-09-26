@@ -4,7 +4,12 @@
 ##
 defaultRules:
   create: true
-
+  # These ask whether the other nodes can absorb the biggest node's requests. There is one control
+  # plane and workers carry worker_default_taints (stage1/inventories/inventory.yml), so they can
+  # never clear. This also drops their requests-above-total-allocatable check.
+  disabled:
+    KubeCPUOvercommit: true
+    KubeMemoryOvercommit: true
 
 ## Managed by the standalone prometheus-operator-crds release in module.kubernetes.
 crds:

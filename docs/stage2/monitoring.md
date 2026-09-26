@@ -221,6 +221,8 @@ Custom alerting rules are defined in `prometheus-rules/`:
 | `postgres-rules.tftpl` | PostgreSQL database alerts |
 | `redis-rules.tftpl` | Redis cache alerts |
 
+The chart's default rules stay enabled except `KubeCPUOvercommit` and `KubeMemoryOvercommit`, which `templates/prometheus-stack-values.tftpl` disables because this cluster cannot tolerate losing a node by design.
+
 ## Pre-configured Dashboards
 
 Grafana includes dashboards for:
