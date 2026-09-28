@@ -40,8 +40,8 @@ What Stage 1 installs on the nodes.
 | crictl | 1.36.0 | <https://github.com/kubernetes-sigs/cri-tools/releases> |
 | nerdctl | 2.3.5 | <https://github.com/containerd/nerdctl/releases> |
 | CNI plugins | 1.9.1 | <https://github.com/containernetworking/plugins/releases> |
-| Cilium | 1.20.0 | <https://github.com/cilium/cilium/releases> |
-| Cilium CLI | 0.19.7 | <https://github.com/cilium/cilium-cli/releases> |
+| Cilium | 1.20.2 | <https://github.com/cilium/cilium/releases> |
+| Cilium CLI | 0.20.1 | <https://github.com/cilium/cilium-cli/releases> |
 | pluto | 5.24.1 | <https://github.com/FairwindsOps/pluto/releases> |
 | minikube | 1.38.1 | |
 | k3s | v1.34.3+k3s1 | |

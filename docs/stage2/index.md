@@ -17,7 +17,6 @@ These have no `count`, so they deploy on every apply.
 | [Longhorn](longhorn-storage.md) | Distributed block storage, the default StorageClass |
 | [MinIO](minio-object-storage.md) | S3-compatible object storage |
 | [Monitoring](monitoring.md) | Prometheus, Grafana, AlertManager, ElastAlert2 |
-| [Kubecost](monitoring-kubecost.md) | Cluster cost attribution |
 | [OAuth2 Proxy](auth.md) | Auth0-backed authentication in front of the web UIs |
 | [ArgoCD](argocd.md) | GitOps continuous deployment |
 | [Stakater Reloader](stakater-reloader.md) | Restarts workloads when a Secret or ConfigMap changes |
@@ -32,6 +31,7 @@ Controlled by an enable flag. The Terraform idiom is `count = var.<name>_enable 
 | [Logging](logging.md) | `logging_module_enable` | `true` |
 | [ArgoCD Image Updater](argocd-updater.md) | `argocd_image_updater_enable` | `false` |
 | [Datadog](datadog.md) | `datadog_enable` | `false` |
+| [Kubecost](monitoring-kubecost.md) | `kubecost_enable` | `false` |
 | [Cloudflare Tunnel](cloudflare-tunnel.md) | `cloudflare_tunnel_enable` | `false` |
 | [Sealed Secrets](bitnami-sealed-secrets.md) | `sealed_secrets_enable` | `true` |
 | [LiteLLM](litellm.md) | `litellm_enable` | `false` |

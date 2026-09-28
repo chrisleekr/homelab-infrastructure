@@ -41,8 +41,10 @@ resource "helm_release" "minio_operator" {
   chart      = "operator"
   version    = "7.1.1"
   namespace  = kubernetes_namespace_v1.minio_operator.metadata[0].name
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 
   values = [
     templatefile(
@@ -132,8 +134,10 @@ resource "helm_release" "minio_tenant" {
   chart      = "tenant"
   version    = "7.1.1"
   namespace  = kubernetes_namespace_v1.minio_tenant.metadata[0].name
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 
   values = [
     templatefile(

@@ -103,14 +103,22 @@ dex:
       memory: 42Mi
 
 redis:
+  # Datadog redisdb check; the password handle resolves through the agent's k8s.secrets backend.
+  podAnnotations:
+    ad.datadoghq.com/redis.checks: |
+      {"redisdb": {"instances": [{"host": "%%host%%", "port": 6379, "password": "ENC[argocd/argocd-redis;auth]"}]}}
+  # redis.metrics renders the Service and ServiceMonitor, but port 9121 is served by this
+  # sidecar, which the chart leaves off. Without it the ServiceMonitor has no target.
   exporter:
+    enabled: true
     resources:
       limits:
         cpu: 50m
         memory: 64Mi
       requests:
         cpu: 0
-        memory: 32Mi
+        # Observed 6Mi here and 12Mi on the gitlab-valkey exporter.
+        memory: 16Mi
   resources:
     limits:
       cpu: 200m

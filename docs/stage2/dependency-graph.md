@@ -15,7 +15,7 @@ flowchart TD
     longhorn["longhorn_storage"]
     minio["minio_object_storage"]
     monitoring["monitoring"]
-    kubecost["kubecost"]
+    kubecost["kubecost<br/>kubecost_enable"]:::optional
     auth["auth"]
     argocd["argocd"]
     vpn["vpn"]

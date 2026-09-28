@@ -8,8 +8,10 @@ resource "helm_release" "eck_operator" {
   chart      = "eck-operator"
   version    = "3.5.0"
   namespace  = kubernetes_namespace_v1.logging.metadata[0].name
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 
   values = []
 }

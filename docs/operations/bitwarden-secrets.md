@@ -259,10 +259,11 @@ The channel name carries no leading `#`. The values template adds it, so `#notif
 | `TF_VAR_elasticsearch_storage_size` | | `10Gi` | Elasticsearch volume |
 | `TF_VAR_kibana_domain` | | `kibana.chrislee.local` | Kibana host |
 
-### Stage 2: Kubecost
+### Stage 2: Kubecost (gate: `TF_VAR_kubecost_enable`)
 
 | Variable | | Value / how to obtain | Purpose |
 |---|---|---|---|
+| `TF_VAR_kubecost_enable` | | `false` | Enable Kubecost |
 | `TF_VAR_kubecost_ingress_host` | | `cost.chrislee.local` | Kubecost host |
 | `TF_VAR_kubecost_cluster_id` | | `cluster-one` | Stamped into every ETL record. Changing it on a live install orphans the cost history |
 | `TF_VAR_kubecost_storage_class_name` | | `longhorn` | Storage class for the Kubecost volumes |

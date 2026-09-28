@@ -32,8 +32,10 @@ resource "helm_release" "oauth2_proxy" {
   chart      = "oauth2-proxy"
   version    = "10.7.0"
   namespace  = kubernetes_namespace_v1.auth_namespace.metadata[0].name
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 
   values = [
     templatefile(

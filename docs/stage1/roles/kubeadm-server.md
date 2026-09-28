@@ -106,6 +106,10 @@ Safe to re-run. `initialise-kubeadm.yml` detects an already-initialised control 
 
     `cilium_version` is the agent and operator release in the cluster. `cilium_cli_version` is only the local binary driving Helm. Gating an agent upgrade on the CLI version compares unrelated numbers. See [Version pins](../../reference/versions.md).
 
+!!! warning "A Helm values change rolls the Cilium agents"
+
+    `upgrade-cilium.yml` runs when the running agent is older than `cilium_version`, or when `cilium_helm_args` or `cilium_mtu` would change the release's Helm values. It compares `cilium upgrade --dry-run-helm-values` with and without those flags, so a values edit at the same version rolls the agent DaemonSet one node at a time. The play's "Display Cilium version information" task prints which condition fired.
+
 !!! warning "`--tags k8s_upgrade` needs `apply:` to work"
 
     Every tagged dynamic include in this file carries `apply: tags: [...]` as well as `tags: [...]`. A tag on a dynamic include selects the include task and nothing it pulls in, so dropping `apply:` would make `--tags k8s_upgrade` walk this file and run none of the work, while reporting success.

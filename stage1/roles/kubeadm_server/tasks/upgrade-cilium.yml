@@ -26,15 +26,42 @@
          | ternary(kubeadm_server_cilium_ds_image.stdout | regex_search('[0-9]+\.[0-9]+\.[0-9]+') | default(cilium_version, true),
                    cilium_version) }}
 
+- name: Render the Cilium Helm values the inventory asks for
+  # --dry-run-helm-values prints the release's non-default values merged with the given
+  # flags (--reset-then-reuse-values is the default) and changes nothing. Comparing it with
+  # the same command without flags detects a cilium_helm_args or cilium_mtu change at an
+  # unchanged version, which the version gate alone never applies.
+  # kubeadm_server_cilium_sm_override is set in install-cilium.yml, which main.yml always runs first.
+  ansible.builtin.command: >-
+    cilium upgrade
+    --version {{ cilium_version }}
+    --dry-run-helm-values
+    {{ cilium_helm_args }}
+    {% if cilium_mtu %}--helm-set MTU={{ cilium_mtu }}{% endif %}
+    {{ kubeadm_server_cilium_sm_override }}
+  register: kubeadm_server_cilium_values_desired
+  changed_when: false
+
+- name: Render the Cilium Helm values currently deployed
+  ansible.builtin.command: >-
+    cilium upgrade
+    --version {{ cilium_version }}
+    --dry-run-helm-values
+  register: kubeadm_server_cilium_values_live
+  changed_when: false
+
 - name: Display Cilium version information
   ansible.builtin.debug:
     msg: |
       Running Cilium agent version: {{ kubeadm_server_cilium_agent_version }}
       Target Cilium agent version: {{ cilium_version }}
-      Upgrade needed: {{ kubeadm_server_cilium_agent_version is version(cilium_version, '<') }}
+      Version upgrade needed: {{ kubeadm_server_cilium_agent_version is version(cilium_version, '<') }}
+      Helm values changed: {{ kubeadm_server_cilium_values_desired.stdout != kubeadm_server_cilium_values_live.stdout }}
 
 - name: Upgrade Cilium
-  when: kubeadm_server_cilium_agent_version is version(cilium_version, '<')
+  when: >-
+    kubeadm_server_cilium_agent_version is version(cilium_version, '<')
+    or kubeadm_server_cilium_values_desired.stdout != kubeadm_server_cilium_values_live.stdout
   block:
     - name: Dry run the Cilium upgrade
       # Renders what would be applied without touching the cluster. A chart or values
@@ -44,15 +71,21 @@
         --version {{ cilium_version }}
         --dry-run
         {{ cilium_helm_args }}
+        {% if cilium_mtu %}--helm-set MTU={{ cilium_mtu }}{% endif %}
+        {{ kubeadm_server_cilium_sm_override }}
       register: kubeadm_server_cilium_dry_run
       changed_when: false
 
     - name: Upgrade Cilium
+      # rollOutCiliumPods, from cilium_helm_args, puts a cilium-config checksum on the agent
+      # pods, so a ConfigMap-only change such as MTU still rolls the DaemonSet.
       ansible.builtin.command: >-
         cilium upgrade
         --version {{ cilium_version }}
         --wait
         {{ cilium_helm_args }}
+        {% if cilium_mtu %}--helm-set MTU={{ cilium_mtu }}{% endif %}
+        {{ kubeadm_server_cilium_sm_override }}
       register: kubeadm_server_cilium_upgrade_output
       changed_when: kubeadm_server_cilium_upgrade_output.rc == 0
 

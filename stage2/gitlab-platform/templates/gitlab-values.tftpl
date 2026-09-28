@@ -846,6 +846,11 @@ gitlab:
   webservice:
     enabled: true
     minReplicas: 1
+    # Return freed jemalloc pages to the OS after 1s instead of the 10s default. muzzy_decay_ms is
+    # deliberately not set: jemalloc 5.3 in these images defaults it to 0, which already purges
+    # immediately, and the 1000 in GitLab's memory-constrained guide would delay that.
+    extraEnv:
+      MALLOC_CONF: "dirty_decay_ms:1000"
     # The chart disables the puma worker killer by default, so workers grow until the cgroup
     # OOM-kills the pod. Re-enabling it with a per-worker cap restarts a worker gracefully instead,
     # which both removes the OOM and lowers steady-state memory. Keep workerProcesses x
@@ -871,6 +876,12 @@ gitlab:
       enabled: false
   sidekiq:
     enabled: true
+    # Default 20. Concurrent jobs rarely exceed 10 here, so the extra threads only held memory and
+    # connections. Bursts queue briefly instead.
+    concurrency: 10
+    # See the webservice extraEnv comment.
+    extraEnv:
+      MALLOC_CONF: "dirty_decay_ms:1000"
     # maxRss must stay below limits.memory or the memory killer can never fire. GitLab converts this
     # with Rails .kilobytes, so 1 KB is 1024 B: the chart default of 2000000 KB is ~1953Mi, above the
     # 1.5Gi limit, so the cgroup OOM always won and the graceful restart was unreachable.

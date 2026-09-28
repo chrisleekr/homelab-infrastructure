@@ -66,7 +66,7 @@ Each is behind OAuth2 Proxy and Auth0, at `service.domain.local`:
 | Longhorn | [longhorn-storage](../stage2/longhorn-storage.md) |
 | MinIO | [minio-object-storage](../stage2/minio-object-storage.md) |
 | Kibana | [logging](../stage2/logging.md) |
-| Kubecost | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
+| Kubecost (only with `kubecost_enable`) | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
 
 A TLS warning means the certificate is not issued yet. A 500 from the proxy usually means the Auth0 callback URL does not match the gateway hostname.
 

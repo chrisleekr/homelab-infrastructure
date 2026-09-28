@@ -39,6 +39,10 @@ WORKER_STEPS = [
     "wait_ready",
 ]
 STEP_VAR = "kubeadm_upgrade_step"
+# Set in install-cilium.yml, read by upgrade-cilium.yml. Must not contain "cilium_helm_args",
+# which cilium_helm_args_applied counts as a substring.
+SM_OVERRIDE = "kubeadm_server_cilium_sm_override"
+CILIUM_RENDER_VARS = ("cilium_helm_args", "cilium_mtu", SM_OVERRIDE)
 DRIFT_FACTS = (
     "kubeadm_node_kubeadm_upgrade_required",
     "kubeadm_node_kubelet_upgrade_required",
@@ -645,11 +649,114 @@ def cilium_upgrade_flags():
     problems = []
     if "--version" not in text:
         problems.append("no --version passed to cilium upgrade")
-    if "--dry-run" not in text:
+    # Lookahead so --dry-run-helm-values, the values check, does not stand in for the preflight.
+    if not re.search(r"--dry-run(?![-\w])", text):
         problems.append("no --dry-run preflight")
     if "cilium_cli_version" in text:
         problems.append("gates on cilium_cli_version, which is the CLI build, not the Cilium release")
     return not problems, f"{rel(SERVER_CILIUM)}: {'; '.join(problems)}" if problems else ""
+
+
+def cilium_values_gate():
+    """A values edit at an unchanged version must reach the upgrade block.
+
+    The gate compares two renders: desired carries cilium_helm_args, cilium_mtu and the
+    ServiceMonitor override, live carries none of them. Flags in both, or in neither, make
+    the comparison always equal and the values edit a silent no-op. Desired without the
+    override differs from a fresh install on every run before stage2, so the upgrade block
+    runs and its dry run fails the chart's ServiceMonitor CRD check. The version gate must
+    survive alongside it.
+    """
+    registered = {}
+    upgrade_when = None
+    for task, _ in walk(load_tasks(SERVER_CILIUM)):
+        if task.get("register"):
+            # Dumped from parsed YAML, so comments cannot satisfy a match.
+            registered[task["register"]] = yaml.safe_dump(task)
+        if task.get("name") == "Upgrade Cilium" and isinstance(task.get("block"), list):
+            upgrade_when = task.get("when")
+
+    problems = []
+    desired = registered.get("kubeadm_server_cilium_values_desired")
+    live = registered.get("kubeadm_server_cilium_values_live")
+    if desired is None:
+        problems.append("no task registers kubeadm_server_cilium_values_desired")
+    else:
+        problems.extend(
+            f"desired render lacks {var}"
+            for var in CILIUM_RENDER_VARS
+            if var not in desired
+        )
+    if live is None:
+        problems.append("no task registers kubeadm_server_cilium_values_live")
+    else:
+        problems.extend(
+            f"live render passes {var}"
+            for var in CILIUM_RENDER_VARS
+            if var in live
+        )
+    if upgrade_when is None:
+        problems.append("no gated `Upgrade Cilium` block")
+    else:
+        gate = " ".join(map(str, upgrade_when)) if isinstance(upgrade_when, list) else str(upgrade_when)
+        problems.extend(
+            f"upgrade block gate lacks {needle}"
+            for needle in ("values_desired", "version(cilium_version")
+            if needle not in gate
+        )
+    return not problems, f"{rel(SERVER_CILIUM)}: {'; '.join(problems)}" if problems else ""
+
+
+def cilium_servicemonitor_override():
+    """The ServiceMonitor override must exist before upgrade-cilium.yml reads it.
+
+    install-cilium.yml derives it from the CRD check and applies it after cilium_helm_args,
+    since the last --helm-set wins. upgrade-cilium.yml only reads the fact, so main.yml must
+    include install-cilium.yml first or every render fails on an undefined variable.
+    """
+    problems = []
+    crd_register = None
+    fact_value = None
+    install_cmd = None
+    for task, _ in walk(load_tasks(SERVER_CILIUM_INSTALL)):
+        command = action_value(task, ("command", "shell"))
+        if isinstance(command, str) and "servicemonitors.monitoring.coreos.com" in command:
+            crd_register = task.get("register")
+        facts = action_value(task, ("set_fact",))
+        if isinstance(facts, dict) and SM_OVERRIDE in facts:
+            fact_value = str(facts[SM_OVERRIDE])
+        if isinstance(command, str) and "cilium install" in command:
+            install_cmd = command
+
+    if not crd_register:
+        problems.append("no registered servicemonitors.monitoring.coreos.com CRD check")
+    if fact_value is None:
+        problems.append(f"no set_fact defines {SM_OVERRIDE}")
+    elif crd_register and crd_register not in fact_value:
+        problems.append(f"{SM_OVERRIDE} is not derived from {crd_register}")
+    if install_cmd is None:
+        problems.append("no `cilium install` command")
+    else:
+        args_at = install_cmd.find("cilium_helm_args")
+        override_at = install_cmd.find(SM_OVERRIDE)
+        if override_at < 0:
+            problems.append(f"install command does not reference {SM_OVERRIDE}")
+        elif args_at < 0 or override_at < args_at:
+            problems.append(f"{SM_OVERRIDE} must follow cilium_helm_args in the install command")
+
+    positions = {child.name: i for i, child in includes_of(SERVER_MAIN)}
+    install_at = positions.get(SERVER_CILIUM_INSTALL.name)
+    upgrade_at = positions.get(SERVER_CILIUM.name)
+    if install_at is None or upgrade_at is None:
+        problems.append(f"{rel(SERVER_MAIN)} is missing an install or upgrade Cilium include")
+    elif install_at > upgrade_at:
+        problems.append(
+            f"{rel(SERVER_MAIN)}: {SERVER_CILIUM_INSTALL.name} at index {install_at} must "
+            f"precede {SERVER_CILIUM.name} at index {upgrade_at}"
+        )
+    return not problems, (
+        f"{rel(SERVER_CILIUM_INSTALL)}: {'; '.join(problems)}" if problems else SM_OVERRIDE
+    )
 
 
 def cilium_before_control_plane():
@@ -668,13 +775,15 @@ def cilium_before_control_plane():
 
 
 def cilium_helm_args_applied():
-    """The 1.20 xDS workaround must reach install, dry run and upgrade alike.
+    """cilium_helm_args must reach install, values check, dry run and upgrade alike.
 
-    Dropping it from any one site silently reintroduces the agent/Envoy livelock on the
-    next install or upgrade, and nothing else in the tree would notice.
+    Dropping it from the install, dry run or upgrade silently loses those values on the
+    next install or upgrade. Dropping it from the values check makes every run see drift
+    and upgrade. This is a count, not a placement; cilium_values_gate pins which render
+    carries it.
     """
     problems, found = [], []
-    for path, expected in ((SERVER_CILIUM_INSTALL, 1), (SERVER_CILIUM, 2)):
+    for path, expected in ((SERVER_CILIUM_INSTALL, 1), (SERVER_CILIUM, 3)):
         count = strip_comments(read_text(path)).count("cilium_helm_args")
         found.append(f"{rel(path)}={count}")
         if count != expected:
@@ -857,6 +966,8 @@ CHECKS = (
     ("C10", pluto_version_pinned),
     ("C11", cilium_upgrade_flags),
     ("C11", cilium_helm_args_applied),
+    ("C11", cilium_values_gate),
+    ("C11", cilium_servicemonitor_override),
     ("C12", cilium_before_control_plane),
     ("C13", binary_apply_gated),
     ("C13", kubelet_apply_inside_drain_block),

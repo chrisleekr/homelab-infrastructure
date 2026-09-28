@@ -64,6 +64,8 @@ resource "helm_release" "longhorn" {
   repository = "https://charts.longhorn.io"
   chart      = "longhorn"
   namespace  = kubernetes_namespace_v1.longhorn.metadata[0].name
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
   # Not 1.11.0: its longhorn-instance-manager image leaks proxy connections and needs a hotfix image
   # override. 1.11.3 ships the fix, so stay on the latest patch of the minor.
   version = "1.11.3"

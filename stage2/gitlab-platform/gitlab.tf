@@ -37,8 +37,10 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "10.3.2"
+  version    = "10.4.1"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
   # A major-version upgrade pulls every image fresh, and 1800 was not enough for 19.0: the release
   # timed out mid-apply, which does not roll back. It leaves resources behind that the next upgrade
   # does not reap, so err high.

@@ -17,7 +17,7 @@ This document provides essential context for AI models interacting with this cod
 |------|----------|---------|
 | Add Terraform module | `stage2/<name>/` | Create `*.tf`, add to `main.tf` with dependencies |
 | Add stage0 cloud provider | `stage0/<provider>/` | Create `*.tf`, add an account map to `stage0/variables.tf`, add a `module` block to `stage0/main.tf` per account, add `docs/stage0/<provider>.md` |
-| Add Helm chart | Module's `.tf` | Use `helm_release` resource with version pinning |
+| Add Helm chart | Module's `.tf` | Use `helm_release` resource with version pinning and `max_history = 3` |
 | Add Ansible role | `stage1/roles/<role>/` | Create `tasks/main.yml`, `defaults/main.yml`, `templates/` |
 | Add variable | `stage2/variables.tf` | Include type, description, default, validation |
 | Enable optional module | `stage2/main.tf` | Use `count = var.<module>_enable ? 1 : 0` |

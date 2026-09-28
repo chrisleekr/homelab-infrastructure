@@ -137,6 +137,35 @@ task stage2:terraform:apply
 | Cluster Agent | Kubernetes events and metadata |
 | Admission Controller | Auto-injection of tracing libraries |
 | NPM | **Disabled** - see Cost Considerations |
+| kube-apiserver metrics | Collected every 60s instead of the default 15s, to cut agent CPU |
+
+## Integration Checks From Pod Annotations
+
+Each workload declares its own integration check in a pod annotation, so a new workload needs no change to this module. Passwords are never written into the annotation: the agent reads them from a Kubernetes Secret through the `k8s.secrets` secret backend, referenced as `ENC[<namespace>/<secret>;<key>]`.
+
+```yaml
+metadata:
+  annotations:
+    ad.datadoghq.com/<container>.checks: |
+      {"redisdb": {"instances": [{"host": "%%host%%", "port": 6379, "password": "ENC[<namespace>/<secret>;<key>]"}]}}
+```
+
+- `<container>` is the container name in the pod, not the image name.
+- The Secret must be in the check's own namespace (the pod's, or the Service's for a cluster check). The node agent, cluster agent and cluster checks runner all refuse a handle that points anywhere else.
+- The Operator grants the agents `get` on Secrets cluster-wide (ClusterRole `datadog-datadog-agent-secret-backend`). That is the cost of not listing each Secret here.
+- The shipped `redisdb` auto-configuration is disabled. It carries no password, so a Redis or Valkey without an annotation is not monitored.
+
+Verify from the agent on the pod's node:
+
+```bash
+P=$(kubectl -n datadog get pod -l app.kubernetes.io/component=agent --field-selector spec.nodeName=<node> -o name)
+kubectl -n datadog exec $P -c agent -- agent status | grep -A8 '    redisdb'
+kubectl -n datadog exec $P -c agent -- agent secret
+```
+
+A resolved handle is listed under "Secrets handle resolved". A refused one logs `secret not resolved`.
+
+See [Datadog secrets management](https://docs.datadoghq.com/agent/configuration/secrets-management/) and [Kubernetes integrations](https://docs.datadoghq.com/containers/kubernetes/integrations/).
 
 ## Datadog Sites
 

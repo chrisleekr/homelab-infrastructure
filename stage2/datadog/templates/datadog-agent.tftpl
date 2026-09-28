@@ -17,6 +17,14 @@ spec:
     clusterName: ${datadog_cluster_name}
     kubelet:
       tlsVerify: false
+    # Check configs reference passwords as ENC[namespace/secret;key], resolved from the API, so a
+    # workload declares its own check in a pod annotation with no change here. Cluster-wide get on
+    # Secrets is the cost; DD_SECRET_SCOPE_INTEGRATION_TO_THEIR_K8S_NAMESPACE below narrows what a
+    # check may resolve.
+    # https://docs.datadoghq.com/agent/configuration/secrets-management/
+    secretBackend:
+      type: k8s.secrets
+      enableGlobalPermissions: true
   features:
     clusterChecks:
       enabled: true
@@ -77,3 +85,46 @@ spec:
         - key: node.homelab/class
           operator: Exists
           effect: NoSchedule
+      containers:
+        agent:
+          env:
+            # An override replaces the operator's own DD_IGNORE_AUTOCONF=kubernetes_state rather than
+            # appending, so kubernetes_state must stay. kube_apiserver_metrics is re-declared below, so
+            # the shipped auto_conf.yaml must not also run. redisdb's auto_conf has no password, and
+            # every Redis here requires one, so each workload annotates its own check instead.
+            - name: DD_IGNORE_AUTOCONF
+              value: "kubernetes_state kube_apiserver_metrics redisdb"
+            # A check can only resolve Secrets in its own namespace (the pod's, or the Service's for a
+            # cluster check). Set on every component holding the secret-backend ClusterRole, since the
+            # cluster agent and runners resolve ENC[] handles too. The config reference says
+            # this covers k8s_secret@ handles only; the 7.81 resolver also applies it to the
+            # k8s.secrets format (comp/core/secrets/impl/secrets.go, shouldResolvedSecret).
+            # https://github.com/DataDog/datadog-agent/blob/7.81.2/pkg/config/config_template.yaml#L1145-L1156
+            - name: DD_SECRET_SCOPE_INTEGRATION_TO_THEIR_K8S_NAMESPACE
+              value: "true"
+      extraConfd:
+        configDataMap:
+          # Shipped auto_conf.yaml plus min_collection_interval. At the default 15s this check parses
+          # ~50k samples per run and was the agent's largest CPU consumer. Same metrics, 60s resolution.
+          kube_apiserver_metrics.yaml: |-
+            ad_identifiers:
+              - kube-apiserver
+            init_config:
+            instances:
+              - possible_prometheus_urls:
+                  - https://%%host%%:6443/metrics
+                  - https://%%host%%:8443/metrics
+                bearer_token_auth: tls_only
+                min_collection_interval: 60
+                tags:
+                  - apiserver:%%host%%
+    clusterAgent:
+      env:
+        # Secret scope, see the nodeAgent env comment.
+        - name: DD_SECRET_SCOPE_INTEGRATION_TO_THEIR_K8S_NAMESPACE
+          value: "true"
+    clusterChecksRunner:
+      env:
+        # Secret scope, see the nodeAgent env comment.
+        - name: DD_SECRET_SCOPE_INTEGRATION_TO_THEIR_K8S_NAMESPACE
+          value: "true"

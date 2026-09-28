@@ -70,15 +70,29 @@ cluster:
     # move independently, so gating an agent upgrade on the CLI version compares unrelated
     # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_version: "1.20.0" # https://github.com/cilium/cilium/releases
-    cilium_cli_version: "0.19.7" # https://github.com/cilium/cilium-cli/releases
+    cilium_version: "1.20.2" # https://github.com/cilium/cilium/releases
+    cilium_cli_version: "0.20.1" # https://github.com/cilium/cilium-cli/releases
 
-    # Split avoids Cilium 1.20.0 ADS livelock; one-at-a-time rolls preserve node networking.
-    # https://github.com/cilium/cilium/issues/47624
+    # Split avoided the 1.20.0 ADS livelock (cilium#47624). The fix, an Envoy image bump
+    # (cilium#47899), shipped in 1.20.1; split stays until the default is verified here.
+    # One-at-a-time rolls preserve node networking. rollOutCiliumPods and envoy.rollOutPods
+    # make a cilium-config change such as MTU roll the agent and Envoy pods; both default false.
+    #
+    # Agent metrics on :9962 feed Datadog's cilium check and, through the ServiceMonitor,
+    # Prometheus. The ServiceMonitor also stops the chart adding prometheus.io/scrape pod
+    # annotations, which Datadog's prometheusScrape would collect a second time as custom metrics.
+    # It is held off until stage2 creates its CRD, see install-cilium.yml.
+    # 30s matches the Prometheus scrapeInterval; the chart default is 10s.
+    # upgrade-cilium.yml applies a change here at the same version too, see its values check.
     cilium_helm_args: >-
       --helm-set envoy.xdsMode=split
       --helm-set updateStrategy.rollingUpdate.maxUnavailable=1
       --helm-set envoy.updateStrategy.rollingUpdate.maxUnavailable=1
+      --helm-set rollOutCiliumPods=true
+      --helm-set envoy.rollOutPods=true
+      --helm-set prometheus.enabled=true
+      --helm-set prometheus.serviceMonitor.enabled=true
+      --helm-set prometheus.serviceMonitor.interval=30s
 
     # This is the *underlying network* MTU, not the pod MTU. Cilium subtracts its own
     # 50-byte VXLAN overhead to derive the route MTU it installs for pods, so 1500 here
@@ -95,13 +109,7 @@ cluster:
     # Cluster-wide, so the lowest path between any two nodes wins. A worker reached over the
     # tailnet rather than the LAN needs its own measurement against that peer.
     #
-    # Applied by `cilium install`, which only runs when there is no cilium-operator yet.
-    # `cilium upgrade` carries the value forward (--reset-then-reuse-values defaults true)
-    # but never introduces a new one, so changing this on a live cluster takes:
-    #   cilium upgrade --version <cilium_version> --wait --helm-set MTU=<value>
-    #   kubectl -n kube-system rollout restart ds/cilium
-    # The restart is required: the agents read MTU once at start, so the ConfigMap alone
-    # changes nothing.
+    # upgrade-cilium.yml applies a change on a live cluster.
     cilium_mtu: "1500" # LAN NIC MTU. Cilium derives the 1450 pod route MTU from it
 
     # Host-level Tailscale for node-to-node transport. Distinct from the stage2 vpn pod,

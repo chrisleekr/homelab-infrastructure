@@ -32,8 +32,10 @@ resource "helm_release" "cloudflare_tunnel" {
   chart      = "cloudflare-tunnel-remote"
   version    = var.cloudflare_tunnel_chart_version
   namespace  = kubernetes_namespace_v1.cloudflare_tunnel.metadata[0].name
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 
   set_sensitive = [
     {

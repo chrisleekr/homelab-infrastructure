@@ -460,6 +460,12 @@ variable "kibana_domain" {
   default     = "kibana.chrislee.local"
 }
 
+variable "kubecost_enable" {
+  description = "Enable Kubecost. Off by default: its aggregator alone holds about 1.3Gi RSS on a single node."
+  type        = bool
+  default     = false
+}
+
 # Changing this on a live install orphans the existing ETL history. See monitoring-kubecost/variables.tf.
 variable "kubecost_cluster_id" {
   description = "Unique identifier for this cluster in Kubecost. Must be distinct per cluster reporting into the same Kubecost."

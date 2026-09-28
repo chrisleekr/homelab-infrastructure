@@ -13,6 +13,12 @@ auth:
     default:
       permissions: "~* &* +@all"
 
+# Datadog redisdb check; the password handle resolves through the agent's k8s.secrets backend.
+# The container is named after the release fullname, not "valkey".
+podAnnotations:
+  ad.datadoghq.com/gitlab-valkey.checks: |
+    {"redisdb": {"instances": [{"host": "%%host%%", "port": 6379, "password": "ENC[${valkey_namespace}/${valkey_password_secret};default]"}]}}
+
 dataStorage:
   enabled: true
   requestedSize: ${valkey_persistence_size}

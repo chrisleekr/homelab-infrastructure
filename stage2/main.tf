@@ -195,6 +195,7 @@ module "monitoring" {
 
 
 module "kubecost" {
+  count = var.kubecost_enable ? 1 : 0
   # minio_object_storage is named explicitly: the only value consumed from it resolves to a
   # random_password, so the implicit edge does not reach the tenant or its buckets.
   depends_on = [module.cert_manager_letsencrypt, module.minio_object_storage, module.istio_gateway]
@@ -212,6 +213,12 @@ module "kubecost" {
   minio_endpoint   = var.minio_internal_endpoint
   minio_access_key = var.minio_tenant_user_access_key
   minio_secret_key = module.minio_object_storage.minio_tenant_user_secret_key
+}
+
+# Keeps an existing install in place when the flag is true, instead of destroy and recreate.
+moved {
+  from = module.kubecost
+  to   = module.kubecost[0]
 }
 
 module "vpn" {
