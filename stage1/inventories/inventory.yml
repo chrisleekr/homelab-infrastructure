@@ -84,6 +84,7 @@ cluster:
     # It is held off until stage2 creates its CRD, see install-cilium.yml.
     # 30s matches the Prometheus scrapeInterval; the chart default is 10s.
     # upgrade-cilium.yml applies a change here at the same version too, see its values check.
+    # Deleting a key does not revert it; set it to the chart default instead.
     cilium_helm_args: >-
       --helm-set envoy.xdsMode=split
       --helm-set updateStrategy.rollingUpdate.maxUnavailable=1

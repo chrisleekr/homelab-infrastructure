@@ -31,6 +31,10 @@
   # flags (--reset-then-reuse-values is the default) and changes nothing. Comparing it with
   # the same command without flags detects a cilium_helm_args or cilium_mtu change at an
   # unchanged version, which the version gate alone never applies.
+  # Deleting a key from cilium_helm_args is not detected or applied, because both renders
+  # reuse the stored value; set it to the chart default instead. --reset-values is not the
+  # fix: upgrade does not re-derive what install set outside cilium_helm_args
+  # (cluster.name, operator.replicas, securityContext.privileged), so it would drop them.
   # kubeadm_server_cilium_sm_override is set in install-cilium.yml, which main.yml always runs first.
   ansible.builtin.command: >-
     cilium upgrade
