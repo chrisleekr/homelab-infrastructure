@@ -64,6 +64,16 @@ flowchart TB
 
 ## Usage
 
+Gated by `kubecost_enable`, default `false`. The module holds about 2Gi of memory, which a single node rarely spares. Setting the flag to `false` on a live install destroys the namespace, but the `longhorn` StorageClass reclaims with `Retain`, so its volumes stay `Released` and keep their disk until deleted by hand. The `kubecost-federated-store` bucket is owned by the MinIO module and stays.
+
+```bash
+# Run before the apply that disables the module, while the claims still name their volumes.
+kubectl -n kubecost get pvc -o jsonpath='{range .items[*]}{.spec.volumeName}{"\n"}{end}' > kubecost-pvs.txt
+# After the apply:
+xargs kubectl delete pv < kubecost-pvs.txt
+xargs kubectl -n longhorn-system delete volumes.longhorn.io < kubecost-pvs.txt
+```
+
 The bucket named by `minio_bucket_name` must exist before apply. It is provisioned by the MinIO tenant via `minio_tenant_default_buckets` in `stage2/variables.tf`.
 
 ```bash

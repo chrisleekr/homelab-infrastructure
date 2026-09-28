@@ -5,6 +5,23 @@
   changed_when: false
   failed_when: false
 
+- name: Check for the ServiceMonitor CRD
+  # cilium_helm_args enables the Cilium ServiceMonitor, and the chart refuses to render one
+  # before stage2 creates monitoring.coreos.com/v1. Install and upgrade-cilium.yml hold it
+  # off until then; the first stage1 run after stage2 sees the values differ and turns it on.
+  # --ignore-not-found makes only an absent CRD read as empty; an API error fails the task
+  # instead of silently turning the ServiceMonitor off and rolling the agents.
+  ansible.builtin.command: >-
+    kubectl get crd servicemonitors.monitoring.coreos.com --ignore-not-found -o name
+  register: kubeadm_server_servicemonitor_crd
+  changed_when: false
+
+- name: Hold the Cilium ServiceMonitor off until its CRD exists
+  ansible.builtin.set_fact:
+    kubeadm_server_cilium_sm_override: >-
+      {{ '' if kubeadm_server_servicemonitor_crd.stdout | length > 0
+         else '--helm-set prometheus.serviceMonitor.enabled=false' }}
+
 - name: Install cilium
   when: kubeadm_server_cilium_operator_check.rc != 0
   block:
@@ -13,12 +30,15 @@
       # own built-in default, and if that is newer than cilium_version the upgrade gate
       # (installed < target) never fires, leaving the cluster permanently on an undeclared
       # version that no inventory bump can correct.
+      #
+      # The ServiceMonitor override follows cilium_helm_args because the last --helm-set wins.
       ansible.builtin.command: >-
         cilium install
         --version {{ cilium_version }}
         --helm-set securityContext.privileged=true
         {% if cilium_mtu %}--helm-set MTU={{ cilium_mtu }}{% endif %}
         {{ cilium_helm_args }}
+        {{ kubeadm_server_cilium_sm_override }}
       register: kubeadm_server_cilium_install
       changed_when: kubeadm_server_cilium_install.rc == 0
 

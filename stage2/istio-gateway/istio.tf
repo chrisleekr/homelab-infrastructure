@@ -12,8 +12,10 @@ resource "helm_release" "istio_base" {
   chart      = "base"
   version    = var.istio_gateway_version
   namespace  = var.istio_gateway_control_plane_namespace
-  timeout    = 300
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 300
+  wait        = true
 }
 
 resource "helm_release" "istiod" {
@@ -24,8 +26,10 @@ resource "helm_release" "istiod" {
   chart      = "istiod"
   version    = var.istio_gateway_version
   namespace  = var.istio_gateway_control_plane_namespace
-  timeout    = 600
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 600
+  wait        = true
 
   values = [
     templatefile(

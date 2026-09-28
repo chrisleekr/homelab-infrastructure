@@ -22,8 +22,10 @@ resource "helm_release" "litellm" {
   chart      = "litellm-helm"
   version    = var.litellm_chart_version
   namespace  = local.litellm_namespace
-  wait       = true
-  timeout    = 600
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  wait        = true
+  timeout     = 600
 
   values = [
     templatefile(

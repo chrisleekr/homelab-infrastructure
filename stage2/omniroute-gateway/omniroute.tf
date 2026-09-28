@@ -22,8 +22,10 @@ resource "helm_release" "omniroute" {
   chart      = "omniroute"
   version    = var.omniroute_chart_version
   namespace  = local.omniroute_namespace
-  wait       = true
-  timeout    = 600
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  wait        = true
+  timeout     = 600
 
   values = [
     templatefile(

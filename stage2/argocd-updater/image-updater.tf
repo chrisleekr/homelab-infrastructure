@@ -18,8 +18,10 @@ resource "helm_release" "argocd_image_updater" {
   chart      = "argocd-image-updater"
   version    = "1.2.4" # app version v1.2.2, released 2026-06-26
   namespace  = var.argocd_namespace
-  wait       = true
-  timeout    = 300
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  wait        = true
+  timeout     = 300
 
   values = [
     templatefile(

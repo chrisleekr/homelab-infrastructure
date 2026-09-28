@@ -6,8 +6,10 @@ resource "helm_release" "reloader" {
   chart      = "reloader"
   version    = "2.2.16"
   namespace  = kubernetes_namespace_v1.reloader_namespace.metadata[0].name
-  wait       = true
-  timeout    = 300
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  wait        = true
+  timeout     = 300
 
   values = [
     templatefile(

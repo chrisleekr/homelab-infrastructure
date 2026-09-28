@@ -51,7 +51,7 @@ RUN set -eux; \
   curl=8.22.0-r0 \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \
-  bind-tools=9.20.27-r0 \
+  bind-tools=9.20.29-r0 \
   git=2.54.0-r0 \
   graphviz=12.2.1-r3 \
   python3=3.14.7-r1 \

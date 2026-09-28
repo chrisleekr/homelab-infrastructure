@@ -5,6 +5,8 @@ resource "helm_release" "prometheus_operator_crds" {
   chart      = "prometheus-operator-crds"
   version    = "31.0.0"
   namespace  = "kube-system"
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
 
   # The CRDs predate this release: they were applied with kubectl, so they carry no Helm
   # ownership metadata and adoption fails without this. Harmless once adopted, and a no-op

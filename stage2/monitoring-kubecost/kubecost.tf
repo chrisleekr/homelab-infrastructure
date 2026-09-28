@@ -55,6 +55,8 @@ resource "helm_release" "kubecost" {
   repository = "https://kubecost.github.io/kubecost"
   chart      = "kubecost"
   namespace  = kubernetes_namespace_v1.kubecost.metadata[0].name
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
   # https://github.com/kubecost/kubecost/releases
   version = "3.2.3"
   wait    = true

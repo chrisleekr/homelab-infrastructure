@@ -6,9 +6,11 @@ resource "helm_release" "datadog_operator" {
   repository = "https://helm.datadoghq.com"
   chart      = "datadog-operator"
   namespace  = kubernetes_namespace_v1.datadog.metadata[0].name
-  version    = "2.25.1"
-  wait       = true
-  timeout    = 300
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  version     = "2.25.1"
+  wait        = true
+  timeout     = 300
 
   values = [
     templatefile(

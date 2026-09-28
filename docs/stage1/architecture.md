@@ -112,11 +112,11 @@ Cilium carries two independent pins, `cilium_version` and `cilium_cli_version`. 
 
 `cilium_helm_args` in `stage1/inventories/inventory.yml` is appended to both `cilium install` and `cilium upgrade`. `envoy.xdsMode=split` holds the cluster on the pre-1.20 per-resource-type xDS server, because the 1.20 chart default of `ads` deadlocks the agent against Envoy ([cilium#47624](https://github.com/cilium/cilium/issues/47624)). The two `maxUnavailable=1` settings roll one Cilium pod and one Envoy pod at a time so node networking survives the roll.
 
-Drop `envoy.xdsMode=split` once cilium#47624 ships a fix. The `maxUnavailable` settings are independent of it and stay.
+The fix for cilium#47624 ([cilium#47899](https://github.com/cilium/cilium/pull/47899)) shipped in 1.20.1; `envoy.xdsMode=split` stays until the `ads` default is verified on this cluster. The `maxUnavailable` settings are independent of it and stay.
 
-!!! warning "A values-only change does not reconcile"
+`prometheus.serviceMonitor.enabled` stays `false` while the ServiceMonitor CRD is absent, because that CRD only exists once Stage 2 has run; the first Stage 1 run after Stage 2 turns it on.
 
-    Both task files that pass these arguments are gated on version, not on values: `install-cilium.yml` runs only when Cilium is absent, and `upgrade-cilium.yml` only when the running agent is older than `cilium_version`. Editing `cilium_helm_args` without also bumping `cilium_version` is a silent no-op, and a cluster already on the target version never receives them. Apply such a change by hand with `cilium upgrade --version <cilium_version> --wait <args>`.
+A values edit at the same `cilium_version` is applied too, see the [Cilium values warning](roles/kubeadm-server.md#gotchas).
 
 ### MTU and the Cilium pin
 
@@ -134,9 +134,4 @@ The value is cluster-wide, so the lowest path between any two nodes wins.
 
     **Neither is chosen yet. Decide before relying on a cloud node for real traffic.** How to provoke the failure deliberately is step 7 of the [Oracle free tier worker](../operations/oracle-free-tier-worker.md#7-check-mtu-across-the-tunnel) runbook.
 
-Cilium reads MTU once at agent start, and `cilium upgrade` carries an existing value forward but never introduces a new one. Changing it on a live cluster therefore takes both of these:
-
-```bash
-cilium upgrade --version <cilium_version> --wait --helm-set MTU=<value>
-kubectl -n kube-system rollout restart ds/cilium
-```
+`upgrade-cilium.yml` applies a `cilium_mtu` change on a live cluster, and `rollOutCiliumPods` in `cilium_helm_args` rolls the agents, which read MTU only at start.

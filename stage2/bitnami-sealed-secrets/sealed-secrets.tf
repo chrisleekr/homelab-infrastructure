@@ -8,8 +8,10 @@ resource "helm_release" "sealed_secrets" {
   chart      = "sealed-secrets"
   version    = "2.19.1"
   namespace  = kubernetes_namespace_v1.sealed_secrets_namespace.metadata[0].name
-  wait       = true
-  timeout    = 300
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  wait        = true
+  timeout     = 300
 
   values = [
     templatefile(

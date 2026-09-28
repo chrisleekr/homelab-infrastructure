@@ -1,6 +1,6 @@
 # Terraform variables
 
-All 126 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
+All 127 root input variables are declared in `stage2/variables.tf` and passed down to modules. Child modules declare their own inputs and receive them from the root; none reads `TF_VAR_*` directly, which is why every value is set in one place.
 
 Values are supplied as `TF_VAR_*` environment variables, injected from [Bitwarden](../operations/bitwarden-secrets.md) when you enter the tooling container. There is no `terraform.tfvars`; `*.tfvars` is gitignored.
 
@@ -22,7 +22,7 @@ Variables are prefixed by the module that consumes them.
 | `datadog_*` | 5 | [datadog](../stage2/datadog.md) |
 | `cloudflare_*` | 5 | [cloudflare-tunnel](../stage2/cloudflare-tunnel.md) |
 | `kubernetes_*` | 4 | [kubernetes](../stage2/kubernetes.md) |
-| `kubecost_*` | 3 | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
+| `kubecost_*` | 4 | [monitoring-kubecost](../stage2/monitoring-kubecost.md) |
 | `istio_*` | 3 | [istio-gateway](../stage2/istio-gateway.md) |
 | `cert_*` | 2 | [cert-manager-letsencrypt](../stage2/cert-manager-letsencrypt.md) |
 | `longhorn_*` | 2 | [longhorn-storage](../stage2/longhorn-storage.md) |
@@ -38,6 +38,7 @@ The gates that decide whether a module is in the plan at all:
 | Variable | Default | Module |
 |---|---|---|
 | `logging_module_enable` | `true` | logging |
+| `kubecost_enable` | `false` | monitoring-kubecost |
 | `argocd_image_updater_enable` | `false` | argocd-updater |
 | `datadog_enable` | `false` | datadog |
 | `cloudflare_tunnel_enable` | `false` | cloudflare-tunnel |

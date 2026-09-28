@@ -35,8 +35,10 @@ resource "helm_release" "prometheus_operator" {
   chart      = "kube-prometheus-stack"
   version    = "88.3.0"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
-  timeout    = 360 # 6 minutes for Prometheus and Grafana startup
-  wait       = true
+  # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
+  max_history = 3
+  timeout     = 360 # 6 minutes for Prometheus and Grafana startup
+  wait        = true
 
   values = [
     templatefile(
