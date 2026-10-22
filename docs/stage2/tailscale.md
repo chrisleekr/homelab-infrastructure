@@ -38,7 +38,7 @@ The pod runs with `TS_USERSPACE=false`, so it uses kernel networking and needs t
 | `kubernetes_service_account_v1.tailscale` | `tailscale-sa` | Identity for the state secret writes |
 | `kubernetes_role_v1.tailscale` | `tailscale` | `create` on secrets, plus `get`, `update`, `patch` on `tailscale-secret` |
 | `kubernetes_role_binding_v1.tailscale` | `tailscale` | Binds the two |
-| `kubernetes_deployment_v1.tailscale` | `tailscale` | Single replica, `tailscale/tailscale:v1.102.2` |
+| `kubernetes_deployment_v1.tailscale` | `tailscale` | Single replica, `tailscale/tailscale:v1.104.2` |
 
 The `vpn` namespace is created unconditionally in `stage2/vpn/namespace.tf` and carries `prevent_destroy = true`, so it survives even with both backends off.
 

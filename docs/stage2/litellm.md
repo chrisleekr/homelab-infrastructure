@@ -51,9 +51,9 @@ Still public by design, and deliberately not gated:
 | `litellm_enable` | bool | `false` | Module gate. Everything below is inert while false |
 | `litellm_domain` | string | `litellm.chrislee.local` | Single host serving both `/v1` and `/ui` |
 | `litellm_ui_paths` | list(string) | `["/ui", "/sso", "/litellm-asset-prefix", "/fallback/login", "/login", "/docs", "/redoc", "/openapi.json", "/routes", "/config/yaml", "/public"]` | Paths gated by oauth2-proxy. Omissions stay unauthenticated |
-| `litellm_chart_version` | string | `1.89.2` | `litellm-helm` chart pin |
-| `litellm_image_tag` | string | `1.89.2` | `ghcr.io/berriai/litellm-database` pin. Bump with the chart |
-| `litellm_postgres_image_tag` | string | `18.4-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
+| `litellm_chart_version` | string | `1.106.2` | `litellm-helm` chart pin |
+| `litellm_image_tag` | string | `1.106.2` | `ghcr.io/berriai/litellm-database` pin. Bump with the chart |
+| `litellm_postgres_image_tag` | string | `18.6-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
 | `litellm_replicas` | number | `1` | Proxy replicas, minimum 1 |
 | `litellm_storage_class_name` | string | `longhorn` | Postgres volume storage class |
 | `litellm_storage_size` | string | `10Gi` | Postgres volume size. See the resize caveat below |

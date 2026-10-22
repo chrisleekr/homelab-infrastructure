@@ -58,7 +58,7 @@ The exact set is app-version dependent; re-verify it against a running container
 | `omniroute_domain` | string | `omniroute.chrislee.local` | Single host serving the API and the dashboard |
 | `omniroute_public_paths` | list(string) | `["/api/v1", "/v1"]` | Paths served by the open route. Omissions fall through to the gated route |
 | `omniroute_gated_admin_suffixes` | list(string) | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every API alias prefix (`/api/v1`, `/v1`, `/v1/v1`). `[]` disables |
-| `omniroute_chart_version` | string | `0.2.2` | `omniroute` chart pin. Bump with the image tag |
+| `omniroute_chart_version` | string | `0.3.1` | `omniroute` chart pin. Bump with the image tag |
 | `omniroute_image_tag` | string | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
 | `omniroute_storage_class_name` | string | `longhorn` | SQLite PVC storage class |
 | `omniroute_storage_size` | string | `5Gi` | SQLite PVC size |

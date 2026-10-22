@@ -1,7 +1,7 @@
 default:
-  image: docker:27
+  image: docker:29
   services:
-    - name: docker:27-dind
+    - name: docker:29-dind
       alias: docker
 
 variables:
@@ -116,8 +116,8 @@ trivy-scan:
 # trips it regardless of which remote the work lands on.
 docs-build:
   stage: docs
-  image: python:3.13-alpine
-  # The top-level `default:` block attaches docker:27-dind to every job. This one
+  image: python:3.15-alpine
+  # The top-level `default:` block attaches docker:29-dind to every job. This one
   # has no use for a Docker daemon, and starting one costs a privileged runner slot.
   services: []
   # Start immediately rather than queueing behind buildx and Trivy. Nothing here

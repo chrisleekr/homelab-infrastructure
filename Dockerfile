@@ -1,20 +1,20 @@
 # syntax=docker/dockerfile:1
-FROM alpine:3.24.1
+FROM alpine:3.24.2
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.36.3
+ARG KUBECTL_VERSION=1.36.5
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.3.0
+ARG HELM_VERSION=4.3.1
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.16.2
+ARG TERRAFORM_VERSION=1.17.0
 # https://github.com/go-task/task/releases
-ARG TASKFILE_VERSION=3.53.1
+ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.74.0
+ARG TRIVY_VERSION=0.76.1
 # https://github.com/terraform-linters/tflint/releases
 ARG TFLINT_VERSION=v0.64.0
 ARG TFLINT_SHA256_AMD64=cca9d13e2e1d7a2c627af60ff899a3c9b74212899416aeb96ec764d2ef954537
@@ -22,7 +22,7 @@ ARG TFLINT_SHA256_ARM64=560da89aacf59389d4eb029730dd5b109b7288096c32f2726a0d9e78
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 # https://github.com/oracle/oci-cli/releases
-ARG OCI_CLI_VERSION=3.90.3
+ARG OCI_CLI_VERSION=3.95.1
 
 # Fail before installing target-specific binaries into a mismatched base image.
 RUN case "${TARGETARCH}:$(apk --print-arch)" in \
@@ -40,22 +40,17 @@ WORKDIR /tmp
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
-# alpine:3.24.1 ships openssl 3.5.7-r0, which carries CVE-2026-14456. The v3.24 apk repo already
-# has the fix, so libcrypto3 and libssl3 are pinned ahead of the base image until 3.24.2 is tagged.
 RUN set -eux; \
   \
   apk add --no-cache \
-  libcrypto3=3.5.8-r0 \
-  libssl3=3.5.8-r0 \
-  ca-certificates=20260909-r0 \
+  ca-certificates=20261020-r0 \
   curl=8.22.0-r0 \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \
   bind-tools=9.20.29-r0 \
   git=2.54.0-r0 \
   graphviz=12.2.1-r3 \
-  python3=3.14.7-r1 \
-  py3-pip=26.1.2-r0 \
+  python3=3.14.8-r0 \
   pre-commit=4.6.0-r0 \
   shellcheck=0.11.0-r1 \
   bash-completion=2.17.0-r1 \
@@ -87,10 +82,12 @@ RUN set -eux; \
   g++=15.2.0-r5 \
   gcc=15.2.0-r5 \
   libffi-dev=3.5.2-r1 \
-  python3-dev=3.14.7-r1 && \
+  python3-dev=3.14.8-r0 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
   . .venv/bin/activate && \
+  # ensurepip ships pip 26.2.1, whose vendored certifi carries GHSA-6q48-6c7w-9gw2.
+  pip install --no-cache-dir pip==26.2.2 && \
   # Install Python packages
   pip install --no-cache-dir -r /tmp/requirements-pip.txt && \
   ansible --version && \
@@ -105,7 +102,12 @@ RUN set -eux; \
   # here imports oci as a library, so a symlinked console script is all that is needed.
   # System python by absolute path because the Ansible venv is active at this point.
   /usr/bin/python3 -m venv /opt/oci-cli && \
+  /opt/oci-cli/bin/pip install --no-cache-dir pip==26.2.2 && \
   /opt/oci-cli/bin/pip install --no-cache-dir oci-cli==${OCI_CLI_VERSION} && \
+  # oci-cli caps certifi<2026, which blocks GHSA-6q48-6c7w-9gw2 (CRITICAL). certifi is only a CA
+  # bundle, so overriding the cap is safe; pip logs a dependency-conflict ERROR and exits 0.
+  # Drop once oci-cli allows certifi>=2026.10.19.
+  /opt/oci-cli/bin/pip install --no-cache-dir certifi==2026.10.19 && \
   ln -s /opt/oci-cli/bin/oci /usr/local/bin/oci && \
   oci --version && \
   \

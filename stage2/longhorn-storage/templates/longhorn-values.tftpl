@@ -8,6 +8,12 @@ preUpgradeChecker:
   jobEnabled: true
   upgradeVersionCheck: true
 
+# From 1.12.1 the chart's own NetworkPolicies default on, and Cilium enforces them, which blocks
+# Prometheus from scraping longhorn-manager:9500 unless metricsScrapeSources (1.12.2+) lists
+# it. Re-enabling restrictInternalTraffic needs a tested, narrowly scoped peer for Prometheus there.
+networkPolicies:
+  restrictInternalTraffic: false
+
 csi:
   kubeletRootDir: ~
   attacherReplicaCount: 1
@@ -52,6 +58,11 @@ longhornManager:
     - key: node.homelab/class
       operator: Exists
       effect: NoSchedule
+
+# 1.13.0 moves the cluster-wide pod and PV controllers into this Deployment. The chart default of
+# 3 replicas is for multi-node HA; one active leader is enough on a single control-plane node.
+longhornGlobalManager:
+  replicas: 1
 
 # Exposure is module-owned, see httproute.tf. The host is served by the Istio gateway through a
 # ListenerSet plus an HTTPRoute, so the chart must not also render an Ingress for it.

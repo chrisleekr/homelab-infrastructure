@@ -370,7 +370,7 @@
     "mappings": {
       "_meta": {
         "beat": "filebeat",
-        "version": "8.19.20"
+        "version": "8.19.23"
       },
       "dynamic_templates": [
         {

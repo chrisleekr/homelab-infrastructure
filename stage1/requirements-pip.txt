@@ -1,13 +1,16 @@
 # Keep ansible-core within the release series required by ansible.
-ansible==14.3.1
-ansible-core==2.21.3
-# Upgrade to 35.0.0 for urllib3 2.6.x compatibility (34.1.0 has urllib3<2.4.0 constraint)
-# Reference: https://pypi.org/project/kubernetes/35.0.0/
+ansible==14.5.0
+ansible-core==2.21.5
+# Hold below 37: it is a generator rewrite and kubernetes.core has no release supporting it yet.
+# Reference: https://github.com/ansible-collections/kubernetes.core/pull/1274
 kubernetes==36.0.3
-# Pin urllib3 to fix CVE-2025-66418, CVE-2025-66471, CVE-2026-21441
+# 2.8.0 fixes CVE-2026-97687 and CVE-2026-97689.
 # Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
-urllib3>=2.7.0
+urllib3>=2.8.0
 # Pin cryptography to fix CVE-2026-69247 (HIGH) - Bleichenbacher oracle in PKCS#7
 # EnvelopedData decryption. Supersedes the 49.0.0 pin for CVE-2026-26007.
 # Reference: https://avd.aquasec.com/nvd/cve-2026-69247
 cryptography>=50.0.1
+# Pin certifi to fix GHSA-6q48-6c7w-9gw2 (CRITICAL) - removes emSign ECC Root CA - G3, whose intermediates had compromised keys
+# Reference: https://github.com/advisories/GHSA-6q48-6c7w-9gw2
+certifi>=2026.10.19

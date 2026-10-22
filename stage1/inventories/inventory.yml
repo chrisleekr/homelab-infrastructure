@@ -54,23 +54,23 @@ cluster:
 
     ########################
     # Start: Kubeadm
-    runc_version: "1.5.1" # https://github.com/opencontainers/runc/releases
+    runc_version: "1.5.2" # https://github.com/opencontainers/runc/releases
     cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
     crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
-    containerd_version: "2.3.4" # https://github.com/containerd/containerd/releases
-    nerdctl_version: "2.3.5" # https://github.com/containerd/nerdctl/releases
+    containerd_version: "2.3.7" # https://github.com/containerd/containerd/releases
+    nerdctl_version: "2.4.1" # https://github.com/containerd/nerdctl/releases
     # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
     # A bump is what arms the upgrade path; see docs/operations/kubernetes-upgrades.md.
-    kubeadm_version: "1.36.3" # https://kubernetes.io/releases/
-    kubectl_version: "1.36.3" # https://kubernetes.io/releases/
-    kubelet_service_version: "0.21.1" # https://github.com/kubernetes/release/releases
+    kubeadm_version: "1.36.5" # https://kubernetes.io/releases/
+    kubectl_version: "1.36.5" # https://kubernetes.io/releases/
+    kubelet_service_version: "0.22.0" # https://github.com/kubernetes/release/releases
 
     # Two distinct Cilium versions. cilium_version is the agent/operator release that runs
     # in the cluster; cilium_cli_version is only the local binary that drives Helm. They
     # move independently, so gating an agent upgrade on the CLI version compares unrelated
     # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_version: "1.20.2" # https://github.com/cilium/cilium/releases
+    cilium_version: "1.20.3" # https://github.com/cilium/cilium/releases
     cilium_cli_version: "0.20.1" # https://github.com/cilium/cilium-cli/releases
 
     # Split avoided the 1.20.0 ADS livelock (cilium#47624). The fix, an Envoy image bump
@@ -124,7 +124,7 @@ cluster:
          if tailscale_node_enable | bool else [] }}
 
     # Deprecated-API scanner run as an upgrade preflight.
-    pluto_version: "5.24.1" # https://github.com/FairwindsOps/pluto/releases
+    pluto_version: "5.24.4" # https://github.com/FairwindsOps/pluto/releases
 
     # Escape hatch. `-e kubeadm_upgrade_enabled=false` reduces a run to install-and-join
     # only, leaving every already-bootstrapped node untouched.
@@ -161,7 +161,7 @@ cluster:
     minikube_download_filename: "{{ minikube_redis_filename }}-{{ minikube_version }}"
 
     # minikube version number
-    minikube_version: "1.38.1"
+    minikube_version: "1.39.0"
 
     # Directory to store files downloaded for minikube
     minikube_download_dir: "{{ x_ansible_download_dir | default(ansible_facts.env.HOME + '/.ansible/tmp/downloads') }}"
@@ -171,7 +171,10 @@ cluster:
 
     ########################
     # Start: k3s vars
-    k3s_version: v1.34.3+k3s1
+    # k3s_server reinstalls any node older than this pin. Kubernetes upgrades one minor at a time,
+    # so an existing v1.34.x cluster must step through v1.35.x before taking this pin.
+    # https://docs.k3s.io/upgrades/manual
+    k3s_version: v1.36.5+k3s1
     token: '{{ lookup("env", "k3s_token") or ""}}'
     api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
     extra_server_args: "{{ lookup('env', 'k3s_extra_server_args') or '' }}"

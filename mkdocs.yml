@@ -174,6 +174,7 @@ nav:
       - Kubernetes upgrades: operations/kubernetes-upgrades.md
       - Adding a worker node: operations/adding-a-worker-node.md
       - Oracle free tier worker: operations/oracle-free-tier-worker.md
+      - Monitoring a host outside the cluster: operations/external-host-node-exporter.md
       - Bitwarden secrets: operations/bitwarden-secrets.md
       - Troubleshooting: operations/troubleshooting.md
   - Reference:

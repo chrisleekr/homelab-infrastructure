@@ -369,6 +369,24 @@ variable "prometheus_alertmanager_slack_credentials" {
   sensitive   = true
 }
 
+variable "prometheus_alertmanager_webhook_url" {
+  description = "Webhook URL for default-receiver. When set, Alertmanager posts notifications there instead of Slack. Leave empty to keep direct Slack delivery."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.prometheus_alertmanager_webhook_url == "" || can(regex("^https://[^/?#]+", var.prometheus_alertmanager_webhook_url))
+    error_message = "Give an https:// URL, or leave it empty to keep direct Slack delivery."
+  }
+}
+
+variable "prometheus_alertmanager_webhook_token" {
+  description = "Optional bearer token sent with webhook notifications. Leave empty when the webhook needs no authorization."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "prometheus_minio_job_bearer_token" {
   description = "The bearer token for the minio job scraper"
   type        = string
@@ -391,6 +409,50 @@ variable "prometheus_minio_job_resource_bearer_token" {
   description = "The bearer token for the minio job resource scraper"
   type        = string
   sensitive   = true
+}
+
+variable "prometheus_blackbox_gateway_ip" {
+  description = "LAN gateway the blackbox exporter pings, separating a LAN fault from a WAN fault."
+  type        = string
+
+  validation {
+    condition     = can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.prometheus_blackbox_gateway_ip))
+    error_message = "Must be a valid IPv4 address (e.g., 192.168.0.1)"
+  }
+}
+
+variable "prometheus_blackbox_lan_dns_servers" {
+  description = "LAN DNS resolvers (router, Pi-hole) the blackbox exporter queries directly. Empty probes public resolvers and CoreDNS only."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for server in var.prometheus_blackbox_lan_dns_servers : can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", server))]) && length(distinct(var.prometheus_blackbox_lan_dns_servers)) == length(var.prometheus_blackbox_lan_dns_servers)
+    error_message = "Each entry must be a valid IPv4 address (e.g., 192.168.0.53), listed once"
+  }
+}
+
+variable "prometheus_blackbox_http_targets" {
+  description = "HTTPS URLs the blackbox exporter fetches and expects a 2xx from, keyed by short name. Each becomes target https-<name>. Empty adds no probes."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    # "google" would duplicate the built-in https-google probe.
+    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", name)) && name != "google" && can(regex("^https://", url))])
+    error_message = "Keys must be lowercase letters, digits or inner hyphens other than google, and values must start with https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
+  }
+}
+
+variable "prometheus_node_exporter_external_targets" {
+  description = "node_exporter endpoints on hosts outside the cluster, as host:port. Scraped under job node-exporter, so the stack's node alerts cover them."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for target in var.prometheus_node_exporter_external_targets : can(regex("^[A-Za-z0-9.-]+:[0-9]{1,5}$", target))])
+    error_message = "Each entry must be host:port (e.g., 192.168.0.10:9100)"
+  }
 }
 
 variable "logging_module_enable" {
@@ -799,19 +861,19 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_postgres_image_tag" {
-  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid. Prisma migrations verified against 18.4-alpine"
+  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid"
   type        = string
-  default     = "18.4-alpine"
+  default     = "18.6-alpine"
 
   validation {
     condition     = var.litellm_postgres_image_tag != "latest" && endswith(var.litellm_postgres_image_tag, "-alpine")
@@ -987,7 +1049,7 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.2.2"
+  default     = "0.3.1"
 }
 
 variable "omniroute_image_tag" {

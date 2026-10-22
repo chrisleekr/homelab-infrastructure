@@ -36,7 +36,7 @@ resource "kubectl_manifest" "gitlab_postgres" {
     instances: 1
     # Pinned deliberately: the operator's own default is an 18.x image, above what GitLab 19.0
     # supports. "standard" is the supported variant; "system" is deprecated upstream.
-    imageName: ghcr.io/cloudnative-pg/postgresql:17.10-standard-trixie
+    imageName: ghcr.io/cloudnative-pg/postgresql:17.11-standard-trixie
     storage:
       size: ${var.gitlab_postgres_storage_size}
       storageClass: ${var.gitlab_persistence_storage_class_name}

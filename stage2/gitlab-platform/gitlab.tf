@@ -37,7 +37,7 @@ resource "helm_release" "gitlab" {
   name       = "gitlab"
   repository = "https://charts.gitlab.io/"
   chart      = "gitlab"
-  version    = "10.4.1"
+  version    = "10.5.1"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

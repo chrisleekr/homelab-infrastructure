@@ -9,7 +9,7 @@ default_stages:
 
 repos:
   - repo: https://github.com/ansible/ansible-lint
-    rev: v26.6.0
+    rev: v26.10.1
     hooks:
       - id: ansible-lint
         args:
@@ -126,7 +126,7 @@ repos:
         files: ^(Dockerfile|stage1/inventories/inventory\.yml|README\.md|docs/.*\.md|scripts/sync-versions\.sh)$
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.1
+    rev: v1.109.3
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
@@ -189,7 +189,7 @@ repos:
         args: ["--branch", "main"]
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks
         stages: [pre-commit]

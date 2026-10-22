@@ -30,7 +30,7 @@ resource "helm_release" "oauth2_proxy" {
   name       = "oauth2-proxy"
   repository = "https://oauth2-proxy.github.io/manifests"
   chart      = "oauth2-proxy"
-  version    = "10.7.0"
+  version    = "10.7.1"
   namespace  = kubernetes_namespace_v1.auth_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

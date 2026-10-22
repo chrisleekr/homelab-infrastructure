@@ -55,7 +55,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
       spec {
         init_container {
-          image = "busybox:1.37.0"
+          image = "busybox:1.38.0"
           name  = "sysctler"
           security_context {
             privileged = true
@@ -67,7 +67,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
         container {
           name  = "wireguard"
-          image = "linuxserver/wireguard:1.0.20260223-r0-ls120"
+          image = "linuxserver/wireguard:1.0.20260223-r0-ls126"
 
           resources {
             requests = {
