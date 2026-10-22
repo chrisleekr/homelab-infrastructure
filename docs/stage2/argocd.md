@@ -266,7 +266,7 @@ Navigate to `https://argocd.chrislee.local` and authenticate through Auth0.
 | Repository | <https://argoproj.github.io/argo-helm> |
 | Chart | `argo-cd` |
 | Version | `10.10.5` |
-| App Version | `v3.5.1` |
+| App Version | `v3.5.5` |
 
 ## Application Example
 

@@ -809,7 +809,7 @@ variable "litellm_image_tag" {
 }
 
 variable "litellm_postgres_image_tag" {
-  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid. Prisma migrations verified against 18.4-alpine"
+  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid"
   type        = string
   default     = "18.6-alpine"
 
