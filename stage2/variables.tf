@@ -433,13 +433,14 @@ variable "prometheus_blackbox_lan_dns_servers" {
 }
 
 variable "prometheus_blackbox_http_targets" {
-  description = "HTTP(S) URLs the blackbox exporter fetches and expects a 2xx from, keyed by short name. Each becomes target https-<name>. Empty adds no probes."
+  description = "HTTPS URLs the blackbox exporter fetches and expects a 2xx from, keyed by short name. Each becomes target https-<name>. Empty adds no probes."
   type        = map(string)
   default     = {}
 
   validation {
-    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9-]+$", name)) && can(regex("^https?://", url))])
-    error_message = "Keys must be lowercase letters, digits or hyphens, and values must start with http:// or https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
+    # "google" would duplicate the built-in https-google probe.
+    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9-]+$", name)) && name != "google" && can(regex("^https://", url))])
+    error_message = "Keys must be lowercase letters, digits or hyphens other than google, and values must start with https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
   }
 }
 

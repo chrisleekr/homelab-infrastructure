@@ -139,7 +139,7 @@ variable "prometheus_blackbox_lan_dns_servers" {
 }
 
 variable "prometheus_blackbox_http_targets" {
-  description = "HTTP(S) URLs the blackbox exporter fetches, keyed by short name."
+  description = "HTTPS URLs the blackbox exporter fetches, keyed by short name."
   type        = map(string)
 }
 

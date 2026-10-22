@@ -23,6 +23,8 @@ flowchart LR
 
 The scrape job is named `node-exporter`, the same as the in-cluster exporter, so the kube-prometheus-stack node alerting rules (filesystem filling up, clock skew, memory pressure and the rest) apply to the external host with no extra rules. The host is told apart by its `instance` label.
 
+The stack's node recording rules select the same job, so the host's CPU and memory also count toward the cluster-wide figures, for example the CPU and memory utilisation panels on the "Kubernetes / Compute Resources / Cluster" dashboard. Read cluster headroom from per-node panels, or filter on `instance`, while an external host is listed.
+
 ## 1. Install node_exporter on the host
 
 Pick one method.

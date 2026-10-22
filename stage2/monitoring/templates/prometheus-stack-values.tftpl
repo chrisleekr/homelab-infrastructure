@@ -306,6 +306,8 @@ prometheus:
 %{ if length(node_exporter_external_targets) > 0 ~}
     # Hosts outside the cluster. The job name matches the in-cluster node-exporter, so the
     # stack's node alerting rules, which select job="node-exporter", cover these hosts too.
+    # The node recording rules select the same job, so cluster CPU and memory dashboards include
+    # these hosts. See docs/operations/external-host-node-exporter.md.
     - job_name: node-exporter
       static_configs:
       - targets: ${jsonencode(node_exporter_external_targets)}
