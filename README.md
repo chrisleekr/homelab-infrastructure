@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/push.yml)
 [![Container Security](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml/badge.svg)](https://github.com/chrisleekr/homelab-infrastructure/actions/workflows/container-security.yml)
-[![Terraform](https://img.shields.io/badge/terraform-1.16.2-blue)](https://www.terraform.io/)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.3-blue)](https://kubernetes.io/)
+[![Terraform](https://img.shields.io/badge/terraform-1.17.0-blue)](https://www.terraform.io/)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.36.5-blue)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Provisioning a Kubernetes cluster with kubeadm/k3s, Ansible and Terraform
@@ -65,11 +65,11 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 <!-- VERSIONS_START - Do not remove this comment, used by sync-versions workflow -->
 | Tool | Version |
 |------|---------|
-| kubectl | 1.36.3 |
-| helm | 4.3.0 |
-| terraform | 1.16.2 |
-| taskfile | 3.53.1 |
-| trivy | 0.74.0 |
+| kubectl | 1.36.5 |
+| helm | 4.3.1 |
+| terraform | 1.17.0 |
+| taskfile | 3.54.0 |
+| trivy | 0.76.1 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at [Version pins](docs/reference/versions.md).

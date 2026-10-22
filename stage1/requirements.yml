@@ -1,12 +1,12 @@
 ---
 collections:
   - name: ansible.posix
-    version: ">=2.1.0"
+    version: ">=2.2.2"
 
   - name: community.general
-    version: ">=12.0.1"
+    version: ">=13.5.0"
 
   - name: kubernetes.core
     # 6.4.0 adds Helm v4 compatibility (issue #1038); <6.4.0 emits the
     # removed `helm list --all` flag and fails against Helm 4.x.
-    version: ">=6.4.0"
+    version: ">=6.6.0"
