@@ -45,6 +45,24 @@ variable "prometheus_alertmanager_slack_credentials" {
   sensitive   = true
 }
 
+variable "prometheus_alertmanager_webhook_url" {
+  description = "Webhook URL for default-receiver. When set, Alertmanager posts notifications there instead of Slack. Leave empty to keep direct Slack delivery."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.prometheus_alertmanager_webhook_url == "" || can(regex("^https://", var.prometheus_alertmanager_webhook_url))
+    error_message = "Give an https:// URL, or leave it empty to keep direct Slack delivery."
+  }
+}
+
+variable "prometheus_alertmanager_webhook_token" {
+  description = "Optional bearer token sent with webhook notifications. Leave empty when the webhook needs no authorization."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "prometheus_minio_job_bearer_token" {
   description = "The bearer token for the minio job scraper"
   type        = string
@@ -108,4 +126,24 @@ variable "istio_gateway_namespace" {
   description = "Namespace of the shared Istio Gateway. The AuthorizationPolicy is created here, because Istio requires a policy to sit beside the resource its targetRefs names."
   type        = string
   default     = "istio-ingress"
+}
+
+variable "prometheus_blackbox_gateway_ip" {
+  description = "LAN gateway the blackbox exporter pings, separating a LAN fault from a WAN fault."
+  type        = string
+}
+
+variable "prometheus_blackbox_lan_dns_servers" {
+  description = "LAN DNS resolvers the blackbox exporter queries directly."
+  type        = list(string)
+}
+
+variable "prometheus_blackbox_http_targets" {
+  description = "HTTP(S) URLs the blackbox exporter fetches, keyed by short name."
+  type        = map(string)
+}
+
+variable "prometheus_node_exporter_external_targets" {
+  description = "node_exporter endpoints on hosts outside the cluster, as host:port."
+  type        = list(string)
 }

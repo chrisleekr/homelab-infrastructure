@@ -248,6 +248,10 @@ Stage 0 has no `hostname_prefix`. Each node key in `stage0_oci_accounts` is the 
 | `TF_VAR_prometheus_minio_job_node_bearer_token` | 🔑 | `mc admin prometheus generate minio node` | Scrape MinIO node metrics |
 | `TF_VAR_prometheus_minio_job_bucket_bearer_token` | 🔑 | `mc admin prometheus generate minio bucket` | Scrape MinIO bucket metrics |
 | `TF_VAR_prometheus_minio_job_resource_bearer_token` | 🔑 | `mc admin prometheus generate minio resource` | Scrape MinIO resource metrics |
+| `TF_VAR_prometheus_blackbox_gateway_ip` | | your router's LAN address | Blackbox ICMP probe of the gateway. Required: an empty value fails the plan |
+| `TF_VAR_prometheus_blackbox_lan_dns_servers` | | raw JSON list, e.g. `["<router>", "<pihole>"]` | LAN resolvers the Blackbox exporter queries. Empty probes public resolvers and CoreDNS only |
+| `TF_VAR_prometheus_blackbox_http_targets` | | raw JSON object, e.g. `{"app": "https://app.example.com/healthz"}` | URLs the Blackbox exporter fetches, each as target `https-<name>`. Empty adds no HTTP probes beyond `https-google` |
+| `TF_VAR_prometheus_node_exporter_external_targets` | | raw JSON list, e.g. `["<host>:9100"]` | node_exporter on hosts outside the cluster. See [Monitoring a host outside the cluster](external-host-node-exporter.md) |
 
 The channel name carries no leading `#`. The values template adds it, so `#notification` renders as `##notification` and every `chat.postMessage` fails with `channel_not_found`. `terraform plan` rejects a leading `#` rather than applying it.
 

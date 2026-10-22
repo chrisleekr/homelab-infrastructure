@@ -180,10 +180,19 @@ module "monitoring" {
   prometheus_alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
   prometheus_alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
 
+  prometheus_alertmanager_webhook_url   = var.prometheus_alertmanager_webhook_url
+  prometheus_alertmanager_webhook_token = var.prometheus_alertmanager_webhook_token
+
   prometheus_minio_job_bearer_token          = var.prometheus_minio_job_bearer_token
   prometheus_minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
   prometheus_minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
   prometheus_minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
+
+  prometheus_blackbox_gateway_ip      = var.prometheus_blackbox_gateway_ip
+  prometheus_blackbox_lan_dns_servers = var.prometheus_blackbox_lan_dns_servers
+  prometheus_blackbox_http_targets    = var.prometheus_blackbox_http_targets
+
+  prometheus_node_exporter_external_targets = var.prometheus_node_exporter_external_targets
 
   # Depends on the logging module, configure elastalert2
   elastalert2_elasticsearch_enabled  = var.logging_module_enable

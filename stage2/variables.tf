@@ -369,6 +369,24 @@ variable "prometheus_alertmanager_slack_credentials" {
   sensitive   = true
 }
 
+variable "prometheus_alertmanager_webhook_url" {
+  description = "Webhook URL for default-receiver. When set, Alertmanager posts notifications there instead of Slack. Leave empty to keep direct Slack delivery."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.prometheus_alertmanager_webhook_url == "" || can(regex("^https://", var.prometheus_alertmanager_webhook_url))
+    error_message = "Give an https:// URL, or leave it empty to keep direct Slack delivery."
+  }
+}
+
+variable "prometheus_alertmanager_webhook_token" {
+  description = "Optional bearer token sent with webhook notifications. Leave empty when the webhook needs no authorization."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "prometheus_minio_job_bearer_token" {
   description = "The bearer token for the minio job scraper"
   type        = string
@@ -391,6 +409,49 @@ variable "prometheus_minio_job_resource_bearer_token" {
   description = "The bearer token for the minio job resource scraper"
   type        = string
   sensitive   = true
+}
+
+variable "prometheus_blackbox_gateway_ip" {
+  description = "LAN gateway the blackbox exporter pings, separating a LAN fault from a WAN fault."
+  type        = string
+
+  validation {
+    condition     = can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", var.prometheus_blackbox_gateway_ip))
+    error_message = "Must be a valid IPv4 address (e.g., 192.168.0.1)"
+  }
+}
+
+variable "prometheus_blackbox_lan_dns_servers" {
+  description = "LAN DNS resolvers (router, Pi-hole) the blackbox exporter queries directly. Empty probes public resolvers and CoreDNS only."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for server in var.prometheus_blackbox_lan_dns_servers : can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", server))])
+    error_message = "Each entry must be a valid IPv4 address (e.g., 192.168.0.53)"
+  }
+}
+
+variable "prometheus_blackbox_http_targets" {
+  description = "HTTP(S) URLs the blackbox exporter fetches and expects a 2xx from, keyed by short name. Each becomes target https-<name>. Empty adds no probes."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9-]+$", name)) && can(regex("^https?://", url))])
+    error_message = "Keys must be lowercase letters, digits or hyphens, and values must start with http:// or https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
+  }
+}
+
+variable "prometheus_node_exporter_external_targets" {
+  description = "node_exporter endpoints on hosts outside the cluster, as host:port. Scraped under job node-exporter, so the stack's node alerts cover them."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for target in var.prometheus_node_exporter_external_targets : can(regex("^[A-Za-z0-9.-]+:[0-9]{1,5}$", target))])
+    error_message = "Each entry must be host:port (e.g., 192.168.0.10:9100)"
+  }
 }
 
 variable "logging_module_enable" {

@@ -58,7 +58,7 @@ resource "helm_release" "kubecost" {
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
   # https://github.com/kubecost/kubecost/releases
-  version = "3.2.3"
+  version = "3.3.1"
   wait    = true
   # 3.x splits the single cost-analyzer pod into four workloads, each pulling its own image and
   # waiting on a Longhorn volume. 300s was already marginal and timed out on the 2.9.7 upgrade.

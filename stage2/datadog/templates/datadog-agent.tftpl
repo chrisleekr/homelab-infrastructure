@@ -79,6 +79,17 @@ spec:
 
   override:
     nodeAgent:
+      # Host journal for the journald log source below. machine-id lets the agent open the host's
+      # journal from inside the container.
+      # https://docs.datadoghq.com/integrations/journald/
+      volumes:
+        - name: journal
+          hostPath:
+            path: /var/log/journal
+        - name: machine-id
+          hostPath:
+            path: /etc/machine-id
+            type: File
       # Exists on the bare key tolerates any node.homelab/class value, so the agent covers
       # current and future tainted workers instead of the control plane alone.
       tolerations:
@@ -102,8 +113,26 @@ spec:
             # https://github.com/DataDog/datadog-agent/blob/7.81.2/pkg/config/config_template.yaml#L1145-L1156
             - name: DD_SECRET_SCOPE_INTEGRATION_TO_THEIR_K8S_NAMESPACE
               value: "true"
+          volumeMounts:
+            - name: journal
+              mountPath: /var/log/journal
+              readOnly: true
+            - name: machine-id
+              mountPath: /etc/machine-id
+              readOnly: true
       extraConfd:
         configDataMap:
+          # Node systemd journal: kernel, kubelet, containerd, iscsid. Container stdout is already
+          # collected from /var/log/pods, and does not pass through the journal.
+          # UFW logs one kernel line per allowed packet, about 1.3M a day on the control plane and
+          # most of the journal. The agent drops those before sending; blocked packets still ship.
+          journald.yaml: |-
+            logs:
+              - type: journald
+                log_processing_rules:
+                  - type: exclude_at_match
+                    name: drop_ufw_allowed_packets
+                    pattern: '\[UFW (ALLOW|AUDIT)\]'
           # Shipped auto_conf.yaml plus min_collection_interval. At the default 15s this check parses
           # ~50k samples per run and was the agent's largest CPU consumer. Same metrics, 60s resolution.
           kube_apiserver_metrics.yaml: |-

@@ -52,6 +52,10 @@ finopsagent:
     enabled: true
     size: 8Gi
 
+# 3.3 adds an MCP server that follows aggregator.enabled and requests 250m/1Gi. Not used here.
+mcp:
+  enabled: false
+
 forecasting:
   resources:
     requests:

@@ -33,7 +33,7 @@ resource "helm_release" "prometheus_operator" {
   name       = "kube-prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  version    = "88.3.0"
+  version    = "92.11.0"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
@@ -52,10 +52,15 @@ resource "helm_release" "prometheus_operator" {
         alertmanager_slack_channel     = var.prometheus_alertmanager_slack_channel
         alertmanager_slack_credentials = var.prometheus_alertmanager_slack_credentials
 
+        alertmanager_webhook_url   = var.prometheus_alertmanager_webhook_url
+        alertmanager_webhook_token = var.prometheus_alertmanager_webhook_token
+
         minio_job_bearer_token          = var.prometheus_minio_job_bearer_token
         minio_job_node_bearer_token     = var.prometheus_minio_job_node_bearer_token
         minio_job_bucket_bearer_token   = var.prometheus_minio_job_bucket_bearer_token
         minio_job_resource_bearer_token = var.prometheus_minio_job_resource_bearer_token
+
+        node_exporter_external_targets = var.prometheus_node_exporter_external_targets
       }
     )
   ]

@@ -132,7 +132,7 @@ task stage2:terraform:apply
 | Feature | Description |
 | --------- | ------------- |
 | Infrastructure Monitoring | Node, pod, and container metrics |
-| Log Collection | Container log aggregation |
+| Log Collection | Container logs, plus each node's systemd journal. See [Node Journal Logs](#node-journal-logs) |
 | APM | Distributed tracing (requires app instrumentation) |
 | Cluster Agent | Kubernetes events and metadata |
 | Admission Controller | Auto-injection of tracing libraries |
@@ -167,6 +167,22 @@ A resolved handle is listed under "Secrets handle resolved". A refused one logs 
 
 See [Datadog secrets management](https://docs.datadoghq.com/agent/configuration/secrets-management/) and [Kubernetes integrations](https://docs.datadoghq.com/containers/kubernetes/integrations/).
 
+## Node Journal Logs
+
+The node agent also tails each node's systemd journal: kernel, kubelet, containerd, iscsid and the other host services. Container output is not duplicated, because containerd writes it to `/var/log/pods` rather than the journal.
+
+- The agent mounts `/var/log/journal` and `/etc/machine-id` from the host read-only, as the [journald integration](https://docs.datadoghq.com/integrations/journald/) requires for a containerized agent.
+- Each log's `source` and `service` come from the unit (`SYSLOG_IDENTIFIER`, then `_SYSTEMD_UNIT`), so search with `source:kernel` or `source:kubelet`.
+- A new source starts at the end of the journal. Existing history is not backfilled.
+- UFW logs one kernel line per allowed packet, which was most of the control plane's journal (about 1.3M of 1.66M lines a day). The agent drops `[UFW ALLOW]` and `[UFW AUDIT]` lines before sending. `[UFW BLOCK]` lines still ship.
+
+Verify from the agent on a node:
+
+```bash
+P=$(kubectl -n datadog get pod -l app.kubernetes.io/component=agent --field-selector spec.nodeName=<node> -o name)
+kubectl -n datadog exec $P -c agent -- agent status | grep -A6 'journald'
+```
+
 ## Datadog Sites
 
 | Site | URL | Region |
@@ -189,7 +205,7 @@ Datadog pricing is based on:
 For homelab use, consider:
 
 - Free tier: 5 hosts, limited retention
-- Reducing log volume with filtering
+- Reducing log volume with filtering. Node journal logs are billed as ingested logs; the UFW filter above is the main reduction
 - Disabling APM if not needed
 
 NPM (`features.npm`) is disabled. It bills a per-host NPM charge monthly, and this cluster never emitted the `network.*`/`dns.*` data to justify it. Disabling it does not remove the `system-probe` container, which `features.oomKill` requires independently.
