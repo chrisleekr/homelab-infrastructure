@@ -427,8 +427,8 @@ variable "prometheus_blackbox_lan_dns_servers" {
   default     = []
 
   validation {
-    condition     = alltrue([for server in var.prometheus_blackbox_lan_dns_servers : can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", server))])
-    error_message = "Each entry must be a valid IPv4 address (e.g., 192.168.0.53)"
+    condition     = alltrue([for server in var.prometheus_blackbox_lan_dns_servers : can(regex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$", server))]) && length(distinct(var.prometheus_blackbox_lan_dns_servers)) == length(var.prometheus_blackbox_lan_dns_servers)
+    error_message = "Each entry must be a valid IPv4 address (e.g., 192.168.0.53), listed once"
   }
 }
 
@@ -439,8 +439,8 @@ variable "prometheus_blackbox_http_targets" {
 
   validation {
     # "google" would duplicate the built-in https-google probe.
-    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9-]+$", name)) && name != "google" && can(regex("^https://", url))])
-    error_message = "Keys must be lowercase letters, digits or hyphens other than google, and values must start with https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
+    condition     = alltrue([for name, url in var.prometheus_blackbox_http_targets : can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", name)) && name != "google" && can(regex("^https://", url))])
+    error_message = "Keys must be lowercase letters, digits or inner hyphens other than google, and values must start with https:// (e.g., {\"app\" = \"https://app.example.com/healthz\"})"
   }
 }
 
