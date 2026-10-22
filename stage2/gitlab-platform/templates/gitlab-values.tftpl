@@ -719,7 +719,8 @@ gitlab-runner:
       [[runners]]
         [runners.kubernetes]
           namespace = "{{.Release.Namespace}}"
-          image = "docker:stable"
+          # Major-only tag tracks patch releases. docker:stable is frozen upstream since 2020.
+          image = "docker:29"
           privileged = true
           # Without these, job pods are BestEffort and invisible to the scheduler: it cannot
           # account for them, so concurrent jobs overcommit the node. Requests sit near the typical

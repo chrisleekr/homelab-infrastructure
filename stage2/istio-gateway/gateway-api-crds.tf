@@ -17,7 +17,7 @@
 # To move to a new Gateway API release: set istio_gateway_api_version, then replace the values in
 # gateway_api_objects with what this prints (terraform fmt fixes the alignment):
 #
-#   V=v1.6.2; for f in gatewayclasses gateways httproutes listenersets referencegrants vap_safeupgrades; do \
+#   V=v1.6.3; for f in gatewayclasses gateways httproutes listenersets referencegrants vap_safeupgrades; do \
 #     printf '%-16s = "%s"\n' "$f" "$(curl -fsSL \
 #       "https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/$V/config/crd/standard/gateway.networking.k8s.io_$f.yaml" \
 #       | shasum -a 256 | cut -d' ' -f1)"; \
@@ -27,12 +27,12 @@ locals {
 
   # Upstream file name stem, mapped to the sha256 of that file at the pinned version.
   gateway_api_objects = {
-    gatewayclasses   = "47875d2b4d7491d574ba47116226d9507e287df80463ea2cec64340d7fdae0e9"
-    gateways         = "be942c2d5e2a5cd3adb506e5d19a493e412492b41577b43b49d7075674af9438"
-    httproutes       = "b460061056e52495dc9450dfcccf0f060ef0f5925d04f4f4905276fdb09eb8f9"
-    listenersets     = "b1487748372b0bdbdd420918e719f0c2c914d6f01154d4e42451405a73b491e5"
-    referencegrants  = "430cc8bb96c4414ce178853f8a01d02c4e5ec0565fc128a4bdf21e37bade3882"
-    vap_safeupgrades = "49ba8406214d445e4cea5cf21b45312cef353a9ee90eab1db41803c7458044f9"
+    gatewayclasses   = "d32070cb6930273a07c5ca183135712b1918cc140c6d9b6cef441cdf0e562345"
+    gateways         = "905c89d8fefaab9088bf9d0a8d47ebd7ec4e653a914d4bfaa575a7716f07a828"
+    httproutes       = "a89d17ff5ed060fa0eac015524f9252bb291f616412c13ac8cb952ed9c25c5ad"
+    listenersets     = "b81f1771dcd96dfb3bb500e07dafef79a2aa58c4a9b4b366d54ca29e8ecccb5e"
+    referencegrants  = "ff8db85aaacc91fb4096975afb5782540572bf2f04842a258094cd7f50c7f38a"
+    vap_safeupgrades = "66b1d7b2c392c0e4dd4b2950e2af62811f8288a65e50708e2b3d26d4433af84c"
   }
 
   gateway_api_crd_objects = {

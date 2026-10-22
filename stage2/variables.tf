@@ -799,19 +799,19 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_postgres_image_tag" {
-  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid. Prisma migrations verified against 18.4-alpine"
+  description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid"
   type        = string
-  default     = "18.4-alpine"
+  default     = "18.6-alpine"
 
   validation {
     condition     = var.litellm_postgres_image_tag != "latest" && endswith(var.litellm_postgres_image_tag, "-alpine")
@@ -987,7 +987,7 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.2.2"
+  default     = "0.3.1"
 }
 
 variable "omniroute_image_tag" {

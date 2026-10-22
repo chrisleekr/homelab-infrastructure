@@ -1,8 +1,8 @@
 # Helm values for the omniroute chart. Overrides ONLY what the module must own; every other key
-# keeps its chart 0.2.2 default. Each key below was confirmed against a `helm template` render of
-# chart 0.2.2. Rendered by templatefile() from omniroute.tf.
+# keeps its chart 0.3.1 default. Each key below was confirmed against a `helm template` render of
+# chart 0.3.1. Rendered by templatefile() from omniroute.tf.
 
-# Pins the Service/Deployment name so the Ingress backends and the module outputs reference a single
+# Pins the Service/Deployment name so the HTTPRoute backends and the module outputs reference a single
 # local instead of inheriting whatever the Helm release happens to be called.
 fullnameOverride: omniroute
 
@@ -19,7 +19,7 @@ image:
 auth:
   existingSecret: ${auth_secret_name}
 
-# The open API edge Ingress (/v1 and /api/v1) is unauthenticated, so require an API key on proxy
+# The open API edge route (/v1 and /api/v1) is unauthenticated, so require an API key on proxy
 # calls. extraConfig
 # merges over config, so this wins over the chart default REQUIRE_API_KEY "false".
 #
@@ -67,7 +67,4 @@ persistence:
   size: ${storage_size}
   storageClass: ${storage_class}
 
-# Ingress is module-owned (ingress.tf): the dashboard sits behind oauth2-proxy while the API prefixes
-# (/v1 and /api/v1) stay open to key-authenticated clients. Disable the chart's own single Ingress.
-ingress:
-  enabled: false
+# The HTTPRoute is module-owned (httproute.tf), so the chart's own route.* stays at its default, off.

@@ -117,6 +117,7 @@
     "shellcheck",
     "sshpass",
     "stakater",
+    "sysctler",
     "tailnet",
     "tailscaled",
     "Taskfile",

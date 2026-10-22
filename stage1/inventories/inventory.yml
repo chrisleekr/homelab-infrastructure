@@ -171,6 +171,9 @@ cluster:
 
     ########################
     # Start: k3s vars
+    # k3s_server reinstalls any node older than this pin. Kubernetes upgrades one minor at a time,
+    # so an existing v1.34.x cluster must step through v1.35.x before taking this pin.
+    # https://docs.k3s.io/upgrades/manual
     k3s_version: v1.36.5+k3s1
     token: '{{ lookup("env", "k3s_token") or ""}}'
     api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"

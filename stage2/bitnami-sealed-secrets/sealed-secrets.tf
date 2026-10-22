@@ -6,7 +6,7 @@ resource "helm_release" "sealed_secrets" {
   name       = "sealed-secrets"
   repository = "https://bitnami.github.io/sealed-secrets"
   chart      = "sealed-secrets"
-  version    = "2.19.1"
+  version    = "2.20.0"
   namespace  = kubernetes_namespace_v1.sealed_secrets_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

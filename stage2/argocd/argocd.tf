@@ -29,7 +29,7 @@ resource "helm_release" "argo_cd" {
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = "10.3.3"
+  version    = "10.10.5"
   namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
