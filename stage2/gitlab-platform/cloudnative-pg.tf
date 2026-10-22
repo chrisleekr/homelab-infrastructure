@@ -12,7 +12,7 @@ resource "helm_release" "cloudnative_pg" {
   name       = "cloudnative-pg"
   repository = "https://cloudnative-pg.io/charts"
   chart      = "cloudnative-pg"
-  version    = "0.29.0"
+  version    = "0.29.1"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

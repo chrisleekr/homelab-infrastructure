@@ -1,10 +1,11 @@
-# https://longhorn.io/docs/archives/1.1.1/snapshots-and-backups/csi-snapshot-support/enable-csi-snapshot-support/
+# Tag matches the chart's image.csi.snapshotter.tag.
+# https://longhorn.io/docs/1.13.0/snapshots-and-backups/csi-snapshot-support/enable-csi-snapshot-support/
 
 locals {
   longhorn_crds = [
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml",
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml",
-    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.2.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml"
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.6.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml",
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.6.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml",
+    "https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/refs/tags/v8.6.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml"
   ]
 }
 

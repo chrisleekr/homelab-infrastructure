@@ -4,7 +4,7 @@ resource "helm_release" "reloader" {
   name       = "stakater"
   repository = "https://stakater.github.io/stakater-charts"
   chart      = "reloader"
-  version    = "2.2.16"
+  version    = "2.2.18"
   namespace  = kubernetes_namespace_v1.reloader_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

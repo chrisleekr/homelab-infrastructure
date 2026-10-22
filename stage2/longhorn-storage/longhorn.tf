@@ -66,9 +66,9 @@ resource "helm_release" "longhorn" {
   namespace  = kubernetes_namespace_v1.longhorn.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
-  # Not 1.11.0: its longhorn-instance-manager image leaks proxy connections and needs a hotfix image
-  # override. 1.11.3 ships the fix, so stay on the latest patch of the minor.
-  version = "1.11.3"
+  # Longhorn refuses to skip a minor (preUpgradeChecker.upgradeVersionCheck), so 1.12.x must stop at
+  # 1.13.x before 1.14. 1.13 needs Kubernetes 1.34+.
+  version = "1.13.0"
   wait    = true
   timeout = 300
 

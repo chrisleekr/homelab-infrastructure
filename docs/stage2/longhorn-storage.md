@@ -9,6 +9,7 @@ flowchart TB
     subgraph k8s [Kubernetes Cluster]
         subgraph ns [Namespace: longhorn-system]
             Manager[Longhorn Manager]
+            GlobalMgr["Longhorn Global Manager<br/>1 replica"]
             UI[Longhorn UI]
             Driver[CSI Driver]
         end
@@ -82,7 +83,7 @@ Enabling the setting does **not** remove disks from nodes Longhorn already knows
 
 ### Applying toleration changes
 
-`defaultSettings.taintToleration` is a Longhorn [Danger Zone](https://longhorn.io/docs/1.10.1/references/settings/#danger-zone) setting. Longhorn will not reconcile it into a component that has running engines or replicas, so on a cluster with attached volumes the Setting CR can sit at `APPLIED=false` indefinitely:
+`defaultSettings.taintToleration` is a Longhorn [Danger Zone](https://longhorn.io/docs/1.13.0/references/settings/#danger-zone) setting. Longhorn will not reconcile it into a component that has running engines or replicas, so on a cluster with attached volumes the Setting CR can sit at `APPLIED=false` indefinitely:
 
 ```bash
 kubectl -n longhorn-system get setting taint-toleration

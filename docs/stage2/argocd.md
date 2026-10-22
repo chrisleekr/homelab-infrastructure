@@ -19,7 +19,7 @@ flowchart TB
         OIDCSecret["argocd-auth0-secret<br/>OIDC client secret"]:::secret
         NotificationsSecret["argocd-notifications-slack-secret<br/>Slack bot token"]:::secret
         RBACConfig["argocd-rbac-cm<br/>default role and group policy"]:::resource
-        HelmRelease["argo-cd Helm release<br/>chart 10.3.3"]:::control
+        HelmRelease["argo-cd Helm release<br/>chart 10.10.5"]:::control
         CRDs["Argo CD CRDs<br/>Application, ApplicationSet, AppProject"]:::resource
         ListenerSet["ListenerSet plus HTTPRoute<br/>module owned, see httproute.tf"]:::network
         TLSSecret["cert-manager TLS Secret"]:::secret
@@ -265,7 +265,7 @@ Navigate to `https://argocd.chrislee.local` and authenticate through Auth0.
 |----------|-------|
 | Repository | <https://argoproj.github.io/argo-helm> |
 | Chart | `argo-cd` |
-| Version | `10.3.3` |
+| Version | `10.10.5` |
 | App Version | `v3.5.1` |
 
 ## Application Example
@@ -328,7 +328,7 @@ kubectl -n argocd get applications.argoproj.io
 - [Argo CD documentation](https://argo-cd.readthedocs.io/)
 - [Argo CD 3.4 to 3.5 upgrade guide](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/3.4-3.5/)
 - [Argo CD tested Kubernetes versions](https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/)
-- [Argo CD Helm chart 10.3.3](https://github.com/argoproj/argo-helm/tree/argo-cd-10.3.3/charts/argo-cd)
-- [Argo CD Helm values 10.3.3](https://github.com/argoproj/argo-helm/blob/argo-cd-10.3.3/charts/argo-cd/values.yaml)
+- [Argo CD Helm chart 10.10.5](https://github.com/argoproj/argo-helm/tree/argo-cd-10.10.5/charts/argo-cd)
+- [Argo CD Helm values 10.10.5](https://github.com/argoproj/argo-helm/blob/argo-cd-10.10.5/charts/argo-cd/values.yaml)
 - [Auth0 OIDC setup](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/auth0/)
 - [RBAC configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/)

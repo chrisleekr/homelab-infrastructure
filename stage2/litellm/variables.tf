@@ -33,7 +33,7 @@ variable "litellm_ui_paths" {
     # the proxy config and /public/* the model, agent, mcp and skill hubs, so both disclose which
     # providers hold keys here. No OpenAI-SDK client requests either. /health/* stays ungated for
     # probes and external monitoring.
-    # Ref: https://github.com/BerriAI/litellm/blob/v1.89.2/litellm/proxy/_types.py
+    # Ref: https://github.com/BerriAI/litellm/blob/v1.106.2/litellm/proxy/_types.py
     "/config/yaml", "/public",
   ]
 
@@ -49,19 +49,19 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag. Reference: https://github.com/BerriAI/litellm/tree/main/deploy/charts/litellm-helm"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.89.2"
+  default     = "1.106.2"
 }
 
 variable "litellm_postgres_image_tag" {
   description = "Tag for the upstream postgres image backing LiteLLM. Must be an -alpine tag: the StatefulSet sets fs_group = 70, which is the alpine postgres gid (the Debian variant uses 999)"
   type        = string
-  default     = "18.4-alpine"
+  default     = "18.6-alpine"
 
   validation {
     condition     = var.litellm_postgres_image_tag != "latest" && endswith(var.litellm_postgres_image_tag, "-alpine")

@@ -344,9 +344,9 @@ An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default 
 | `TF_VAR_litellm_storage_size` | | `10Gi` | Postgres volume size |
 | `TF_VAR_litellm_storage_class_name` | | `longhorn` | Storage class |
 | `TF_VAR_litellm_ui_paths` | | `["/ui","/sso","/litellm-asset-prefix","/fallback/login","/login","/docs","/redoc","/openapi.json","/routes","/config/yaml","/public"]` | Paths routed behind oauth2-proxy. Anything omitted is served unauthenticated |
-| `TF_VAR_litellm_chart_version` | | `1.89.2` | `litellm-helm` chart pin. Bump together with the image tag |
-| `TF_VAR_litellm_image_tag` | | `1.89.2` | `ghcr.io/berriai/litellm-database` pin |
-| `TF_VAR_litellm_postgres_image_tag` | | `18.4-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
+| `TF_VAR_litellm_chart_version` | | `1.106.2` | `litellm-helm` chart pin. Bump together with the image tag |
+| `TF_VAR_litellm_image_tag` | | `1.106.2` | `ghcr.io/berriai/litellm-database` pin |
+| `TF_VAR_litellm_postgres_image_tag` | | `18.6-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
 | `TF_VAR_litellm_replicas` | | `1` | Replica count |
 | `TF_VAR_litellm_master_key` | 🔑 | `echo "sk-$(openssl rand -hex 24)"` | Admin and API superuser key |
 | `TF_VAR_litellm_salt_key` | 🔑 | `echo "sk-$(openssl rand -hex 24)"` | Encrypts DB-stored provider credentials. **Write once, never rotate** |
@@ -363,7 +363,7 @@ Rotating `TF_VAR_litellm_salt_key` after models have been added through `/ui` ma
 | `TF_VAR_omniroute_domain` | | `omniroute.chrislee.local` | Host serving both the open API prefixes (`/v1`, `/api/v1`) and the dashboard |
 | `TF_VAR_omniroute_storage_size` | | `5Gi` | SQLite volume size |
 | `TF_VAR_omniroute_storage_class_name` | | `longhorn` | Storage class |
-| `TF_VAR_omniroute_chart_version` | | `0.2.2` | `omniroute` chart pin. Bump together with the image tag |
+| `TF_VAR_omniroute_chart_version` | | `0.3.1` | `omniroute` chart pin. Bump together with the image tag |
 | `TF_VAR_omniroute_image_tag` | | `""` | `diegosouzapw/omniroute` tag. Empty uses the chart appVersion; use `-web` for web-cookie providers |
 | `TF_VAR_omniroute_public_paths` | | `["/api/v1", "/v1"]` | Paths served by the open route. Anything omitted falls to the gated route, behind oauth2-proxy |
 | `TF_VAR_omniroute_gated_admin_suffixes` | | `["/management", "/agents", "/accounts", "/registered-keys"]` | Admin suffixes pulled back behind oauth2-proxy, applied to every public path prefix |

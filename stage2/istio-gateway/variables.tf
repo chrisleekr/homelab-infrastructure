@@ -7,7 +7,7 @@
 variable "istio_gateway_version" {
   description = "Istio version for both the base and istiod charts"
   type        = string
-  default     = "1.31.0"
+  default     = "1.31.2"
 }
 
 variable "istio_gateway_chart_repository" {
@@ -19,11 +19,11 @@ variable "istio_gateway_chart_repository" {
 variable "istio_gateway_api_version" {
   description = "Gateway API release tag, standard channel. The module fetches five CRDs from it plus the safe-upgrades ValidatingAdmissionPolicy, which rejects experimental CRDs and releases older than v1.5. Changing this requires refreshing the checksums in gateway-api-crds.tf"
   type        = string
-  default     = "v1.6.2"
+  default     = "v1.6.3"
 
   validation {
     condition     = can(regex("^v[0-9]+\\.[0-9]+\\.[0-9]+$", var.istio_gateway_api_version))
-    error_message = "Must be a released bundle version such as v1.6.2"
+    error_message = "Must be a released bundle version such as v1.6.3"
   }
 }
 
