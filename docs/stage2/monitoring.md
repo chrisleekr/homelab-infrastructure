@@ -60,6 +60,7 @@ flowchart TB
             KubeStateMetrics[kube-state-metrics]
             MinIO[MinIO Metrics]
             ServiceMonitors[ServiceMonitors]
+            Blackbox[Blackbox Exporter<br/>LAN, WAN and DNS probes]
         end
 
         subgraph logging [Logging Module]
@@ -91,6 +92,7 @@ flowchart TB
     StackRelease -->|deploys| AlertManager
     StackRelease -->|deploys| NodeExporter
     StackRelease -->|deploys| KubeStateMetrics
+    MonitoringModule -->|deploys| Blackbox
 
     User --> Gateway
     Gateway -->|ext_authz check| OAuth
@@ -140,6 +142,7 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 - `random_password.grafana_admin_password` - Grafana admin password
 - `kubectl_manifest.prometheus_rules` - Custom PrometheusRules, one per `*.tftpl` under `prometheus-rules/`, including the Istio gateway alerts
 - `helm_release.prometheus_operator` - kube-prometheus-stack
+- `helm_release.blackbox_exporter` - Blackbox exporter, with one ServiceMonitor per probe target
 - `kubectl_manifest.listener` - one ListenerSet per host, contributing its HTTPS listener to the shared Gateway
 - `kubectl_manifest.certificate` - one DNS-01 Certificate per host, reusing the Secret name the Ingress used
 - `kubectl_manifest.route` - one HTTPRoute per host, carrying the header filters
@@ -163,7 +166,23 @@ The stack values set `crds.enabled=false`. Do not enable it while the standalone
 | `prometheus_persistence_size` | Prometheus storage size | `10Gi` |
 | `prometheus_alertmanager_slack_channel` | Slack channel for alerts | (required) |
 | `prometheus_alertmanager_slack_credentials` | Slack bot token (`xoxb-`) with the `chat:write` scope | (required, sensitive) |
+| `prometheus_alertmanager_webhook_url` | Webhook URL. When set, `default-receiver` posts there instead of Slack | `""` (direct Slack) |
+| `prometheus_alertmanager_webhook_token` | Optional bearer token for the webhook | `""` (sensitive) |
 | `prometheus_minio_job_bearer_token` | MinIO metrics token | (required, sensitive) |
+
+### Blackbox Exporter
+
+| Name | Description | Default |
+|------|-------------|---------|
+| `prometheus_blackbox_gateway_ip` | LAN gateway to ping | (required) |
+| `prometheus_blackbox_lan_dns_servers` | LAN DNS resolvers (router, Pi-hole) to query directly | `[]` |
+| `prometheus_blackbox_http_targets` | URLs to fetch and expect a 2xx from, keyed by name; each becomes target `https-<name>` | `{}` |
+
+### External Hosts
+
+| Name | Description | Default |
+|------|-------------|---------|
+| `prometheus_node_exporter_external_targets` | node_exporter endpoints outside the cluster, as `host:port`. See [Monitoring a host outside the cluster](../operations/external-host-node-exporter.md) | `[]` |
 
 ### ElastAlert2
 
@@ -188,6 +207,15 @@ TF_VAR_prometheus_alertmanager_slack_credentials="xoxb-..."
 
 Each alert group keeps one Slack message. The first notification posts it, and every later notification for the same group rewrites it via `chat.update`, so the resolve and the 12h repeat both land as edits rather than new messages. An edit does not ping. Two gaps follow and are accepted deliberately: a second instance of the same alert in the same namespace joins the group and arrives as a silent edit, and an alert that resolves and re-fires while the message reference is still held is edited back to red without pinging. `alertname` is in the group key so that different rules at least never collide this way. Alertmanager holds the reference in its notification log for twice the repeat interval, on an `emptyDir` volume that is lost when the pod is replaced, and either expiry starts a fresh message. Deleting an alert message in Slack stops that group notifying until the reference expires, because the failed edit is not retried and never falls back to posting.
 
+### Send Alerts to a Webhook
+
+Set `prometheus_alertmanager_webhook_url`, and `prometheus_alertmanager_webhook_token` if the endpoint expects a bearer token, to have `default-receiver` post Alertmanager's [webhook payload](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config) there instead of Slack. The payload carries each alert's labels, fingerprint and start time, with `send_resolved: true`. Slack and the webhook are alternatives, not both, so a receiver that posts to Slack itself does not duplicate the message. Clear the URL and apply to return to direct Slack delivery.
+
+```bash
+TF_VAR_prometheus_alertmanager_webhook_url="https://example.com/alertmanager"
+TF_VAR_prometheus_alertmanager_webhook_token="..."
+```
+
 ### Access Dashboards
 
 | Service | URL | Authentication |
@@ -195,6 +223,26 @@ Each alert group keeps one Slack message. The first notification posts it, and e
 | Grafana | <https://grafana.chrislee.local> | Gateway ext_authz, plus the Grafana admin password |
 | Prometheus | <https://prometheus.chrislee.local> | Gateway ext_authz |
 | AlertManager | <https://alertmanager.chrislee.local> | Gateway ext_authz |
+
+### Network Probes
+
+The Blackbox exporter probes every 30 seconds from inside the cluster. Each series carries a `target` label naming the probe, so after an outage the first failing probe in this order locates the fault:
+
+| `target` | Failure means |
+|----------|---------------|
+| `icmp-gateway` | The node cannot reach the LAN gateway |
+| `icmp-cloudflare`, `icmp-google` | The internet connection is down |
+| `dns-cloudflare`, `dns-google` | Public DNS is unreachable while ICMP still passes |
+| `dns-lan-*` | A LAN resolver (router or Pi-hole) is not answering |
+| `dns-coredns` | Cluster DNS is failing |
+| `https-google` | The full path, resolved through the pod's own DNS, is failing |
+| `https-<name>` from `prometheus_blackbox_http_targets` | That URL is failing end to end, for example an app host through Cloudflare, a tunnel and the ingress gateway |
+
+```promql
+probe_success{job="prometheus-blackbox-exporter"} == 0
+```
+
+Prometheus has no persistent volume (see `prometheus-stack-values.tftpl`), so probe history only reaches back to its last restart.
 
 ### Get Grafana Admin Password
 
@@ -207,6 +255,7 @@ kubectl -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath="{.da
 | Component | Repository | Chart |
 |-----------|------------|-------|
 | Prometheus Stack | prometheus-community | kube-prometheus-stack |
+| Blackbox Exporter | prometheus-community | prometheus-blackbox-exporter |
 | ElastAlert2 | jertel | elastalert2 |
 
 ## PrometheusRules

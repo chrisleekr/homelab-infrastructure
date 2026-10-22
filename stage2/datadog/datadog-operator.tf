@@ -8,7 +8,7 @@ resource "helm_release" "datadog_operator" {
   namespace  = kubernetes_namespace_v1.datadog.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
-  version     = "2.25.1"
+  version     = "2.31.0"
   wait        = true
   timeout     = 300
 

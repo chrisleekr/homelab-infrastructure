@@ -90,14 +90,26 @@ alertmanager:
     receivers:
     - name: 'null'
     - name: 'default-receiver'
+%{ if alertmanager_webhook_url != "" ~}
+      ## A webhook replaces Slack rather than adding to it, so a receiver that relays to Slack
+      ## itself does not produce a second message for the same alert.
+      webhook_configs:
+      - url: ${jsonencode(alertmanager_webhook_url)}
+        send_resolved: true
+%{ if alertmanager_webhook_token != "" ~}
+        http_config:
+          authorization:
+            type: Bearer
+            credentials: ${jsonencode(alertmanager_webhook_token)}
+%{ endif ~}
+%{ else ~}
       slack_configs:
       - api_url: 'https://slack.com/api/chat.postMessage'
         channel: '#${alertmanager_slack_channel}'
         send_resolved: true
         ## Every notification after the first rewrites the group's message via chat.update,
         ## repeat reminders and re-fires after a resolve included, and an edit never pings.
-        ## Bot token only, incoming webhooks cannot update. Needs Alertmanager >= v0.32.0,
-        ## chart 88.3.0 ships v0.33.1.
+        ## Bot token only, incoming webhooks cannot update. Needs Alertmanager >= v0.32.0.
         update_message: true
         http_config:
           authorization:
@@ -121,6 +133,7 @@ alertmanager:
         icon_emoji: '{{ template "slack.default.iconemoji" . }}'
         icon_url: '{{ template "slack.default.iconurl" . }}'
         link_names: false
+%{ endif ~}
     templates:
     - '/etc/alertmanager/config/*.tmpl'
   ingress:
@@ -290,6 +303,15 @@ prometheus:
       scheme: http
       static_configs:
       - targets: [minio.minio-tenant.svc.cluster.local]
+%{ if length(node_exporter_external_targets) > 0 ~}
+    # Hosts outside the cluster. The job name matches the in-cluster node-exporter, so the
+    # stack's node alerting rules, which select job="node-exporter", cover these hosts too.
+    # The node recording rules select the same job, so cluster CPU and memory dashboards include
+    # these hosts. See docs/operations/external-host-node-exporter.md.
+    - job_name: node-exporter
+      static_configs:
+      - targets: ${jsonencode(node_exporter_external_targets)}
+%{ endif ~}
   ingress:
     # Served by the Istio gateway, see httproute.tf. The chart must not render an Ingress
     # for a host the gateway now serves.

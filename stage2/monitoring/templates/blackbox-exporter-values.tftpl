@@ -1,0 +1,79 @@
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-blackbox-exporter/values.yaml
+
+## ICMP runs as the chart's non-root user with no capabilities, over an unprivileged datagram
+## socket. containerd 2.x permits that by setting net.ipv4.ping_group_range to every group in each
+## pod; on a runtime that does not, set that sysctl under podSecurityContext.sysctls.
+
+## Chart default is resources: {}, so this runs unaccounted. Not yet measured; re-derive from usage.
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+    icmp:
+      prober: icmp
+      timeout: 5s
+      icmp:
+        preferred_ip_protocol: ip4
+    ## Asks the target resolver directly. A caching resolver keeps answering for the record's TTL
+    ## after its upstream fails, so a short outage can show on the public resolvers only.
+    dns_a:
+      prober: dns
+      timeout: 5s
+      dns:
+        query_name: cloudflare.com
+        query_type: A
+        preferred_ip_protocol: ip4
+        valid_rcodes: [NOERROR]
+
+## One ServiceMonitor per target. Read in order, they locate a failure: gateway (LAN), public
+## IPs (WAN), public resolvers (upstream DNS), LAN resolvers and CoreDNS (local DNS), then a
+## full HTTPS fetch through the pod's own resolver.
+serviceMonitor:
+  enabled: true
+  defaults:
+    interval: 30s
+    scrapeTimeout: 10s
+  targets:
+    - name: icmp-gateway
+      url: ${gateway_ip}
+      module: icmp
+    - name: icmp-cloudflare
+      url: 1.1.1.1
+      module: icmp
+    - name: icmp-google
+      url: 8.8.8.8
+      module: icmp
+    - name: dns-cloudflare
+      url: 1.1.1.1
+      module: dns_a
+    - name: dns-google
+      url: 8.8.8.8
+      module: dns_a
+%{ for server in lan_dns_servers ~}
+    - name: dns-lan-${replace(server, ".", "-")}
+      url: ${server}
+      module: dns_a
+%{ endfor ~}
+    - name: dns-coredns
+      url: kube-dns.kube-system.svc.cluster.local
+      module: dns_a
+    - name: https-google
+      url: https://www.google.com/generate_204
+      module: http_2xx
+%{ for name, url in http_targets ~}
+    - name: https-${name}
+      url: ${url}
+      module: http_2xx
+%{ endfor ~}
