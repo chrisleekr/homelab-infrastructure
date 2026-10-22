@@ -94,13 +94,13 @@ alertmanager:
       ## A webhook replaces Slack rather than adding to it, so a receiver that relays to Slack
       ## itself does not produce a second message for the same alert.
       webhook_configs:
-      - url: '${alertmanager_webhook_url}'
+      - url: ${jsonencode(alertmanager_webhook_url)}
         send_resolved: true
 %{ if alertmanager_webhook_token != "" ~}
         http_config:
           authorization:
             type: Bearer
-            credentials: '${alertmanager_webhook_token}'
+            credentials: ${jsonencode(alertmanager_webhook_token)}
 %{ endif ~}
 %{ else ~}
       slack_configs:

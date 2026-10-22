@@ -375,7 +375,7 @@ variable "prometheus_alertmanager_webhook_url" {
   default     = ""
 
   validation {
-    condition     = var.prometheus_alertmanager_webhook_url == "" || can(regex("^https://", var.prometheus_alertmanager_webhook_url))
+    condition     = var.prometheus_alertmanager_webhook_url == "" || can(regex("^https://[^/?#]+", var.prometheus_alertmanager_webhook_url))
     error_message = "Give an https:// URL, or leave it empty to keep direct Slack delivery."
   }
 }

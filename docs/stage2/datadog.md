@@ -172,7 +172,7 @@ See [Datadog secrets management](https://docs.datadoghq.com/agent/configuration/
 The node agent also tails each node's systemd journal: kernel, kubelet, containerd, iscsid and the other host services. Container output is not duplicated, because containerd writes it to `/var/log/pods` rather than the journal.
 
 - The agent mounts `/var/log/journal` and `/etc/machine-id` from the host read-only, as the [journald integration](https://docs.datadoghq.com/integrations/journald/) requires for a containerized agent.
-- Each log's `source` and `service` come from the unit (`SYSLOG_IDENTIFIER`, then `_SYSTEMD_UNIT`), so search with `source:kernel` or `source:kubelet`.
+- Each log's `source` and `service` come from the first of `SYSLOG_IDENTIFIER`, `_SYSTEMD_USER_UNIT`, `_SYSTEMD_UNIT` and `_COMM` that the entry carries, so search with `source:kernel` or `source:kubelet`.
 - A new source starts at the end of the journal. Existing history is not backfilled.
 - UFW logs one kernel line per allowed packet, which was most of the control plane's journal (about 1.3M of 1.66M lines a day). The agent drops `[UFW ALLOW]` and `[UFW AUDIT]` lines before sending. `[UFW BLOCK]` lines still ship.
 
