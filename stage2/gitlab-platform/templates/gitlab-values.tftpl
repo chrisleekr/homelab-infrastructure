@@ -705,7 +705,10 @@ gitlab-runner:
   # the cpu_request values below. Keep concurrent * 350m inside the node's free CPU, or job pods
   # sit Pending and fail as runner_system_failure when poll_timeout expires (default 180s, not
   # overridden here).
-  concurrent: 2
+  # Job pods write to the root NVMe that also holds /var/lib/etcd. A second concurrent job slows
+  # etcd WAL fsync enough to burn the apiserver error budget. Raise only once etcd or job storage
+  # is on a separate disk.
+  concurrent: 1
   rbac:
     create: true
   envVars:
