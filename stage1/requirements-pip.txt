@@ -10,7 +10,7 @@ urllib3>=2.8.0
 # Pin cryptography to fix CVE-2026-69247 (HIGH) - Bleichenbacher oracle in PKCS#7
 # EnvelopedData decryption. Supersedes the 49.0.0 pin for CVE-2026-26007.
 # Reference: https://avd.aquasec.com/nvd/cve-2026-69247
-cryptography>=50.0.1
+cryptography>=50.0.2
 # Pin certifi to fix GHSA-6q48-6c7w-9gw2 (CRITICAL) - removes emSign ECC Root CA - G3, whose intermediates had compromised keys
 # Reference: https://github.com/advisories/GHSA-6q48-6c7w-9gw2
 certifi>=2026.10.23
