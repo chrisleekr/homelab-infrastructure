@@ -13,4 +13,4 @@ urllib3>=2.8.0
 cryptography>=50.0.1
 # Pin certifi to fix GHSA-6q48-6c7w-9gw2 (CRITICAL) - removes emSign ECC Root CA - G3, whose intermediates had compromised keys
 # Reference: https://github.com/advisories/GHSA-6q48-6c7w-9gw2
-certifi>=2026.10.19
+certifi>=2026.10.23
