@@ -348,8 +348,8 @@ An exported `TF_VAR_argocd_rbac_policy_default` overrides the Terraform default 
 | `TF_VAR_litellm_storage_size` | | `10Gi` | Postgres volume size |
 | `TF_VAR_litellm_storage_class_name` | | `longhorn` | Storage class |
 | `TF_VAR_litellm_ui_paths` | | `["/ui","/sso","/litellm-asset-prefix","/fallback/login","/login","/docs","/redoc","/openapi.json","/routes","/config/yaml","/public"]` | Paths routed behind oauth2-proxy. Anything omitted is served unauthenticated |
-| `TF_VAR_litellm_chart_version` | | `1.106.4` | `litellm-helm` chart pin. Bump together with the image tag |
-| `TF_VAR_litellm_image_tag` | | `1.106.4` | `ghcr.io/berriai/litellm-database` pin |
+| `TF_VAR_litellm_chart_version` | | `1.106.6` | `litellm-helm` chart pin. Bump together with the image tag |
+| `TF_VAR_litellm_image_tag` | | `1.106.6` | `ghcr.io/berriai/litellm-database` pin |
 | `TF_VAR_litellm_postgres_image_tag` | | `18.6-alpine` | Must end in `-alpine`: the pod sets `fs_group = 70` |
 | `TF_VAR_litellm_replicas` | | `1` | Replica count |
 | `TF_VAR_litellm_master_key` | 🔑 | `echo "sk-$(openssl rand -hex 24)"` | Admin and API superuser key |
@@ -387,7 +387,7 @@ Rotating `TF_VAR_omniroute_api_key_secret` (`API_KEY_SECRET`) or `TF_VAR_omnirou
 | `TF_VAR_cloudflare_tunnel_enable` | | `false` | Enable the tunnel |
 | `TF_VAR_cloudflare_tunnel_token` | 🔑 | Cloudflare → Zero Trust → Networks → Tunnels → copy `--token` `eyJ…` | cloudflared connector auth |
 | `TF_VAR_cloudflare_tunnel_chart_version` | | `0.1.2` | Helm chart version |
-| `TF_VAR_cloudflare_tunnel_image_tag` | | `2026.10.4` | cloudflared image tag. Empty uses the chart default, which is `latest` |
+| `TF_VAR_cloudflare_tunnel_image_tag` | | `2026.10.7` | cloudflared image tag. Empty uses the chart default, which is `latest` |
 | `TF_VAR_cloudflare_tunnel_replica_count` | | `2` | Replica count |
 
 ### Stage 2: Istio Gateway

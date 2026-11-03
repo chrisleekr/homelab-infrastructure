@@ -62,7 +62,7 @@ cluster:
     cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
     crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
     containerd_version: "2.3.7" # https://github.com/containerd/containerd/releases
-    nerdctl_version: "2.4.1" # https://github.com/containerd/nerdctl/releases
+    nerdctl_version: "2.4.2" # https://github.com/containerd/nerdctl/releases
     # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
     # A bump is what arms the upgrade path; see docs/operations/kubernetes-upgrades.md.
     kubeadm_version: "1.36.5" # https://kubernetes.io/releases/
@@ -75,7 +75,7 @@ cluster:
     # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
     cilium_version: "1.20.4" # https://github.com/cilium/cilium/releases
-    cilium_cli_version: "0.20.1" # https://github.com/cilium/cilium-cli/releases
+    cilium_cli_version: "0.20.2" # https://github.com/cilium/cilium-cli/releases
 
     # Split avoided the 1.20.0 ADS livelock (cilium#47624). The fix, an Envoy image bump
     # (cilium#47899), shipped in 1.20.1; split stays until the default is verified here.

@@ -861,13 +861,13 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
   type        = string
-  default     = "1.106.4"
+  default     = "1.106.6"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.106.4"
+  default     = "1.106.6"
 }
 
 variable "litellm_postgres_image_tag" {
@@ -980,7 +980,7 @@ variable "cloudflare_tunnel_chart_version" {
 variable "cloudflare_tunnel_image_tag" {
   description = "cloudflared image tag to pin. Empty uses the chart default, which is `latest`. Reference: https://github.com/cloudflare/cloudflared/releases"
   type        = string
-  default     = "2026.10.4" # chart appVersion is "latest", so empty would leave cloudflared unpinned
+  default     = "2026.10.7" # chart appVersion is "latest", so empty would leave cloudflared unpinned
 }
 
 variable "cloudflare_tunnel_replica_count" {
