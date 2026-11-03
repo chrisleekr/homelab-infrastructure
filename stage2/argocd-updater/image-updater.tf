@@ -16,7 +16,7 @@ resource "helm_release" "argocd_image_updater" {
   name       = "argocd-image-updater"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argocd-image-updater"
-  version    = "1.3.2" # app version v1.3.1
+  version    = "1.4.0" # app version v1.4.0
   namespace  = var.argocd_namespace
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

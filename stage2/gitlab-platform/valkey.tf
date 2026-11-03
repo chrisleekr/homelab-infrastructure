@@ -37,7 +37,7 @@ resource "helm_release" "valkey" {
   name       = local.valkey_release_name
   repository = "https://valkey.io/valkey-helm/"
   chart      = "valkey"
-  version    = "0.12.0"
+  version    = "0.12.1"
   namespace  = kubernetes_namespace_v1.gitlab.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

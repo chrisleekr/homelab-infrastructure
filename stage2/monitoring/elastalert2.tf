@@ -54,7 +54,7 @@ resource "helm_release" "elastalert2" {
   name       = "elastalert2"
   repository = "https://jertel.github.io/elastalert2/"
   chart      = "elastalert2"
-  version    = "2.31.0"
+  version    = "2.32.0"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

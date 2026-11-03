@@ -22,7 +22,7 @@ What the Docker image ships. Bump with `task versions:bump`, which edits the `Do
 | trivy | 0.76.1 |
 | tflint | v0.65.0 |
 | bws | 2.1.0 |
-| oci-cli | 3.95.1 |
+| oci-cli | 3.96.0 |
 <!-- VERSIONS_END:container-tools -->
 
 ## Cluster components
@@ -38,10 +38,10 @@ What Stage 1 installs: node binaries, plus the MetalLB and metrics-server charts
 | containerd | 2.3.7 | <https://github.com/containerd/containerd/releases> |
 | runc | 1.5.2 | <https://github.com/opencontainers/runc/releases> |
 | crictl | 1.36.0 | <https://github.com/kubernetes-sigs/cri-tools/releases> |
-| nerdctl | 2.4.1 | <https://github.com/containerd/nerdctl/releases> |
+| nerdctl | 2.4.2 | <https://github.com/containerd/nerdctl/releases> |
 | CNI plugins | 1.9.1 | <https://github.com/containernetworking/plugins/releases> |
 | Cilium | 1.20.4 | <https://github.com/cilium/cilium/releases> |
-| Cilium CLI | 0.20.1 | <https://github.com/cilium/cilium-cli/releases> |
+| Cilium CLI | 0.20.2 | <https://github.com/cilium/cilium-cli/releases> |
 | MetalLB chart | 0.16.1 | <https://github.com/metallb/metallb/releases> |
 | metrics-server chart | 3.14.0 | <https://github.com/kubernetes-sigs/metrics-server/releases> |
 | pluto | 5.24.4 | <https://github.com/FairwindsOps/pluto/releases> |

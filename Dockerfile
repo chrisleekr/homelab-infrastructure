@@ -22,7 +22,7 @@ ARG TFLINT_SHA256_ARM64=843017c47a98be1de4d88fa038daa293770fe25cd01656c4f08b2e30
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 # https://github.com/oracle/oci-cli/releases
-ARG OCI_CLI_VERSION=3.95.1
+ARG OCI_CLI_VERSION=3.96.0
 
 # Fail before installing target-specific binaries into a mismatched base image.
 RUN case "${TARGETARCH}:$(apk --print-arch)" in \
@@ -104,10 +104,6 @@ RUN set -eux; \
   /usr/bin/python3 -m venv /opt/oci-cli && \
   /opt/oci-cli/bin/pip install --no-cache-dir pip==26.3 && \
   /opt/oci-cli/bin/pip install --no-cache-dir oci-cli==${OCI_CLI_VERSION} && \
-  # oci-cli caps certifi<2026, which blocks GHSA-6q48-6c7w-9gw2 (CRITICAL). certifi is only a CA
-  # bundle, so overriding the cap is safe; pip logs a dependency-conflict ERROR and exits 0.
-  # Drop once oci-cli allows certifi>=2026.10.19.
-  /opt/oci-cli/bin/pip install --no-cache-dir certifi==2026.10.19 && \
   ln -s /opt/oci-cli/bin/oci /usr/local/bin/oci && \
   oci --version && \
   \
