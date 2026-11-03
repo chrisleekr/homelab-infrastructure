@@ -10,7 +10,7 @@ ARG KUBECTL_VERSION=1.36.5
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.3.1
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.17.0
+ARG TERRAFORM_VERSION=1.17.1
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
@@ -87,7 +87,7 @@ RUN set -eux; \
   python3 -m venv .venv && \
   . .venv/bin/activate && \
   # ensurepip ships pip 26.2.1, whose vendored certifi carries GHSA-6q48-6c7w-9gw2.
-  pip install --no-cache-dir pip==26.2.2 && \
+  pip install --no-cache-dir pip==26.3 && \
   # Install Python packages
   pip install --no-cache-dir -r /tmp/requirements-pip.txt && \
   ansible --version && \
@@ -102,7 +102,7 @@ RUN set -eux; \
   # here imports oci as a library, so a symlinked console script is all that is needed.
   # System python by absolute path because the Ansible venv is active at this point.
   /usr/bin/python3 -m venv /opt/oci-cli && \
-  /opt/oci-cli/bin/pip install --no-cache-dir pip==26.2.2 && \
+  /opt/oci-cli/bin/pip install --no-cache-dir pip==26.3 && \
   /opt/oci-cli/bin/pip install --no-cache-dir oci-cli==${OCI_CLI_VERSION} && \
   # oci-cli caps certifi<2026, which blocks GHSA-6q48-6c7w-9gw2 (CRITICAL). certifi is only a CA
   # bundle, so overriding the cap is safe; pip logs a dependency-conflict ERROR and exits 0.

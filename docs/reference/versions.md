@@ -17,7 +17,7 @@ What the Docker image ships. Bump with `task versions:bump`, which edits the `Do
 |------|---------|
 | kubectl | 1.36.5 |
 | helm | 4.3.1 |
-| terraform | 1.17.0 |
+| terraform | 1.17.1 |
 | taskfile | 3.54.0 |
 | trivy | 0.76.1 |
 | tflint | v0.65.0 |
