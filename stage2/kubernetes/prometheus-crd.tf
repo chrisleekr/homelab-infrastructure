@@ -3,7 +3,7 @@ resource "helm_release" "prometheus_operator_crds" {
   name       = "prometheus-operator-crds"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "prometheus-operator-crds"
-  version    = "32.0.1"
+  version    = "32.0.2"
   namespace  = "kube-system"
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3

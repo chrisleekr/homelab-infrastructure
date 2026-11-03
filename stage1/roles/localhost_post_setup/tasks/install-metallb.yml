@@ -17,6 +17,7 @@
     name: metallb
     chart_ref: metallb
     chart_repo_url: https://metallb.github.io/metallb
+    chart_version: "{{ metallb_chart_version }}"
     namespace: metallb-system
     create_namespace: true
     state: present

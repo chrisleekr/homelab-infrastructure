@@ -20,6 +20,10 @@ local:
     kubernetes_cluster_type: '{{ lookup("env", "kubernetes_cluster_type") or "kubeadm" }}'
     server_ssh_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
 
+    # Helm chart pins for the post-setup add-ons. Defined on local because that play runs on localhost.
+    metallb_chart_version: "0.16.1" # https://github.com/metallb/metallb/releases
+    metrics_server_chart_version: "3.14.0" # https://github.com/kubernetes-sigs/metrics-server/releases
+
 cluster:
   children:
     server:
@@ -70,7 +74,7 @@ cluster:
     # move independently, so gating an agent upgrade on the CLI version compares unrelated
     # numbers.
     # IMPORTANT: The only tested upgrade and rollback path is between consecutive minor releases. Always perform upgrades and rollbacks between one minor release at a time. Additionally, always update to the latest patch release of your current version before attempting an upgrade.
-    cilium_version: "1.20.3" # https://github.com/cilium/cilium/releases
+    cilium_version: "1.20.4" # https://github.com/cilium/cilium/releases
     cilium_cli_version: "0.20.1" # https://github.com/cilium/cilium-cli/releases
 
     # Split avoided the 1.20.0 ADS livelock (cilium#47624). The fix, an Envoy image bump

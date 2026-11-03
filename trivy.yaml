@@ -1,6 +1,10 @@
 # Trivy configuration
 # Reference: https://trivy.dev/docs/latest/references/configuration/config-file/
 
+# The default 5m covers the vulnerability DB download too. CI jobs start with no
+# cache and pull ~130 MiB from the mirror, which can exceed 5m on a slow link.
+timeout: 15m
+
 scan:
   # Enable vulnerability and misconfiguration scanning, disable secret scanning
   # Secret scanning disabled: third-party Ansible collections contain example credentials

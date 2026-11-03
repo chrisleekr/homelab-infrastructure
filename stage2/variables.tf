@@ -861,13 +861,13 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
   type        = string
-  default     = "1.106.2"
+  default     = "1.106.4"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.106.2"
+  default     = "1.106.4"
 }
 
 variable "litellm_postgres_image_tag" {
@@ -978,9 +978,9 @@ variable "cloudflare_tunnel_chart_version" {
 }
 
 variable "cloudflare_tunnel_image_tag" {
-  description = "cloudflared image tag to pin. Empty uses the chart default. Reference: https://github.com/cloudflare/cloudflared/releases"
+  description = "cloudflared image tag to pin. Empty uses the chart default, which is `latest`. Reference: https://github.com/cloudflare/cloudflared/releases"
   type        = string
-  default     = ""
+  default     = "2026.10.4" # chart appVersion is "latest", so empty would leave cloudflared unpinned
 }
 
 variable "cloudflare_tunnel_replica_count" {
@@ -1049,7 +1049,7 @@ variable "omniroute_gated_admin_suffixes" {
 variable "omniroute_chart_version" {
   description = "omniroute Helm chart version from https://chrisleekr.github.io/helm-charts. The chart version tracks appVersion, so bump it together with omniroute_image_tag"
   type        = string
-  default     = "0.3.1"
+  default     = "0.3.2"
 }
 
 variable "omniroute_image_tag" {

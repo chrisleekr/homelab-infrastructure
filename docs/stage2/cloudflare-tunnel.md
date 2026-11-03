@@ -30,7 +30,7 @@ Each public hostname points at the Istio gateway Service. Every HTTPS listener s
 |----------|-------------|---------|
 | `cloudflare_tunnel_token` | Tunnel token (sensitive). Cloudflare issues it per tunnel. | *(required when enabled)* |
 | `cloudflare_tunnel_chart_version` | `cloudflare-tunnel-remote` Helm chart version (pinned). | `0.1.2` |
-| `cloudflare_tunnel_image_tag` | `cloudflared` image tag. Empty uses the chart default. | `""` |
+| `cloudflare_tunnel_image_tag` | `cloudflared` image tag. Empty uses the chart default, which is `latest`. | `"2026.10.4"` |
 | `cloudflare_tunnel_replica_count` | Number of replicas. HA only; do not autoscale (downscaling drops live connections). | `2` |
 
 Enable the module with `cloudflare_tunnel_enable = true` (top-level variable, default `false`).
