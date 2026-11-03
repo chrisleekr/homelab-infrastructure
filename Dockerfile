@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -10,15 +10,15 @@ ARG KUBECTL_VERSION=1.36.5
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.3.1
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.17.0
+ARG TERRAFORM_VERSION=1.17.1
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
 ARG TRIVY_VERSION=0.76.1
 # https://github.com/terraform-linters/tflint/releases
-ARG TFLINT_VERSION=v0.64.0
-ARG TFLINT_SHA256_AMD64=cca9d13e2e1d7a2c627af60ff899a3c9b74212899416aeb96ec764d2ef954537
-ARG TFLINT_SHA256_ARM64=560da89aacf59389d4eb029730dd5b109b7288096c32f2726a0d9e783a5ea8eb
+ARG TFLINT_VERSION=v0.65.0
+ARG TFLINT_SHA256_AMD64=d4c545ed2e29d6338604b586f34f544f380f70f243aa72f7b484713835eaec61
+ARG TFLINT_SHA256_ARM64=843017c47a98be1de4d88fa038daa293770fe25cd01656c4f08b2e30d1d3b3a0
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 # https://github.com/oracle/oci-cli/releases
@@ -44,13 +44,13 @@ RUN set -eux; \
   \
   apk add --no-cache \
   ca-certificates=20261020-r0 \
-  curl=8.22.0-r0 \
+  curl=8.23.0-r0 \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \
   bind-tools=9.20.30-r0 \
   git=2.54.0-r0 \
   graphviz=12.2.1-r3 \
-  python3=3.14.8-r0 \
+  python3=3.14.10-r1 \
   pre-commit=4.6.0-r0 \
   shellcheck=0.11.0-r1 \
   bash-completion=2.17.0-r1 \
@@ -82,12 +82,12 @@ RUN set -eux; \
   g++=15.2.0-r5 \
   gcc=15.2.0-r5 \
   libffi-dev=3.5.2-r1 \
-  python3-dev=3.14.8-r0 && \
+  python3-dev=3.14.10-r1 && \
   # Setup Python virtual environment
   python3 -m venv .venv && \
   . .venv/bin/activate && \
   # ensurepip ships pip 26.2.1, whose vendored certifi carries GHSA-6q48-6c7w-9gw2.
-  pip install --no-cache-dir pip==26.2.2 && \
+  pip install --no-cache-dir pip==26.3 && \
   # Install Python packages
   pip install --no-cache-dir -r /tmp/requirements-pip.txt && \
   ansible --version && \
@@ -102,7 +102,7 @@ RUN set -eux; \
   # here imports oci as a library, so a symlinked console script is all that is needed.
   # System python by absolute path because the Ansible venv is active at this point.
   /usr/bin/python3 -m venv /opt/oci-cli && \
-  /opt/oci-cli/bin/pip install --no-cache-dir pip==26.2.2 && \
+  /opt/oci-cli/bin/pip install --no-cache-dir pip==26.3 && \
   /opt/oci-cli/bin/pip install --no-cache-dir oci-cli==${OCI_CLI_VERSION} && \
   # oci-cli caps certifi<2026, which blocks GHSA-6q48-6c7w-9gw2 (CRITICAL). certifi is only a CA
   # bundle, so overriding the cap is safe; pip logs a dependency-conflict ERROR and exits 0.

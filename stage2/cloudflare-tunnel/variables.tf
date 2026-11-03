@@ -10,7 +10,7 @@ variable "cloudflare_tunnel_chart_version" {
 }
 
 variable "cloudflare_tunnel_image_tag" {
-  description = "cloudflared image tag to pin. Empty uses the chart default. Pin to a current release from https://github.com/cloudflare/cloudflared/releases."
+  description = "cloudflared image tag to pin. Empty uses the chart default, which is `latest`. Pin to a current release from https://github.com/cloudflare/cloudflared/releases."
   type        = string
   default     = ""
 }

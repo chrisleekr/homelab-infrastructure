@@ -12,6 +12,9 @@
   kubernetes.core.helm:
     name: metrics-server
     chart_ref: metrics-server/metrics-server
+    chart_version: "{{ metrics_server_chart_version }}"
+    # chart_ref resolves through the local repo index, which helm_repository does not refresh, so a newer pin is otherwise "not found".
+    update_repo_cache: true
     release_namespace: kube-system
     state: present
     create_namespace: true

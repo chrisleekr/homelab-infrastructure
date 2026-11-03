@@ -104,8 +104,8 @@ kubectl get secret -n sealed-secrets -l sealedsecrets.bitnami.com/sealed-secrets
 |----------|-------|
 | Repository | <https://bitnami.github.io/sealed-secrets> |
 | Chart | sealed-secrets |
-| Version | 2.18.1 |
-| App Version | 0.35.0 |
+| Version | 2.22.0 |
+| App Version | 0.41.2 |
 
 ## References
 

@@ -28,10 +28,13 @@ jobs:
 
       - name: Install hadolint
         run: |
-          # Detect architecture for ARM64 runner compatibility
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
-          curl -L "https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-${ARCH}" -o hadolint
+          case "$(uname -m)" in
+            aarch64|arm64) arch=arm64;  sha=f6198ef8090f404dbb771abfee086eb8c48ac177f30da7fd3510aca35b344b5d ;;
+            x86_64|amd64)  arch=x86_64; sha=c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507 ;;
+            *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+          curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-${arch}" -o hadolint
+          printf '%s  %s\n' "$sha" hadolint | sha256sum -c -
           chmod +x hadolint
           mv hadolint /usr/local/bin/
 

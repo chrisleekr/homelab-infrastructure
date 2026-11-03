@@ -106,7 +106,7 @@ validate_version "trivy" "$TRIVY_LATEST"
 echo -e "${BOLD}Fetching latest Alpine package versions…${NC}"
 
 # Parse Alpine version from the FROM line (e.g. "alpine:3.21" → "3.21")
-ALPINE_VER=$(grep -E '^FROM .* alpine:' "$DOCKERFILE" | head -1 \
+ALPINE_VER=$(grep -E '^FROM (.* )?alpine:' "$DOCKERFILE" | head -1 \
   | sed -E 's/.*alpine:([0-9]+\.[0-9]+).*/\1/')
 echo "  Alpine base: v${ALPINE_VER}"
 

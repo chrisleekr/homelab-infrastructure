@@ -22,7 +22,12 @@ Stage 2 creates no `LoadBalancer` Service. Traffic arrives through the [Cloudfla
 
 ## Variables
 
-None.
+| Variable | Defined in | Purpose |
+|---|---|---|
+| `metallb_chart_version` | `local` group vars in `stage1/inventories/inventory.yml` | MetalLB Helm chart version to install |
+| `metrics_server_chart_version` | `local` group vars in `stage1/inventories/inventory.yml` | metrics-server Helm chart version to install |
+
+Current values are listed in [Version pins](../../reference/versions.md).
 
 ## Re-run behaviour
 

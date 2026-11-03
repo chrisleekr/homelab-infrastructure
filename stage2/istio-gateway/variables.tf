@@ -7,7 +7,7 @@
 variable "istio_gateway_version" {
   description = "Istio version for both the base and istiod charts"
   type        = string
-  default     = "1.31.2"
+  default     = "1.31.3"
 }
 
 variable "istio_gateway_chart_repository" {

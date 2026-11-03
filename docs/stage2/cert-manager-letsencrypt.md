@@ -42,7 +42,7 @@ The token Secret is created here rather than in the istio-gateway module because
 | Resource | Name | Notes |
 |---|---|---|
 | `kubernetes_namespace_v1.cert_manager` | `cert-manager` | Carries `prevent_destroy = true` |
-| `helm_release.cert_manager` | `cert-manager` | Chart `v1.21.2` from <https://charts.jetstack.io>, `wait = true` |
+| `helm_release.cert_manager` | `cert-manager` | Chart `v1.21.3` from <https://charts.jetstack.io>, `wait = true` |
 | `kubernetes_secret_v1.cloudflare_api_token` | `cloudflare-api-token` | The root rejects an empty token, so it always exists |
 
 The values file also turns on the chart's ServiceMonitor. Expiry is the one failure mode of DNS-01 renewal that is otherwise silent, because nothing serves an error and the certificate simply runs out; the ServiceMonitor is what feeds `certmanager_certificate_expiration_timestamp_seconds` to the `CertificateExpiringSoon` alert in [monitoring](monitoring.md). The chart rejects having both its ServiceMonitor and its PodMonitor enabled, so only the former is on.

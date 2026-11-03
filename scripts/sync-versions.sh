@@ -3,7 +3,7 @@
 #
 # Sources of truth:
 #   Dockerfile                        ARG *_VERSION  - the operator toolbox
-#   stage1/inventories/inventory.yml  *_version      - what Ansible installs on the nodes
+#   stage1/inventories/inventory.yml  *_version      - what Stage 1 installs
 #
 # Targets:
 #   README.md                   legacy VERSIONS_START/END block + shields.io badges
@@ -116,6 +116,8 @@ nerdctl_version nerdctl
 cni_version CNI plugins
 cilium_version Cilium
 cilium_cli_version Cilium CLI
+metallb_chart_version MetalLB chart
+metrics_server_chart_version metrics-server chart
 pluto_version pluto
 minikube_version minikube
 k3s_version k3s"
