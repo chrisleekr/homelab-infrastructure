@@ -1,6 +1,6 @@
 # Keep ansible-core within the release series required by ansible.
-ansible==14.5.0
-ansible-core==2.21.5
+ansible==14.6.0
+ansible-core==2.21.6
 # Hold below 37: it is a generator rewrite and kubernetes.core has no release supporting it yet.
 # Reference: https://github.com/ansible-collections/kubernetes.core/pull/1274
 kubernetes==36.0.3

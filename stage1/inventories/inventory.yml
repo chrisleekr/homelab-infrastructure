@@ -21,7 +21,7 @@ local:
     server_ssh_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
 
     # Helm chart pins for the post-setup add-ons. Defined on local because that play runs on localhost.
-    metallb_chart_version: "0.16.1" # https://github.com/metallb/metallb/releases
+    metallb_chart_version: "0.16.2" # https://github.com/metallb/metallb/releases
     metrics_server_chart_version: "3.14.0" # https://github.com/kubernetes-sigs/metrics-server/releases
 
 cluster:
@@ -128,7 +128,7 @@ cluster:
          if tailscale_node_enable | bool else [] }}
 
     # Deprecated-API scanner run as an upgrade preflight.
-    pluto_version: "5.24.4" # https://github.com/FairwindsOps/pluto/releases
+    pluto_version: "5.24.5" # https://github.com/FairwindsOps/pluto/releases
 
     # Escape hatch. `-e kubeadm_upgrade_enabled=false` reduces a run to install-and-join
     # only, leaving every already-bootstrapped node untouched.

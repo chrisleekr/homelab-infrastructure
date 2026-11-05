@@ -69,7 +69,7 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 | helm | 4.3.1 |
 | terraform | 1.17.1 |
 | taskfile | 3.54.0 |
-| trivy | 0.76.1 |
+| trivy | 0.76.2 |
 <!-- VERSIONS_END - Do not remove this comment -->
 
 Cluster component versions live in `stage1/inventories/inventory.yml`. Both sets are documented at [Version pins](docs/reference/versions.md).

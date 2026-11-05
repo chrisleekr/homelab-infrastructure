@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM alpine:3.24.3
+FROM alpine:3.24.4
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,7 +14,7 @@ ARG TERRAFORM_VERSION=1.17.1
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
-ARG TRIVY_VERSION=0.76.1
+ARG TRIVY_VERSION=0.76.2
 # https://github.com/terraform-linters/tflint/releases
 ARG TFLINT_VERSION=v0.65.0
 ARG TFLINT_SHA256_AMD64=d4c545ed2e29d6338604b586f34f544f380f70f243aa72f7b484713835eaec61
@@ -77,7 +77,7 @@ RUN set -eux; \
   \
   # Install Ansible
   apk add --no-cache \
-  openssh=10.3_p1-r1 \
+  openssh=10.3_p1-r2 \
   sshpass=1.10-r0 \
   g++=15.2.0-r5 \
   gcc=15.2.0-r5 \
