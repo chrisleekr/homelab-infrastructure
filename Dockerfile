@@ -6,7 +6,7 @@ ARG BUILDPLATFORM
 ARG TARGETARCH
 
 # https://dl.k8s.io/release/stable.txt
-ARG KUBECTL_VERSION=1.36.5
+ARG KUBECTL_VERSION=1.37.2
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.3.1
 # https://developer.hashicorp.com/terraform/install
