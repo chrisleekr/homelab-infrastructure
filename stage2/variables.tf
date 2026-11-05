@@ -861,13 +861,13 @@ variable "litellm_ui_paths" {
 variable "litellm_chart_version" {
   description = "litellm-helm chart version. The chart version tracks appVersion, so bump it together with litellm_image_tag"
   type        = string
-  default     = "1.106.6"
+  default     = "1.108.0"
 }
 
 variable "litellm_image_tag" {
   description = "Tag for ghcr.io/berriai/litellm-database. No 'v' prefix: the chart's own default is the bare appVersion"
   type        = string
-  default     = "1.106.6"
+  default     = "1.108.0"
 }
 
 variable "litellm_postgres_image_tag" {

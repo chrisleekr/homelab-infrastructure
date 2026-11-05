@@ -33,7 +33,7 @@ resource "helm_release" "prometheus_operator" {
   name       = "kube-prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  version    = "92.17.1"
+  version    = "92.21.1"
   namespace  = kubernetes_namespace_v1.monitoring_namespace.metadata[0].name
   # Default 0 keeps every revision as a Secret that kube-apiserver holds in memory.
   max_history = 3
