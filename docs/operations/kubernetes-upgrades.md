@@ -67,6 +67,8 @@ The trade-off is that non-DaemonSet pods on the control plane experience the kub
 
 Workers **are** drained, because they have somewhere to reschedule to.
 
+Before each worker drain, the playbook rollout-restarts Longhorn's `csi-attacher` and `csi-provisioner` onto the control plane. Both run 1 replica under a Longhorn-managed PodDisruptionBudget that allows 0 evictions, so draining the node that hosts either one would otherwise time out. Volume attach and detach pause for the few seconds the new pods take to start; mounted volumes are unaffected. See `stage1/roles/kubeadm_node/tasks/node-drain.yml`.
+
 ## Escape hatch
 
 To provision or join nodes without touching any already-bootstrapped node:
