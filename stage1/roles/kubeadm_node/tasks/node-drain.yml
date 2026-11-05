@@ -1,7 +1,27 @@
 ---
 # Delegated to the control plane: the target may be a worker with no kubeconfig, and the API
 # server must stay reachable while its kubelet is stopped.
-#
+- name: Cordon the node
+  ansible.builtin.command: "kubectl cordon {{ kubeadm_node_name }}"
+  delegate_to: "{{ groups['server'][0] }}"
+  register: kubeadm_node_cordon_result
+  changed_when: kubeadm_node_cordon_result.rc == 0
+
+# longhorn-manager keeps a minAvailable=1 PDB on csi-attacher and csi-provisioner while any
+# volume is attached. At 1 replica that allows 0 evictions, so drain hangs on whichever node
+# hosts them. A rollout is not an eviction, so it moves them to an uncordoned node. Wait for
+# it before draining, so evicted pods' volume detaches have a running attacher.
+- name: Move Longhorn CSI controllers off the node
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    kubectl -n longhorn-system rollout restart deployment/csi-attacher deployment/csi-provisioner &&
+    kubectl -n longhorn-system rollout status deployment/csi-attacher --timeout=120s &&
+    kubectl -n longhorn-system rollout status deployment/csi-provisioner --timeout=120s
+  args:
+    executable: /bin/bash
+  delegate_to: "{{ groups['server'][0] }}"
+  changed_when: true
+
 # --ignore-daemonsets is mandatory: Cilium, kube-proxy and Longhorn run as DaemonSet pods
 # that cannot be evicted, so a drain without it never completes. --delete-emptydir-data
 # because several kube-system pods hold emptyDir scratch space.

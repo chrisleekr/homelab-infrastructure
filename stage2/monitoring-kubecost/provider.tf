@@ -17,7 +17,7 @@ terraform {
     # time, which it does not on a first apply.
     kubectl = {
       source  = "alekc/kubectl"
-      version = "~> 2.1"
+      version = "~> 3.0"
     }
   }
 }

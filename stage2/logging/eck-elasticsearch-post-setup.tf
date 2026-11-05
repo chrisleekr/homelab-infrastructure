@@ -56,7 +56,7 @@ resource "kubernetes_job_v1" "elasticsearch_post_setup" {
       spec {
         container {
           name  = "elasticsearch-post-setup"
-          image = "alpine:3.24.3"
+          image = "alpine:3.24.4"
 
           env {
             name  = "ELASTIC_PASSWORD"

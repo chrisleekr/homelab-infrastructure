@@ -21,7 +21,7 @@ local:
     server_ssh_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
 
     # Helm chart pins for the post-setup add-ons. Defined on local because that play runs on localhost.
-    metallb_chart_version: "0.16.1" # https://github.com/metallb/metallb/releases
+    metallb_chart_version: "0.16.2" # https://github.com/metallb/metallb/releases
     metrics_server_chart_version: "3.14.0" # https://github.com/kubernetes-sigs/metrics-server/releases
 
 cluster:
@@ -60,14 +60,14 @@ cluster:
     # Start: Kubeadm
     runc_version: "1.5.2" # https://github.com/opencontainers/runc/releases
     cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
-    crictl_version: "1.36.0" # https://github.com/kubernetes-sigs/cri-tools/releases
-    containerd_version: "2.3.7" # https://github.com/containerd/containerd/releases
+    crictl_version: "1.37.0" # https://github.com/kubernetes-sigs/cri-tools/releases
+    containerd_version: "2.4.2" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.4.2" # https://github.com/containerd/nerdctl/releases
     # Drives the kubeadm AND kubelet binary downloads, so bumping it rolls the whole fleet.
     # A bump is what arms the upgrade path; see docs/operations/kubernetes-upgrades.md.
-    kubeadm_version: "1.36.5" # https://kubernetes.io/releases/
-    kubectl_version: "1.36.5" # https://kubernetes.io/releases/
-    kubelet_service_version: "0.22.0" # https://github.com/kubernetes/release/releases
+    kubeadm_version: "1.37.2" # https://kubernetes.io/releases/
+    kubectl_version: "1.37.2" # https://kubernetes.io/releases/
+    kubelet_service_version: "0.23.0" # https://github.com/kubernetes/release/releases
 
     # Two distinct Cilium versions. cilium_version is the agent/operator release that runs
     # in the cluster; cilium_cli_version is only the local binary that drives Helm. They
@@ -128,7 +128,7 @@ cluster:
          if tailscale_node_enable | bool else [] }}
 
     # Deprecated-API scanner run as an upgrade preflight.
-    pluto_version: "5.24.4" # https://github.com/FairwindsOps/pluto/releases
+    pluto_version: "5.24.5" # https://github.com/FairwindsOps/pluto/releases
 
     # Escape hatch. `-e kubeadm_upgrade_enabled=false` reduces a run to install-and-join
     # only, leaving every already-bootstrapped node untouched.
@@ -178,7 +178,7 @@ cluster:
     # k3s_server reinstalls any node older than this pin. Kubernetes upgrades one minor at a time,
     # so an existing v1.34.x cluster must step through v1.35.x before taking this pin.
     # https://docs.k3s.io/upgrades/manual
-    k3s_version: v1.36.5+k3s1
+    k3s_version: v1.37.2+k3s1
     token: '{{ lookup("env", "k3s_token") or ""}}'
     api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
     extra_server_args: "{{ lookup('env', 'k3s_extra_server_args') or '' }}"

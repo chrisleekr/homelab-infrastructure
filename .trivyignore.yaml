@@ -15,34 +15,30 @@ vulnerabilities:
     expired_at: 2026-11-15
 
   # Every pinned Go CLI is its latest upstream release. Exact PURLs make rebuilt versions visible.
-  # stdlib per binary: kubectl 1.36.5 = 1.26.8, TFLint v0.65.0 and Terraform 1.17.1 = 1.26.10,
-  # Task 3.54.0 = 1.27.1, Helm 4.3.1 = 1.27.2, Trivy 0.76.1 = 1.27.3.
+  # stdlib per binary: kubectl 1.37.2, TFLint v0.65.0 and Terraform 1.17.1 = 1.26.10,
+  # Task 3.54.0 = 1.27.1, Helm 4.3.1 = 1.27.2, Trivy 0.76.2 = 1.27.3.
   - id: CVE-2026-78667
     purls:
-      - pkg:golang/stdlib@v1.26.8
       - pkg:golang/stdlib@v1.27.1
     statement: Accept CLI HTTP Range DoS risk until official binaries use Go 1.26.9 or 1.27.2 or later
     expired_at: 2026-11-15
 
   - id: CVE-2026-78669
     purls:
-      - pkg:golang/golang.org/x/net@v0.56.0 # kubectl
+      - pkg:golang/golang.org/x/net@v0.57.0 # kubectl
       - pkg:golang/golang.org/x/net@v0.59.0 # Task
-      - pkg:golang/stdlib@v1.26.8
       - pkg:golang/stdlib@v1.27.1
     statement: Accept CLI HTTP/2 SETTINGS DoS risk until official binaries use x/net 0.60.0 and Go 1.26.9 or 1.27.2 or later
     expired_at: 2026-11-15
 
   - id: CVE-2026-97031
     purls:
-      - pkg:golang/stdlib@v1.26.8
       - pkg:golang/stdlib@v1.27.1
     statement: Accept CLI TLS ECH DoS risk until official binaries use Go 1.26.9 or 1.27.2 or later
     expired_at: 2026-11-15
 
   - id: CVE-2026-111943
     purls:
-      - pkg:golang/stdlib@v1.26.8
       - pkg:golang/stdlib@v1.27.1
       - pkg:golang/stdlib@v1.27.2
     statement: Mitigated, ca-certificates 20261020-r0 drops emSign ECC Root CA - G3 from the system store. Drop when binaries use Go 1.26.10 or 1.27.3 or later
@@ -50,14 +46,13 @@ vulnerabilities:
 
   - id: CVE-2026-56851
     purls:
-      - pkg:golang/golang.org/x/text@v0.39.0 # kubectl
+      - pkg:golang/golang.org/x/text@v0.40.0 # kubectl
     statement: Accept CLI x/text Nickname DoS risk until official binaries include x/text 0.41.0 or later
     expired_at: 2026-11-15
 
   - id: CVE-2026-116587
     purls:
       - pkg:golang/github.com/go-jose/go-jose/v4@v4.1.4 # Task, TFLint
-      - pkg:golang/github.com/go-jose/go-jose/v4@v4.1.5 # Trivy
     statement: Accept CLI go-jose DoS risk until official binaries include go-jose 4.1.6 or later
     expired_at: 2026-11-15
 
