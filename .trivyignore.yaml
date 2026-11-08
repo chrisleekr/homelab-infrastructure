@@ -31,6 +31,14 @@ vulnerabilities:
     statement: Accept CLI HTTP/2 SETTINGS DoS risk until official binaries use x/net 0.60.0 and Go 1.26.9 or 1.27.2 or later
     expired_at: 2026-11-15
 
+  - id: CVE-2026-78661
+    purls:
+      - pkg:golang/golang.org/x/net@v0.57.0 # kubectl
+      - pkg:golang/golang.org/x/net@v0.59.0 # Task
+      - pkg:golang/golang.org/x/net@v0.60.0 # Helm, TFLint
+    statement: Accept CLI x/net/html quadratic parse DoS risk until official binaries include x/net 0.62.0 or later
+    expired_at: 2026-11-15
+
   - id: CVE-2026-97031
     purls:
       - pkg:golang/stdlib@v1.27.1
