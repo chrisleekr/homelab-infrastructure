@@ -44,10 +44,11 @@
   serial: 1
   become: true
   # The upgrade to Ubuntu 26.04 removes /etc/sysctl.conf and the 99-sysctl.conf link that
-  # loaded it at boot, so values written there do not survive a reboot.
+  # loaded it at boot, so values written there do not survive a reboot. The name sorts after
+  # 99-protect-links.conf and 99-sysctl.conf, which would otherwise override it on 24.04.
   module_defaults:
     ansible.posix.sysctl:
-      sysctl_file: /etc/sysctl.d/90-homelab.conf
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   roles:
     - role: host_setup
       tags: [host_setup]
@@ -81,7 +82,7 @@
   become: true
   module_defaults:
     ansible.posix.sysctl:
-      sysctl_file: /etc/sysctl.d/90-homelab.conf
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   pre_tasks:
     - name: Gather service state information as fact data
       ansible.builtin.service_facts:
@@ -144,7 +145,7 @@
   become: true
   module_defaults:
     ansible.posix.sysctl:
-      sysctl_file: /etc/sysctl.d/90-homelab.conf
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   pre_tasks:
     - name: Gather service state information as fact data
       ansible.builtin.service_facts:
