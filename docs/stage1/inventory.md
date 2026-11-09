@@ -40,10 +40,9 @@ server_host:
   ansible_host: '{{ lookup("env", "server_ssh_host") or "192.168.1.100" }}'
   ansible_user: '{{ lookup("env", "server_ssh_user") or "ubuntu" }}'
   ansible_port: '{{ lookup("env", "server_ssh_port") or 22 }}'
-  ansible_python_interpreter: "/usr/bin/python3.12"
 ```
 
-The interpreter is pinned explicitly here. Workers deliberately do **not** pin it: `stage1/ansible.cfg` sets `interpreter_python = auto_silent`, which discovers the right one per host. That matters when an ARM64 Raspberry Pi worker ships a different Python than the control plane.
+No host pins an interpreter: `stage1/ansible.cfg` sets `interpreter_python = auto_silent`, which discovers the right one per host. That matters when an ARM64 Raspberry Pi worker ships a different Python than the control plane.
 
 ## Declaring workers
 

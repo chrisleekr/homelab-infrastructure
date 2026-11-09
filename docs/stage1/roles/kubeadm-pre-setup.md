@@ -23,7 +23,7 @@ None. Everything comes from the inventory and gathered facts.
 
 ## Handlers notified
 
-None. Sysctl settings use `ansible.posix.sysctl` with `reload: true`, which applies them inline rather than through a handler.
+None. Sysctl settings use `ansible.posix.sysctl` with `reload: true`, which applies them inline rather than through a handler. `site.yml` points the module at `/etc/sysctl.d/99-zz-homelab.conf`, because `/etc/sysctl.conf` is no longer loaded at boot after the upgrade to Ubuntu 26.04.
 
 ## Re-run behaviour
 

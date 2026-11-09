@@ -46,10 +46,14 @@
       register: kubeadm_node_containerd_default_config
       changed_when: false
 
+    # Ubuntu 26.04 labels container tasks cri-containerd.apparmor.d//&unconfined, and the
+    # default profile denies signals to that label, so Postgres hangs in recovery with
+    # "could not signal for checkpoint". Drop the AppArmor line once containerd#14485 ships.
     - name: Write containerd config.toml with SystemdCgroup enabled
       ansible.builtin.copy:
         content: "{{ kubeadm_node_containerd_default_config.stdout
-                     | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
+                     | replace('SystemdCgroup = false', 'SystemdCgroup = true')
+                     | replace('disable_apparmor = false', 'disable_apparmor = true') }}"
         dest: /etc/containerd/config.toml
         mode: "0644"
 

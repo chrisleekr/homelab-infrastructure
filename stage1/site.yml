@@ -43,6 +43,12 @@
   # time is fine at homelab scale.
   serial: 1
   become: true
+  # The upgrade to Ubuntu 26.04 removes /etc/sysctl.conf and the 99-sysctl.conf link that
+  # loaded it at boot, so values written there do not survive a reboot. The name sorts after
+  # 99-protect-links.conf and 99-sysctl.conf, which would otherwise override it on 24.04.
+  module_defaults:
+    ansible.posix.sysctl:
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   roles:
     - role: host_setup
       tags: [host_setup]
@@ -74,6 +80,9 @@
   # run on the first failure keeps the cluster at a known version instead of a mixed one.
   any_errors_fatal: true
   become: true
+  module_defaults:
+    ansible.posix.sysctl:
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   pre_tasks:
     - name: Gather service state information as fact data
       ansible.builtin.service_facts:
@@ -134,6 +143,9 @@
   # the run before the next worker is touched.
   any_errors_fatal: true
   become: true
+  module_defaults:
+    ansible.posix.sysctl:
+      sysctl_file: /etc/sysctl.d/99-zz-homelab.conf
   pre_tasks:
     - name: Gather service state information as fact data
       ansible.builtin.service_facts:
