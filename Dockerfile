@@ -8,7 +8,7 @@ ARG TARGETARCH
 # https://dl.k8s.io/release/stable.txt
 ARG KUBECTL_VERSION=1.37.2
 # https://github.com/helm/helm/releases
-ARG HELM_VERSION=4.3.1
+ARG HELM_VERSION=4.3.2
 # https://developer.hashicorp.com/terraform/install
 ARG TERRAFORM_VERSION=1.17.1
 # https://github.com/go-task/task/releases
@@ -16,9 +16,9 @@ ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
 ARG TRIVY_VERSION=0.76.2
 # https://github.com/terraform-linters/tflint/releases
-ARG TFLINT_VERSION=v0.65.0
-ARG TFLINT_SHA256_AMD64=d4c545ed2e29d6338604b586f34f544f380f70f243aa72f7b484713835eaec61
-ARG TFLINT_SHA256_ARM64=843017c47a98be1de4d88fa038daa293770fe25cd01656c4f08b2e30d1d3b3a0
+ARG TFLINT_VERSION=v0.66.0
+ARG TFLINT_SHA256_AMD64=22be11cadc25cd02401e94c0ccc91aa63467debb8485c2a755d98f4c0a9d1e2e
+ARG TFLINT_SHA256_ARM64=1105a0a5ddee7cdac7957a3475571a946b839192ea1bc0c722c6c4686001067e
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 # https://github.com/oracle/oci-cli/releases
@@ -48,7 +48,7 @@ RUN set -eux; \
   bash=5.3.9-r1 \
   jq=1.8.2-r0 \
   bind-tools=9.20.30-r0 \
-  git=2.54.0-r0 \
+  git=2.54.1-r0 \
   graphviz=12.2.1-r3 \
   python3=3.14.10-r1 \
   pre-commit=4.6.0-r0 \

@@ -57,7 +57,7 @@ The login redirect needs `X-Auth-Request-Redirect`. ext_authz has no way to pass
 |---|---|---|
 | `istio_gateway_name` | `public` | Root variable, also passed to every module that exposes a host, which names it in its ListenerSet `parentRef` |
 | `istio_gateway_namespace` | `istio-ingress` | Root variable. Also where each module puts its `AuthorizationPolicy`, because Istio requires a policy beside the resource its `targetRefs` names |
-| `istio_gateway_version` | `1.31.4` | Both charts |
+| `istio_gateway_version` | `1.32.0` | Both charts |
 | `istio_gateway_chart_repository` | `https://blob.istio.io/istio-release/charts` | The `storage.googleapis.com` mirror stops at 1.30.4 |
 | `istio_gateway_control_plane_namespace` | `istio-system` | istiod, and the Istio root namespace that mesh-wide config is read from |
 | `istio_gateway_api_version` | `v1.6.3` | CRD bundle |

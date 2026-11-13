@@ -57,8 +57,8 @@ cluster:
 
     ########################
     # Start: Kubeadm
-    runc_version: "1.5.2" # https://github.com/opencontainers/runc/releases
-    cni_version: "1.9.1" # https://github.com/containernetworking/plugins/releases
+    runc_version: "1.5.3" # https://github.com/opencontainers/runc/releases
+    cni_version: "1.10.0" # https://github.com/containernetworking/plugins/releases
     crictl_version: "1.37.0" # https://github.com/kubernetes-sigs/cri-tools/releases
     containerd_version: "2.4.2" # https://github.com/containerd/containerd/releases
     nerdctl_version: "2.4.2" # https://github.com/containerd/nerdctl/releases

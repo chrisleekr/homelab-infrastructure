@@ -87,7 +87,7 @@ Then apply from `stage2`. Per-application image configuration is **not** set her
 | --- | --- |
 | Repository | `https://argoproj.github.io/argo-helm` |
 | Chart | `argocd-image-updater` |
-| Version | `1.4.0` |
+| Version | `1.4.2` |
 | App Version | `v1.4.0` |
 
 `crds.keep` is enabled, so `terraform destroy` leaves the `ImageUpdater` CRD in the cluster. Remove it by hand if a full teardown is wanted.
