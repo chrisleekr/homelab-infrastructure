@@ -1,8 +1,6 @@
 # Keep ansible-core within the release series required by ansible.
 ansible==14.6.0
 ansible-core==2.21.6
-# 37.x breaks kubernetes.core k8s_cp and k8s_log until kubernetes.core#1274 is released; stage1 uses neither.
-# Reference: https://github.com/ansible-collections/kubernetes.core/pull/1274
 kubernetes==37.0.2
 # 2.8.0 fixes CVE-2026-97687 and CVE-2026-97689.
 # Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
