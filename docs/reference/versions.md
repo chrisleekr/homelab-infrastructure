@@ -16,11 +16,11 @@ What the Docker image ships. Bump with `task versions:bump`, which edits the `Do
 | Tool | Version |
 |------|---------|
 | kubectl | 1.37.2 |
-| helm | 4.3.1 |
+| helm | 4.3.2 |
 | terraform | 1.17.1 |
 | taskfile | 3.54.0 |
 | trivy | 0.76.2 |
-| tflint | v0.65.0 |
+| tflint | v0.66.0 |
 | bws | 2.1.0 |
 | oci-cli | 3.96.0 |
 <!-- VERSIONS_END:container-tools -->
@@ -36,10 +36,10 @@ What Stage 1 installs: node binaries, plus the MetalLB and metrics-server charts
 | kubectl | 1.37.2 | <https://kubernetes.io/releases/> |
 | kubelet systemd unit | 0.23.0 | <https://github.com/kubernetes/release/releases> |
 | containerd | 2.4.2 | <https://github.com/containerd/containerd/releases> |
-| runc | 1.5.2 | <https://github.com/opencontainers/runc/releases> |
+| runc | 1.5.3 | <https://github.com/opencontainers/runc/releases> |
 | crictl | 1.37.0 | <https://github.com/kubernetes-sigs/cri-tools/releases> |
 | nerdctl | 2.4.2 | <https://github.com/containerd/nerdctl/releases> |
-| CNI plugins | 1.9.1 | <https://github.com/containernetworking/plugins/releases> |
+| CNI plugins | 1.10.0 | <https://github.com/containernetworking/plugins/releases> |
 | Cilium | 1.20.4 | <https://github.com/cilium/cilium/releases> |
 | Cilium CLI | 0.20.2 | <https://github.com/cilium/cilium-cli/releases> |
 | MetalLB chart | 0.16.2 | <https://github.com/metallb/metallb/releases> |

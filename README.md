@@ -66,7 +66,7 @@ Pinned in `Dockerfile`, synced here by `scripts/sync-versions.sh`.
 | Tool | Version |
 |------|---------|
 | kubectl | 1.37.2 |
-| helm | 4.3.1 |
+| helm | 4.3.2 |
 | terraform | 1.17.1 |
 | taskfile | 3.54.0 |
 | trivy | 0.76.2 |
