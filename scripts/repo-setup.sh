@@ -103,4 +103,4 @@ fi
 echo "Installing ansible-galaxy roles..."
 ansible-galaxy install -r stage1/requirements.yml
 echo "Installing pip requirements..."
-pip install --no-cache-dir -r stage1/requirements-pip.txt
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python -m pip install --no-cache-dir -r stage1/requirements-pip.txt
