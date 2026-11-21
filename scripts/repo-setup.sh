@@ -5,7 +5,7 @@
 # Fail on any error.
 set -Eeuo pipefail
 
-PYTHON_VERSION=3.12
+PYTHON_VERSION=3.14
 
 # This script is used to setup the repository for the first time.
 

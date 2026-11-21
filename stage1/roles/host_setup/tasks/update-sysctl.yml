@@ -24,10 +24,18 @@
 
 # Ubuntu 24.04+ blocks user namespaces for unconfined non-root processes. CI job pods run
 # privileged (AppArmor unconfined), so sandboxed Chrome in browser tests aborts at startup.
+# Kernels without the key (Ubuntu 22.04 GA) have no restriction, and setting it would fail the reload.
+- name: Check for the AppArmor user namespace restriction
+  ansible.builtin.stat:
+    path: /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+  register: host_setup_apparmor_userns_restriction
+  tags: [network]
+
 - name: Allow unprivileged user namespaces for sandboxed Chrome in CI
   ansible.posix.sysctl:
     name: kernel.apparmor_restrict_unprivileged_userns
     value: "0"
     state: present
     reload: true
+  when: host_setup_apparmor_userns_restriction.stat.exists
   tags: [network]
