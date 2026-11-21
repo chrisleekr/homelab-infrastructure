@@ -538,7 +538,7 @@ prometheus:
     strategy:
       type: Recreate
     image:
-      tag: v2.38.0
+      tag: v3.16.0
   serverFiles:
     prometheus.yml:
       scrape_configs:
@@ -722,8 +722,8 @@ gitlab-runner:
       [[runners]]
         [runners.kubernetes]
           namespace = "{{.Release.Namespace}}"
-          # Major-only tag tracks patch releases. docker:stable is frozen upstream since 2020.
-          image = "docker:29"
+          # Exact tag so a runner job image change is reviewed. docker:stable is frozen upstream since 2020.
+          image = "docker:29.10.0"
           privileged = true
           # Without these, job pods are BestEffort and invisible to the scheduler: it cannot
           # account for them, so concurrent jobs overcommit the node. Requests sit near the typical

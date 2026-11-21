@@ -10,7 +10,7 @@ ARG KUBECTL_VERSION=1.37.2
 # https://github.com/helm/helm/releases
 ARG HELM_VERSION=4.3.2
 # https://developer.hashicorp.com/terraform/install
-ARG TERRAFORM_VERSION=1.17.1
+ARG TERRAFORM_VERSION=1.17.2
 # https://github.com/go-task/task/releases
 ARG TASKFILE_VERSION=3.54.0
 # https://github.com/aquasecurity/trivy/releases
@@ -22,7 +22,7 @@ ARG TFLINT_SHA256_ARM64=1105a0a5ddee7cdac7957a3475571a946b839192ea1bc0c722c6c468
 # https://github.com/bitwarden/sdk-sm/releases
 ARG BWS_VERSION=2.1.0
 # https://github.com/oracle/oci-cli/releases
-ARG OCI_CLI_VERSION=3.96.0
+ARG OCI_CLI_VERSION=3.96.3
 
 # Fail before installing target-specific binaries into a mismatched base image.
 RUN case "${TARGETARCH}:$(apk --print-arch)" in \

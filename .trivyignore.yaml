@@ -62,6 +62,14 @@ vulnerabilities:
     statement: Accept CLI go-jose DoS risk until official binaries include go-jose 4.1.6 or later
     expired_at: 2026-11-29
 
+  - id: CVE-2026-97054
+    purls:
+      - pkg:golang/stdlib@v1.26.10 # kubectl, Terraform, TFLint
+      - pkg:golang/stdlib@v1.27.1 # Task
+      - pkg:golang/stdlib@v1.27.3 # Trivy
+    statement: Accept CLI HTTP/1 MaxBytesReader DoS risk; these CLIs run no HTTP server. Drop when binaries use Go 1.26.11 or 1.27.4 or later
+    expired_at: 2026-11-29
+
 misconfigurations:
   # Dockerfile checks - acceptable for this use case
   - id: DS-0002

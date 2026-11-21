@@ -6,9 +6,9 @@
 # Major-bounded ranges: minor and patch bumps land without review, majors need
 # one. Material 9 -> 10 is where theme templates break.
 # https://squidfunk.github.io/mkdocs-material/
-mkdocs-material>=9.7,<10
+mkdocs-material>=9.8.2,<10
 
 # Direct dependency of scripts/check-docs.py, which parses mkdocs.yml nav with a
 # custom SafeLoader subclass. mkdocs pulls PyYAML in transitively, but the drift
 # gate depends on it directly, so it is declared directly.
-PyYAML>=6.0,<7
+PyYAML>=6.0.3,<7

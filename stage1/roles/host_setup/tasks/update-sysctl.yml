@@ -1,4 +1,7 @@
 ---
+# Tasks carry the include's tag because tags on include_tasks do not reach the included
+# tasks, so `--tags network` would otherwise skip this whole file.
+
 # For Gitlab Registry
 # sysctl -w fs.inotify.max_user_watches=100000
 # sysctl -w fs.inotify.max_user_instances=100000
@@ -9,6 +12,7 @@
     value: 100000
     state: present
     reload: true
+  tags: [network]
 
 - name: Set fs.inotify.max_user_instances
   ansible.posix.sysctl:
@@ -16,3 +20,14 @@
     value: 100000
     state: present
     reload: true
+  tags: [network]
+
+# Ubuntu 24.04+ blocks user namespaces for unconfined non-root processes. CI job pods run
+# privileged (AppArmor unconfined), so sandboxed Chrome in browser tests aborts at startup.
+- name: Allow unprivileged user namespaces for sandboxed Chrome in CI
+  ansible.posix.sysctl:
+    name: kernel.apparmor_restrict_unprivileged_userns
+    value: "0"
+    state: present
+    reload: true
+  tags: [network]
