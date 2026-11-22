@@ -14,23 +14,22 @@ auth:
       permissions: "~* &* +@all"
 
 # Datadog redisdb check; the password handle resolves through the agent's k8s.secrets backend.
-# The container is named after the release fullname, not "valkey".
+# Annotation key is the container name, fixed to "valkey" since chart 1.0.
 podAnnotations:
-  ad.datadoghq.com/gitlab-valkey.checks: |
+  ad.datadoghq.com/valkey.checks: |
     {"redisdb": {"instances": [{"host": "%%host%%", "port": 6379, "password": "ENC[${valkey_namespace}/${valkey_password_secret};default]"}]}}
 
-dataStorage:
+persistence:
   enabled: true
-  requestedSize: ${valkey_persistence_size}
-  className: ${persistence_storage_class_name}
+  size: ${valkey_persistence_size}
+  storageClass: ${persistence_storage_class_name}
   # Holds Sidekiq queues; keep the claim if the release is ever uninstalled.
-  keepPvc: true
+  keepOnUninstall: true
 
 metrics:
   enabled: true
   serviceMonitor:
     enabled: true
-    # extraLabels is the key that reaches metadata.labels; additionalLabels is not
-    # consumed by this chart's ServiceMonitor template.
-    extraLabels:
+    # labels reaches metadata.labels; additionalLabels is not consumed by the chart.
+    labels:
       release: kube-prometheus-stack

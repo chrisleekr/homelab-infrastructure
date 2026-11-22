@@ -5,7 +5,7 @@
 # Fail on any error.
 set -Eeuo pipefail
 
-PYTHON_VERSION=3.12
+PYTHON_VERSION=3.14
 
 # This script is used to setup the repository for the first time.
 
@@ -103,4 +103,4 @@ fi
 echo "Installing ansible-galaxy roles..."
 ansible-galaxy install -r stage1/requirements.yml
 echo "Installing pip requirements..."
-pip install --no-cache-dir -r stage1/requirements-pip.txt
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python -m pip install --no-cache-dir -r stage1/requirements-pip.txt

@@ -40,6 +40,11 @@ resource "kubernetes_deployment_v1" "wireguard" {
   spec {
     replicas = 1
 
+    # The ReadWriteOnce PVC cannot attach to a surge pod on another node, so stop the old pod first.
+    strategy {
+      type = "Recreate"
+    }
+
     selector {
       match_labels = {
         app = "wireguard"
@@ -67,7 +72,7 @@ resource "kubernetes_deployment_v1" "wireguard" {
 
         container {
           name  = "wireguard"
-          image = "linuxserver/wireguard:1.0.20260223-r0-ls129"
+          image = "linuxserver/wireguard:1.0.20260223-r0-ls130"
 
           resources {
             requests = {
@@ -130,6 +135,12 @@ resource "kubernetes_deployment_v1" "wireguard" {
                 "SYS_MODULE",
               ]
             }
+          }
+
+          # Server and peer keys live in /config; without the PVC every restart regenerates them.
+          volume_mount {
+            name       = "wireguard-config"
+            mount_path = "/config"
           }
 
           volume_mount {

@@ -17,12 +17,12 @@ What the Docker image ships. Bump with `task versions:bump`, which edits the `Do
 |------|---------|
 | kubectl | 1.37.2 |
 | helm | 4.3.2 |
-| terraform | 1.17.1 |
+| terraform | 1.17.2 |
 | taskfile | 3.54.0 |
 | trivy | 0.76.2 |
 | tflint | v0.66.0 |
 | bws | 2.1.0 |
-| oci-cli | 3.96.0 |
+| oci-cli | 3.96.3 |
 <!-- VERSIONS_END:container-tools -->
 
 ## Cluster components
@@ -40,8 +40,8 @@ What Stage 1 installs: node binaries, plus the MetalLB and metrics-server charts
 | crictl | 1.37.0 | <https://github.com/kubernetes-sigs/cri-tools/releases> |
 | nerdctl | 2.4.2 | <https://github.com/containerd/nerdctl/releases> |
 | CNI plugins | 1.10.0 | <https://github.com/containernetworking/plugins/releases> |
-| Cilium | 1.20.4 | <https://github.com/cilium/cilium/releases> |
-| Cilium CLI | 0.20.2 | <https://github.com/cilium/cilium-cli/releases> |
+| Cilium | 1.20.5 | <https://github.com/cilium/cilium/releases> |
+| Cilium CLI | 0.20.3 | <https://github.com/cilium/cilium-cli/releases> |
 | MetalLB chart | 0.16.2 | <https://github.com/metallb/metallb/releases> |
 | metrics-server chart | 3.14.0 | <https://github.com/kubernetes-sigs/metrics-server/releases> |
 | pluto | 5.24.5 | <https://github.com/FairwindsOps/pluto/releases> |

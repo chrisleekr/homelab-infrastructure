@@ -29,8 +29,8 @@ The pod is `privileged` with `NET_ADMIN` and `SYS_MODULE`, and mounts the host's
 
 | Resource | Name | Notes |
 |---|---|---|
-| `kubernetes_persistent_volume_claim_v1.wireguard_config` | `wireguard-config` | 1Gi, `ReadWriteOnce`. See the warning below |
-| `kubernetes_deployment_v1.wireguard` | `wireguard` | Single replica, `linuxserver/wireguard:1.0.20260223-r0-ls129` |
+| `kubernetes_persistent_volume_claim_v1.wireguard_config` | `wireguard-config` | 1Gi, `ReadWriteOnce`, mounted at `/config`. Holds the server and peer keys, so peer configs survive a restart |
+| `kubernetes_deployment_v1.wireguard` | `wireguard` | Single replica, `Recreate` strategy, `linuxserver/wireguard:1.0.20260223-r0-ls130` |
 | `kubernetes_service_v1.wireguard` | `wireguard` | ClusterIP, UDP, `wireguard_port` to container 51820 |
 
 All three are gated on `wireguard_enable`, so a disabled backend leaves no orphaned PVC behind. The `vpn` namespace itself is created unconditionally in `stage2/vpn/namespace.tf` and carries `prevent_destroy = true`.
@@ -76,12 +76,6 @@ kubectl -n vpn logs deployment/wireguard
 ```
 
 ## Gotchas
-
-!!! danger "The config PVC is created but never mounted, so peer keys do not survive a restart"
-
-    `stage2/vpn/wireguard.tf` declares the `wireguard-config` volume on the pod and binds the PVC, but the container has only one `volume_mount`, for `/lib/modules`. Nothing mounts the claim at `/config`.
-
-    The image therefore generates its server and peer keys onto the container filesystem. Every restart produces a fresh set, which silently invalidates every peer config already distributed, and the PVC sits bound and empty. Treat distributed configs as valid only until the next restart until this is fixed.
 
 !!! warning "Peer private keys are printed to the pod log"
 

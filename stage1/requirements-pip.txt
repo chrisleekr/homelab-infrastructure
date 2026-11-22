@@ -1,7 +1,7 @@
 # Keep ansible-core within the release series required by ansible.
-ansible==14.6.0
-ansible-core==2.21.6
-kubernetes==37.0.2
+ansible==15.0.0
+ansible-core==2.22.0
+kubernetes==37.0.3
 # 2.8.0 fixes CVE-2026-97687 and CVE-2026-97689.
 # Reference: https://urllib3.readthedocs.io/en/stable/changelog.html
 urllib3>=2.8.0
